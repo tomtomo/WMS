@@ -1,0 +1,15 @@
+{
+  "solution": {
+    "path": "Wms.sln",
+    "projects": [
+      "src\\AppHost\\Wms.AppHost\\Wms.AppHost.csproj",
+      "src\\BuildingBlocks\\Wms.BuildingBlocks.Application\\Wms.BuildingBlocks.Application.csproj",
+      "src\\BuildingBlocks\\Wms.BuildingBlocks.Domain\\Wms.BuildingBlocks.Domain.csproj",
+      "src\\BuildingBlocks\\Wms.BuildingBlocks.Infrastructure\\Wms.BuildingBlocks.Infrastructure.csproj",
+      "src\\BuildingBlocks\\Wms.BuildingBlocks.Web\\Wms.BuildingBlocks.Web.csproj",
+      "src\\Platform\\Wms.Platform.Hosting\\Wms.Platform.Hosting.csproj",
+      "src\\Platform\\Wms.Platform.Local\\Wms.Platform.Local.csproj",
+      "tests\\Wms.Architecture.Tests\\Wms.Architecture.Tests.csproj"
+    ]
+  }
+}

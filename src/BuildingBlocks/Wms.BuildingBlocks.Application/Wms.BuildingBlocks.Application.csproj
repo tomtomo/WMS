@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Kontrak CQRS (ICommand/IQuery), port abstrak, pipeline behavior MediatR
+       (Validation -> Transaction -> AuditLog -> Logging). Diisi menyusul. -->
+
+</Project>

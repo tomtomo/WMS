@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Mekanisme rail: tabel Outbox/Inbox/DLQ + AddInfrastructureTables, EF audit
+       interceptor, optimistic concurrency xmin, MessageEnvelope, Polly, setup OTel.
+       Tanpa DbContext standalone. Diisi menyusul. -->
+
+</Project>

@@ -1,0 +1,138 @@
+# EditorConfig — satu ruleset ter-curate untuk seluruh solution.
+# Tingkat severity:
+#   error      -> correctness / security  -> blokir build
+#   warning    -> -> jadi error via TreatWarningsAsErrors
+#   suggestion -> sekadar hint editor (tak blokir build)
+#   none       -> mati (di-curate keluar supaya tak jadi noise analyzer-overload)
+# Build-enforced via EnforceCodeStyleInBuild=true (Directory.Build.props).
+# Komentar selalu di baris sendiri (spec EditorConfig ketat — tanpa trailing inline comment).
+
+root = true
+
+# ----------------------------------------------------------------------------
+# Semua file
+# ----------------------------------------------------------------------------
+[*]
+charset = utf-8
+end_of_line = crlf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+[*.{json,yml,yaml}]
+indent_size = 2
+
+[*.{csproj,props,targets,slnf}]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
+
+# ----------------------------------------------------------------------------
+# Source C#
+# ----------------------------------------------------------------------------
+[*.cs]
+
+#### Formatting .NET (IDE) ####
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+csharp_using_directive_placement = outside_namespace:warning
+csharp_style_namespace_declarations = file_scoped:warning
+csharp_prefer_braces = true:suggestion
+csharp_new_line_before_open_brace = all
+
+#### Kualifikasi 'this.' — mati (gaya .NET modern bertumpu pada penamaan _field) ####
+dotnet_style_qualification_for_field = false:suggestion
+dotnet_style_qualification_for_property = false:suggestion
+dotnet_style_qualification_for_method = false:suggestion
+dotnet_style_qualification_for_event = false:suggestion
+
+#### var / expression-bodied — preferensi tim, hanya hint ####
+csharp_style_var_for_built_in_types = false:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_style_var_elsewhere = false:suggestion
+csharp_style_expression_bodied_methods = when_on_single_line:suggestion
+
+#### Penggunaan bahasa modern — biarkan jadi build warning (bernilai nyata) ####
+csharp_style_pattern_matching_over_is_with_cast_check = true:warning
+csharp_style_throw_expression = true:suggestion
+dotnet_style_object_initializer = true:suggestion
+dotnet_style_collection_initializer = true:suggestion
+csharp_prefer_simple_using_statement = true:suggestion
+csharp_style_prefer_primary_constructors = true:suggestion
+
+#### Penamaan = ubiquitous language ####
+# field private/internal: _camelCase
+dotnet_naming_rule.private_fields_underscore.severity = warning
+dotnet_naming_rule.private_fields_underscore.symbols = private_internal_fields
+dotnet_naming_rule.private_fields_underscore.style = underscore_camel
+dotnet_naming_symbols.private_internal_fields.applicable_kinds = field
+dotnet_naming_symbols.private_internal_fields.applicable_accessibilities = private, internal
+dotnet_naming_style.underscore_camel.capitalization = camel_case
+dotnet_naming_style.underscore_camel.required_prefix = _
+# constant: PascalCase
+dotnet_naming_rule.constants_pascal.severity = warning
+dotnet_naming_rule.constants_pascal.symbols = constant_symbols
+dotnet_naming_rule.constants_pascal.style = pascal
+dotnet_naming_symbols.constant_symbols.applicable_kinds = field, local
+dotnet_naming_symbols.constant_symbols.required_modifiers = const
+dotnet_naming_style.pascal.capitalization = pascal_case
+# type & member: PascalCase
+dotnet_naming_rule.types_pascal.severity = warning
+dotnet_naming_rule.types_pascal.symbols = type_symbols
+dotnet_naming_rule.types_pascal.style = pascal
+dotnet_naming_symbols.type_symbols.applicable_kinds = class, struct, enum, property, method, event, delegate
+
+#### Rule IDE ter-curate ####
+# IDE0005 (buang using tak terpakai) hanya jalan saat build bila GenerateDocumentationFile=true
+# (Roslyn #41640); kita tak emit doc file, jadi biarkan hint editor saja, bukan gerbang build.
+dotnet_diagnostic.IDE0005.severity = suggestion
+# Formatting — jaga source rapi; jangan gagalkan build hanya karena whitespace.
+dotnet_diagnostic.IDE0055.severity = suggestion
+
+# ============================================================================
+# StyleCop.Analyzers — ter-curate. none = noise gaya tanpa nilai di sini.
+# ============================================================================
+# Analisis XML comment dimatikan (memang tak ada doc file)
+dotnet_diagnostic.SA0001.severity = none
+# Prefix 'this.' — bentrok dengan konvensi _field
+dotnet_diagnostic.SA1101.severity = none
+# using di dalam namespace — kita pakai outside + global using
+dotnet_diagnostic.SA1200.severity = none
+# field tak boleh diawali '_' — kita justru MEWAJIBKAN '_' (rule penamaan di atas)
+dotnet_diagnostic.SA1309.severity = none
+# trailing comma di initializer multi-baris
+dotnet_diagnostic.SA1413.severity = none
+# elemen wajib didokumentasikan
+dotnet_diagnostic.SA1600.severity = none
+# partial element wajib didokumentasikan
+dotnet_diagnostic.SA1601.severity = none
+# enum member wajib didokumentasikan
+dotnet_diagnostic.SA1602.severity = none
+# file header
+dotnet_diagnostic.SA1633.severity = none
+# diksi dokumentasi property
+dotnet_diagnostic.SA1623.severity = none
+# dokumentasi harus diakhiri titik
+dotnet_diagnostic.SA1629.severity = none
+# spacing titik dua (bentrok dengan sintaks primary-ctor / record)
+dotnet_diagnostic.SA1024.severity = none
+# baris kosong antar-elemen
+dotnet_diagnostic.SA1516.severity = suggestion
+
+# ============================================================================
+# SonarAnalyzer.CSharp — pertahankan default correctness/smell (warning -> error).
+# Roslynator — pertahankan default; jaga formatting source tetap rapi.
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# Project test — longgarkan penamaan supaya Method_Should_X terbaca natural.
+# ----------------------------------------------------------------------------
+[tests/**.cs]
+# underscore di nama member (penamaan test)
+dotnet_diagnostic.CA1707.severity = none
+# elemen wajib didokumentasikan
+dotnet_diagnostic.SA1600.severity = none
+# type boleh public untuk discovery xUnit
+dotnet_diagnostic.CA1515.severity = none

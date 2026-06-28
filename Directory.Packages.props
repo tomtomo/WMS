@@ -1,0 +1,34 @@
+<Project>
+
+  <!--
+    Central Package Management (CPM): tiap versi package hidup di sini, tak pernah di .csproj.
+    Transitive pinning aktif = package terdaftar dipin meski ditarik secara transitive
+    (hygiene supply-chain). Daftar tumbuh per-iterasi; hanya package yang benar-benar dipakai
+    sejauh ini yang dipin (pin tak-relevan akan memaksa versinya ke graph transitive).
+  -->
+
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+
+  <ItemGroup Label="Analyzer Roslyn (build-gate)">
+    <PackageVersion Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="10.0.301" />
+    <PackageVersion Include="StyleCop.Analyzers" Version="1.2.0-beta.556" />
+    <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.27.0.140913" />
+    <PackageVersion Include="Roslynator.Analyzers" Version="4.15.0" />
+  </ItemGroup>
+
+  <ItemGroup Label="Aspire AppHost (orkestrasi lokal)">
+    <PackageVersion Include="Aspire.Hosting.AppHost" Version="13.4.6" />
+  </ItemGroup>
+
+  <ItemGroup Label="Harness test">
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
+    <PackageVersion Include="xunit" Version="2.5.3" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="2.5.3" />
+    <PackageVersion Include="coverlet.collector" Version="6.0.0" />
+    <PackageVersion Include="NetArchTest.Rules" Version="1.3.2" />
+  </ItemGroup>
+
+</Project>

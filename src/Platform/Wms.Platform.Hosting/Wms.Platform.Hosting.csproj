@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Lem komposisi agnostic: service-defaults (logging, telemetry, health).
+       NOL cloud SDK (adapter cloud hidup di Platform.<Cloud> terpisah). Diisi menyusul. -->
+
+</Project>

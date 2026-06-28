@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Adapter Local yang mengimplementasikan tiap port (RabbitMQ, Postgres rail, InMemory
+       cache, filesystem object-store, env-secret, Argon2id, Hangfire, in-proc saga,
+       OTLP). Hanya mengimplementasikan port abstrak. Diisi menyusul. -->
+
+</Project>

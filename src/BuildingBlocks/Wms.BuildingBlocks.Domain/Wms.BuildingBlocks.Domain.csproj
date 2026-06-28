@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Kernel seedwork: AggregateRoot, ValueObject, Result<T>/Error, StronglyTypedId,
+       IDomainEvent, IAuditable. Framework-free. Diisi menyusul. -->
+
+</Project>
