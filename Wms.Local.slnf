@@ -9,7 +9,8 @@
       "src\\BuildingBlocks\\Wms.BuildingBlocks.Web\\Wms.BuildingBlocks.Web.csproj",
       "src\\Platform\\Wms.Platform.Hosting\\Wms.Platform.Hosting.csproj",
       "src\\Platform\\Wms.Platform.Local\\Wms.Platform.Local.csproj",
-      "tests\\Wms.Architecture.Tests\\Wms.Architecture.Tests.csproj"
+      "tests\\Wms.Architecture.Tests\\Wms.Architecture.Tests.csproj",
+      "tests\\BuildingBlocks\\Wms.BuildingBlocks.Domain.UnitTests\\Wms.BuildingBlocks.Domain.UnitTests.csproj"
     ]
   }
 }

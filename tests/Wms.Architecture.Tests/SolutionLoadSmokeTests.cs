@@ -4,13 +4,7 @@ using Xunit;
 
 namespace Wms.Architecture.Tests;
 
-// What : Smoke test yang membuktikan harness fitness-function (NetArchTest) sudah ter-wire
-//        dan bisa load + analisis assembly Wms.*. Ini BUKAN aturan arsitektur sungguhan —
-//        rule fitness-function asli menyusul belakangan.
-// Why  : harness governance harus terbukti jalan sebelum aturan apa pun ditulis, supaya
-//        penambahan rule berikutnya tinggal nempel, tak perlu merakit ulang engine-nya.
-// How  : load tiap Wms.*.dll dari output test, lalu jalankan satu predicate NetArchTest
-//        end-to-end (lolos karena tak ada yang depend ke System.Web).
+// Smoke test: untuk membuktikan harness NetArchTest bisa load assembly Wms.* dan jalan end to end, belum aturan arsitektur sungguhan.
 public sealed class SolutionLoadSmokeTests
 {
     [Fact]
@@ -23,7 +17,7 @@ public sealed class SolutionLoadSmokeTests
 
         Assert.NotEmpty(assemblies);
 
-        // Jalankan engine NetArchTest atas type yang benar-benar ter-load.
+        // Jalankan engine NetArchTest untuk type yang benar-benar ter-load.
         var result = Types.InAssemblies(assemblies)
             .That()
             .ResideInNamespaceStartingWith("Wms")

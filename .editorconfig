@@ -2,8 +2,8 @@
 # Tingkat severity:
 #   error      -> correctness / security  -> blokir build
 #   warning    -> -> jadi error via TreatWarningsAsErrors
-#   suggestion -> sekadar hint editor (tak blokir build)
-#   none       -> mati (di-curate keluar supaya tak jadi noise analyzer-overload)
+#   suggestion -> sekadar hint editor (tidak blokir build)
+#   none       -> mati (di-curate keluar supaya tidak jadi noise analyzer-overload)
 # Build-enforced via EnforceCodeStyleInBuild=true (Directory.Build.props).
 # Komentar selalu di baris sendiri (spec EditorConfig ketat — tanpa trailing inline comment).
 
@@ -54,7 +54,7 @@ csharp_style_var_when_type_is_apparent = true:suggestion
 csharp_style_var_elsewhere = false:suggestion
 csharp_style_expression_bodied_methods = when_on_single_line:suggestion
 
-#### Penggunaan bahasa modern — biarkan jadi build warning (bernilai nyata) ####
+#### Penggunaan bahasa modern — biarkan jadi build warning ####
 csharp_style_pattern_matching_over_is_with_cast_check = true:warning
 csharp_style_throw_expression = true:suggestion
 dotnet_style_object_initializer = true:suggestion
@@ -120,6 +120,10 @@ dotnet_diagnostic.SA1629.severity = none
 dotnet_diagnostic.SA1024.severity = none
 # baris kosong antar-elemen
 dotnet_diagnostic.SA1516.severity = suggestion
+# satu tipe per file — sengaja dimatikan: tipe satu-konsep beda arity (mis. Result + Result<T>)
+# boleh se-file. Kohesi & co-evolution diprioritaskan ketimbang findability-per-file; findability
+# tetap dijaga SA1649 (nama file = tipe utama) + konvensi "satu konsep per file".
+dotnet_diagnostic.SA1402.severity = none
 
 # ============================================================================
 # SonarAnalyzer.CSharp — pertahankan default correctness/smell (warning -> error).

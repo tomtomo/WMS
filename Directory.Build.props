@@ -1,7 +1,7 @@
 <Project>
 
   <!--
-    Baseline build seluruh repo. Di-import otomatis oleh tiap project sebelum body-nya,
+    Baseline build seluruh repo. Di import otomatis oleh tiap project sebelum bodynya,
     jadi tiap .csproj bisa nyaris kosong dan (bila perlu) meng-override. Satu sumber untuk:
     TFM, kedisiplinan bahasa, gerbang warning-as-error, dan set analyzer Roslyn.
     Hygiene = build-gate (bukan sekadar advisory IDE).
