@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!-- Kernel surface Web: IEndpoint, ProblemDetails (RFC 7807), correlation-id,
-       plumbing JWT, Asp.Versioning, gRPC interceptor. Diisi menyusul. -->
+       plumbing JWT, Asp.Versioning, gRPC interceptor. -->
 
 </Project>

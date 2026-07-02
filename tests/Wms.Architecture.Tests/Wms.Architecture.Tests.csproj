@@ -1,9 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- Harness fitness-function (NetArchTest + source-scan), fail-build. Tahap skeleton
-       hanya mengirim smoke test yang membuktikan harness me-load assembly Wms.*; rule
-       asli menyusul. net8.0 (inherited) — tak bisa mereferensi AppHost net10, jadi smoke
-       hanya menyasar assembly Wms.* net8. -->
+  <!-- Harness fitness-function (NetArchTest + source-scan), fail-build. Tidak mereferensi AppHost net10, jadi smoke
+       hanya ke assembly Wms.* net8. -->
 
   <PropertyGroup>
     <IsPackable>false</IsPackable>
