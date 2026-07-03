@@ -1,7 +1,34 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!-- Mekanisme rail: tabel Outbox/Inbox/DLQ + AddInfrastructureTables, EF audit
-       interceptor, optimistic concurrency xmin, MessageEnvelope, Polly, setup OTel.
-       Tanpa DbContext standalone. -->
+       interceptor, optimistic concurrency xmin, MessageEnvelope, Polly, setup OTel. -->
+
+  <ItemGroup Label="Seedwork — satu-satunya project-ref">
+    <ProjectReference Include="..\Wms.BuildingBlocks.Application\Wms.BuildingBlocks.Application.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Label="Persistence — EF Core + Npgsql (rail tables, interceptor, xmin)">
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+  </ItemGroup>
+
+  <ItemGroup Label="Composition root — DI + OTel logging setup">
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+  </ItemGroup>
+
+  <ItemGroup Label="Resilience — Polly v8 standard handler (split-timeout)">
+    <PackageReference Include="Polly.Core" />
+    <PackageReference Include="Polly.Extensions" />
+    <PackageReference Include="Microsoft.Extensions.Http.Resilience" />
+  </ItemGroup>
+
+  <!-- OTel ServiceDefaults. -->
+  <ItemGroup Label="Observability — OpenTelemetry">
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Http" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" />
+  </ItemGroup>
 
 </Project>
