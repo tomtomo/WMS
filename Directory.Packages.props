@@ -52,6 +52,17 @@
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.1" />
   </ItemGroup>
 
+  <ItemGroup Label="Web — hosting surface (REST/gRPC/auth/versioning/OpenAPI)">
+    <!-- JwtBearer 8.0.15 -> Microsoft.IdentityModel.* 7.1.2. -->
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.15" />
+    <PackageVersion Include="Grpc.AspNetCore" Version="2.80.0" />
+    <PackageVersion Include="Asp.Versioning.Http" Version="8.1.1" />
+    <PackageVersion Include="Asp.Versioning.Mvc.ApiExplorer" Version="8.1.1" />
+    <!-- net8.0 tak punya MapOpenApi built-in (itu net9+); Swashbuckle jadi sumber dokumen untuk Scalar. -->
+    <PackageVersion Include="Swashbuckle.AspNetCore" Version="10.2.3" />
+    <PackageVersion Include="Scalar.AspNetCore" Version="2.16.9" />
+  </ItemGroup>
+
   <ItemGroup Label="Harness test — host DI/logging/config">
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="8.0.1" />
@@ -67,6 +78,12 @@
     <PackageVersion Include="AwesomeAssertions" Version="9.4.0" />
     <PackageVersion Include="NSubstitute" Version="5.3.0" />
     <PackageVersion Include="Testcontainers.PostgreSql" Version="4.12.0" />
+  </ItemGroup>
+
+  <ItemGroup Label="Harness test — web integration">
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.15" />
+    <!-- 7.1.2 selaras transitif JwtBearer 8.0.15. -->
+    <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="7.1.2" />
   </ItemGroup>
 
 </Project>
