@@ -11,7 +11,8 @@
       "src\\Platform\\Wms.Platform.Local\\Wms.Platform.Local.csproj",
       "tests\\Wms.Architecture.Tests\\Wms.Architecture.Tests.csproj",
       "tests\\BuildingBlocks\\Wms.BuildingBlocks.Application.UnitTests\\Wms.BuildingBlocks.Application.UnitTests.csproj",
-      "tests\\BuildingBlocks\\Wms.BuildingBlocks.Domain.UnitTests\\Wms.BuildingBlocks.Domain.UnitTests.csproj"
+      "tests\\BuildingBlocks\\Wms.BuildingBlocks.Domain.UnitTests\\Wms.BuildingBlocks.Domain.UnitTests.csproj",
+      "tests\\BuildingBlocks\\Wms.BuildingBlocks.Infrastructure.IntegrationTests\\Wms.BuildingBlocks.Infrastructure.IntegrationTests.csproj"
     ]
   }
 }

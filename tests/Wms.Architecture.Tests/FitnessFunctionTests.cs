@@ -1,5 +1,7 @@
+using System.Linq;
 using NetArchTest.Rules;
 using Wms.BuildingBlocks.Application;
+using Wms.BuildingBlocks.Infrastructure;
 using Xunit;
 
 namespace Wms.Architecture.Tests;
@@ -18,5 +20,30 @@ public sealed class FitnessFunctionTests
             .GetResult();
 
         Assert.True(result.IsSuccessful);
+    }
+
+    // Infrastructure tidak boleh punya DbContext standalone.
+    [Fact]
+    public void Ff10_infrastructure_building_block_has_no_standalone_dbcontext()
+    {
+        var dbContexts = typeof(InfrastructureModelBuilderExtensions).Assembly
+            .GetTypes()
+            .Where(InheritsDbContext)
+            .ToList();
+
+        Assert.Empty(dbContexts);
+    }
+
+    private static bool InheritsDbContext(Type type)
+    {
+        for (var current = type.BaseType; current is not null; current = current.BaseType)
+        {
+            if (current.FullName == "Microsoft.EntityFrameworkCore.DbContext")
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
