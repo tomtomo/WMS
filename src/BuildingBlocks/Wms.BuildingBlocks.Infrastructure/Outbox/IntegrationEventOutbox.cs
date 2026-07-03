@@ -1,4 +1,3 @@
-using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using Wms.BuildingBlocks.Application.Abstractions.Ports;
 using Wms.BuildingBlocks.Application.Messaging;
@@ -17,7 +16,7 @@ public sealed class IntegrationEventOutbox(DbContext dbContext, TimeProvider tim
     {
         ArgumentNullException.ThrowIfNull(integrationEvent);
 
-        var logicalName = ResolveLogicalName(integrationEvent.GetType());
+        var logicalName = IntegrationEventLogicalName.Resolve(integrationEvent.GetType());
         var envelope = MessageEnvelope.Create(
             integrationEvent,
             logicalName,
@@ -36,19 +35,5 @@ public sealed class IntegrationEventOutbox(DbContext dbContext, TimeProvider tim
             Tracestate = envelope.Tracestate,
         });
         return Task.CompletedTask;
-    }
-
-    private static string ResolveLogicalName(Type eventType)
-    {
-        var field = eventType.GetField(
-            "LogicalName",
-            BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy);
-        if (field is null || field.GetValue(null) is not string logicalName)
-        {
-            throw new InvalidOperationException(
-                $"Integration event '{eventType.Name}' wajib punya 'public const string LogicalName'");
-        }
-
-        return logicalName;
     }
 }

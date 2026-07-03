@@ -1,6 +1,23 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- Lem komposisi agnostic: service-defaults (logging, telemetry, health).
-       NOL cloud SDK (adapter cloud hidup di Platform.<Cloud> terpisah). -->
+  <!-- Lem komposisi agnostic: service-defaults (OTel, health, resilience, service discovery)
+       untuk SETIAP host Local/Azure/GCP. NOL cloud SDK<Cloud> terpisah. -->
+
+  <ItemGroup Label="Kernel — mekanisme telemetry/resilience + surface web">
+    <ProjectReference Include="..\..\BuildingBlocks\Wms.BuildingBlocks.Infrastructure\Wms.BuildingBlocks.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\BuildingBlocks\Wms.BuildingBlocks.Web\Wms.BuildingBlocks.Web.csproj" />
+  </ItemGroup>
+
+  <!-- Class-lib butuh tipe ASP.NET Core (WebApplication, MapHealthChecks, instrumentation server-side). -->
+  <ItemGroup Label="Shared framework">
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup Label="Service defaults — dipakai langsung di project ini">
+    <PackageReference Include="Microsoft.Extensions.Http.Resilience" />
+    <PackageReference Include="Microsoft.Extensions.ServiceDiscovery" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" />
+  </ItemGroup>
 
 </Project>

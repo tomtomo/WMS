@@ -26,7 +26,6 @@
     <PackageVersion Include="Microsoft.Extensions.Options" Version="8.0.2" />
     <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="8.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Options.DataAnnotations" Version="8.0.0" />
-    <!-- 8.0.3 (bukan 8.0.2): floor transitif Telemetry.Abstractions 10.7.0 + Testcontainers 4.12.0 (NU1109). -->
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.3" />
     <PackageVersion Include="Microsoft.FeatureManagement" Version="3.5.0" />
   </ItemGroup>
@@ -47,18 +46,30 @@
     <PackageVersion Include="OpenTelemetry" Version="1.16.0" />
     <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.16.0" />
     <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.16.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.16.0" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.16.0" />
-    <!-- Runtime instrumentation tertinggal 1 minor: 1.16.0 belum rilis, tertinggi 1.15.1. -->
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.1" />
   </ItemGroup>
 
+  <ItemGroup Label="Platform.Hosting — service defaults">
+    <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="10.7.0" />
+  </ItemGroup>
+
+  <ItemGroup Label="Platform.Local — adapter stack">
+    <PackageVersion Include="RabbitMQ.Client" Version="6.8.1" />
+    <PackageVersion Include="Hangfire.Core" Version="1.8.23" />
+    <PackageVersion Include="Hangfire.NetCore" Version="1.8.23" />
+    <PackageVersion Include="Hangfire.PostgreSql" Version="1.20.13" />
+    <PackageVersion Include="Konscious.Security.Cryptography.Argon2" Version="1.3.1" />
+    <PackageVersion Include="Npgsql" Version="8.0.9" />
+    <PackageVersion Include="StackExchange.Redis" Version="2.13.17" />
+  </ItemGroup>
+
   <ItemGroup Label="Web — hosting surface (REST/gRPC/auth/versioning/OpenAPI)">
-    <!-- JwtBearer 8.0.15 -> Microsoft.IdentityModel.* 7.1.2. -->
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.15" />
     <PackageVersion Include="Grpc.AspNetCore" Version="2.80.0" />
     <PackageVersion Include="Asp.Versioning.Http" Version="8.1.1" />
     <PackageVersion Include="Asp.Versioning.Mvc.ApiExplorer" Version="8.1.1" />
-    <!-- net8.0 tak punya MapOpenApi built-in (itu net9+); Swashbuckle jadi sumber dokumen untuk Scalar. -->
     <PackageVersion Include="Swashbuckle.AspNetCore" Version="10.2.3" />
     <PackageVersion Include="Scalar.AspNetCore" Version="2.16.9" />
   </ItemGroup>
@@ -78,11 +89,11 @@
     <PackageVersion Include="AwesomeAssertions" Version="9.4.0" />
     <PackageVersion Include="NSubstitute" Version="5.3.0" />
     <PackageVersion Include="Testcontainers.PostgreSql" Version="4.12.0" />
+    <PackageVersion Include="Testcontainers.RabbitMq" Version="4.12.0" />
   </ItemGroup>
 
   <ItemGroup Label="Harness test — web integration">
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.15" />
-    <!-- 7.1.2 selaras transitif JwtBearer 8.0.15. -->
     <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="7.1.2" />
   </ItemGroup>
 

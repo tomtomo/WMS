@@ -9,6 +9,7 @@ using Xunit;
 namespace Wms.BuildingBlocks.Infrastructure.IntegrationTests;
 
 // Test AuditLogStore
+[Collection(PostgresCollection.Name)]
 public sealed class AuditLogSurvivesRollbackTests(PostgresFixture postgres)
 {
     private static readonly DateTimeOffset _auditTime = new(2026, 7, 3, 11, 0, 0, TimeSpan.Zero);
