@@ -3,4 +3,28 @@
   <!-- Kernel surface Web: IEndpoint, ProblemDetails (RFC 7807), correlation-id,
        plumbing JWT, Asp.Versioning, gRPC interceptor. -->
 
+  <ItemGroup Label="Seedwork — satu-satunya project-ref">
+    <ProjectReference Include="..\Wms.BuildingBlocks.Application\Wms.BuildingBlocks.Application.csproj" />
+  </ItemGroup>
+
+  <!-- Class-lib butuh tipe ASP.NET Core (IEndpointRouteBuilder, HttpContext, middleware, ProblemDetails). -->
+  <ItemGroup Label="Shared framework">
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup Label="AuthN — JWT RS256">
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+  </ItemGroup>
+
+  <ItemGroup Label="Protocol — gRPC internal interceptor">
+    <PackageReference Include="Grpc.AspNetCore" />
+  </ItemGroup>
+
+  <ItemGroup Label="REST versioning + OpenAPI dev-UI">
+    <PackageReference Include="Asp.Versioning.Http" />
+    <PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" />
+    <PackageReference Include="Swashbuckle.AspNetCore" />
+    <PackageReference Include="Scalar.AspNetCore" />
+  </ItemGroup>
+
 </Project>
