@@ -1,26 +1,39 @@
 <Project>
 
-  <!--
-    Central Package Management (CPM): tiap versi package ada di sini, tidak pernah di .csproj.
-    Transitive pinning aktif = package terdaftar dipin meski ditarik secara transitive
-    (hygiene supply-chain). Daftar tumbuh per-iterasi; hanya package yang benar-benar dipakai
-    sejauh ini yang dipin (pin tak-relevan akan memaksa versinya ke graph transitive).
-  -->
+  <!-- Central Package Management (CPM): tiap versi package ada di sini, tidak pernah di .csproj. -->
 
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
 
-  <ItemGroup Label="Analyzer Roslyn (build-gate)">
+  <ItemGroup Label="Analyzer Roslyn">
     <PackageVersion Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="10.0.301" />
     <PackageVersion Include="StyleCop.Analyzers" Version="1.2.0-beta.556" />
     <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.27.0.140913" />
     <PackageVersion Include="Roslynator.Analyzers" Version="4.15.0" />
   </ItemGroup>
 
-  <ItemGroup Label="Aspire AppHost (orkestrasi lokal)">
+  <ItemGroup Label="Aspire AppHost">
     <PackageVersion Include="Aspire.Hosting.AppHost" Version="13.4.6" />
+  </ItemGroup>
+
+  <ItemGroup Label="Application pipeline">
+    <PackageVersion Include="MediatR" Version="12.5.0" />
+    <PackageVersion Include="FluentValidation" Version="11.11.0" />
+    <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.2" />
+    <PackageVersion Include="Microsoft.Extensions.Options" Version="8.0.2" />
+    <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="8.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Options.DataAnnotations" Version="8.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.2" />
+    <PackageVersion Include="Microsoft.FeatureManagement" Version="3.5.0" />
+  </ItemGroup>
+
+  <ItemGroup Label="Harness test — host DI/logging/config">
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
+    <PackageVersion Include="Microsoft.Extensions.Logging" Version="8.0.1" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
   </ItemGroup>
 
   <ItemGroup Label="Harness test">
