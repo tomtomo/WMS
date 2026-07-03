@@ -1,7 +1,25 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!-- Adapter Local yang mengimplementasikan tiap port (RabbitMQ, Postgres rail, InMemory
-       cache, filesystem object-store, env-secret, Argon2id, Hangfire, in-proc saga,
-       OTLP). Hanya mengimplementasikan port abstrak. -->
+       cache, filesystem object-store, env-secret, Argon2id, Hangfire, in-proc saga).
+       Hanya mengimplementasikan port abstrak; NOL cloud SDK. -->
+
+  <ItemGroup Label="Kernel — port (Application) + mekanisme rail/envelope (Infrastructure)">
+    <ProjectReference Include="..\..\BuildingBlocks\Wms.BuildingBlocks.Application\Wms.BuildingBlocks.Application.csproj" />
+    <ProjectReference Include="..\..\BuildingBlocks\Wms.BuildingBlocks.Infrastructure\Wms.BuildingBlocks.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Label="Stack Local per concern">
+    <PackageReference Include="Hangfire.Core" />
+    <PackageReference Include="Hangfire.NetCore" />
+    <PackageReference Include="Hangfire.PostgreSql" />
+    <PackageReference Include="Konscious.Security.Cryptography.Argon2" />
+    <PackageReference Include="Npgsql" />
+    <PackageReference Include="RabbitMQ.Client" />
+  </ItemGroup>
+
+  <ItemGroup Label="Internals untuk test (ctor parameter-lama Argon2id)">
+    <InternalsVisibleTo Include="Wms.Platform.Local.IntegrationTests" />
+  </ItemGroup>
 
 </Project>

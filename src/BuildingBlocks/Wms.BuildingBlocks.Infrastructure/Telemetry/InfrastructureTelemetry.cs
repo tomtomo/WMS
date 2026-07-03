@@ -16,6 +16,14 @@ public static class InfrastructureTelemetry
     {
         ArgumentNullException.ThrowIfNull(services);
 
+        // Idempoten: host memanggil via AddServiceDefaults dan AddBuildingBlocksInfrastructure
+        if (services.Any(descriptor => descriptor.ServiceType == typeof(TelemetryRegistrationMarker)))
+        {
+            return services;
+        }
+
+        services.AddSingleton(new TelemetryRegistrationMarker(serviceName));
+
         var otlpEnabled = !string.IsNullOrWhiteSpace(
             Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT"));
 
@@ -54,4 +62,10 @@ public static class InfrastructureTelemetry
 
         return services;
     }
+}
+
+// Penanda "telemetry sudah ter-wire" di container, membawa nama service (registrasi pertama).
+public sealed class TelemetryRegistrationMarker(string serviceName)
+{
+    public string ServiceName { get; } = serviceName;
 }

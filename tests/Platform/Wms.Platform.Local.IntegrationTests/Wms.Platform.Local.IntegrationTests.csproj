@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Test adapter Local per port: RabbitMQ pub/sub round-trip (Testcontainers), Postgres
+       idempotency/projection, Hangfire durable, cache TTL, object-store HMAC valet-key,
+       env-secret fail-secure, Argon2id, notif log-stub, saga shell, komposisi AddLocalPlatform. -->
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup Label="Harness test">
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="coverlet.collector">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="AwesomeAssertions" />
+    <PackageReference Include="NSubstitute" />
+  </ItemGroup>
+
+  <ItemGroup Label="Container nyata untuk jalur infra">
+    <PackageReference Include="Testcontainers.PostgreSql" />
+    <PackageReference Include="Testcontainers.RabbitMq" />
+  </ItemGroup>
+
+  <ItemGroup Label="Host konkret untuk test DI/konfigurasi">
+    <PackageReference Include="Microsoft.Extensions.Configuration" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+  </ItemGroup>
+
+  <ItemGroup Label="Subjek di bawah test">
+    <ProjectReference Include="..\..\..\src\Platform\Wms.Platform.Local\Wms.Platform.Local.csproj" />
+  </ItemGroup>
+
+</Project>
