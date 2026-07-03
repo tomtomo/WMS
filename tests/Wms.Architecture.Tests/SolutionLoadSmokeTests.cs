@@ -17,7 +17,7 @@ public sealed class SolutionLoadSmokeTests
 
         Assert.NotEmpty(assemblies);
 
-        // Jalankan engine NetArchTest untuk type yang benar-benar ter-load.
+        // Jalankan engine NetArchTest untuk type yang benar-benar terload.
         var result = Types.InAssemblies(assemblies)
             .That()
             .ResideInNamespaceStartingWith("Wms")

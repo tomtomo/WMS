@@ -1,7 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- Orchestrator Aspire lokal. Meng-override net8.0 repo-wide ke net10.0 karena
-       Aspire.Hosting menarget net10. -->
+  <!-- Orchestrator Aspire lokal. Meng-override net8.0 repo wide ke net10.0 karena Aspire.Hosting menarget net10. -->
 
   <Sdk Name="Aspire.AppHost.Sdk" Version="13.4.6" />
 
@@ -9,6 +8,7 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
     <IsAspireHost>true</IsAspireHost>
+    <CentralPackageTransitivePinningEnabled>false</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
 
   <ItemGroup>

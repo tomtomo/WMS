@@ -1,6 +1,22 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- Kontrak CQRS (ICommand/IQuery), port abstrak, pipeline behavior MediatR
-       (Validation -> Transaction -> AuditLog -> Logging) -->
+  <!-- Application kernel: kontrak CQRS (ICommand/IQuery), pipeline behavior MediatR
+       (Validation -> Transaction -> AuditLog -> Logging), dan semua port platform abstrak. -->
+
+  <ItemGroup Label="Seedwork (satu-satunya ref project)">
+    <ProjectReference Include="..\Wms.BuildingBlocks.Domain\Wms.BuildingBlocks.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Label="Pipeline">
+    <PackageReference Include="MediatR" />
+    <PackageReference Include="FluentValidation" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
+    <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.FeatureManagement" />
+  </ItemGroup>
 
 </Project>
