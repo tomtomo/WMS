@@ -9,6 +9,8 @@ internal static class StockMother
 
     public static readonly Guid SourceGrId = Guid.Parse("11111111-1111-1111-1111-111111111111");
 
+    public static readonly Guid WarehouseId = Guid.Parse("66666666-6666-6666-6666-666666666666");
+
     public static readonly Guid WaveId = Guid.Parse("22222222-2222-2222-2222-222222222222");
 
     public static readonly Guid OrderId = Guid.Parse("33333333-3333-3333-3333-333333333333");
@@ -40,12 +42,12 @@ internal static class StockMother
     public static Quantity QtyOf(decimal qty) => Quantity.Create(qty).Value;
 
     // Balance OnHand baru di receiving area (belum putaway).
-    public static Stock OnHand(decimal qty = 100m)
-        => Stock.CreateOnHand(NewStockId(), MilkSku, ReceivingLocation, BatchOf(), ExpiryOf(), QtyOf(qty), SourceGrId).Value;
+    public static Stock OnHand(decimal qty = 100m, int line = 0)
+        => Stock.CreateOnHand(NewStockId(), MilkSku, ReceivingLocation, BatchOf(), ExpiryOf(), QtyOf(qty), SourceGrId, line, WarehouseId).Value;
 
     // Balance Quarantine (line QcHold).
-    public static Stock Quarantine(decimal qty = 100m)
-        => Stock.CreateQuarantine(NewStockId(), MilkSku, QuarantineLocation, BatchOf(), ExpiryOf(), QtyOf(qty), SourceGrId).Value;
+    public static Stock Quarantine(decimal qty = 100m, int line = 0)
+        => Stock.CreateQuarantine(NewStockId(), MilkSku, QuarantineLocation, BatchOf(), ExpiryOf(), QtyOf(qty), SourceGrId, line, WarehouseId).Value;
 
     // Balance Available (sudah putaway ke rak) — allocatable.
     public static Stock Available(decimal qty = 100m)
@@ -59,7 +61,7 @@ internal static class StockMother
     public static Stock AvailableWith(DateOnly expiry, string batch = "LOT-01", decimal qty = 100m)
     {
         var stock = Stock.CreateOnHand(
-            NewStockId(), MilkSku, ReceivingLocation, Batch.Create(batch).Value, Expiry.Create(expiry).Value, QtyOf(qty), SourceGrId).Value;
+            NewStockId(), MilkSku, ReceivingLocation, Batch.Create(batch).Value, Expiry.Create(expiry).Value, QtyOf(qty), SourceGrId, 0, WarehouseId).Value;
         stock.PutAway(RackLocation);
         return stock;
     }

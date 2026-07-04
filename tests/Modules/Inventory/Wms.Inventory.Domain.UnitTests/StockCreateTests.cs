@@ -23,7 +23,9 @@ public sealed class StockCreateTests
             StockMother.BatchOf(),
             StockMother.ExpiryOf(),
             StockMother.QtyOf(100m),
-            StockMother.SourceGrId);
+            StockMother.SourceGrId,
+            line: 0,
+            StockMother.WarehouseId);
 
         result.IsSuccess.Should().BeTrue();
         var stock = result.Value;
@@ -56,7 +58,9 @@ public sealed class StockCreateTests
             StockMother.BatchOf(),
             StockMother.ExpiryOf(),
             StockMother.QtyOf(5m),
-            StockMother.SourceGrId);
+            StockMother.SourceGrId,
+            line: 1,
+            StockMother.WarehouseId);
 
         result.IsSuccess.Should().BeTrue();
         result.Value.Status.Should().Be(StockStatus.Quarantine);
@@ -81,7 +85,9 @@ public sealed class StockCreateTests
             StockMother.BatchOf(),
             StockMother.ExpiryOf(),
             StockMother.QtyOf(100m),
-            Guid.Empty);
+            Guid.Empty,
+            line: 0,
+            StockMother.WarehouseId);
 
         result.IsFailure.Should().BeTrue();
         result.ErrorType.Should().Be(ResultErrorType.Validation);
@@ -92,5 +98,63 @@ public sealed class StockCreateTests
     public void A_balance_follows_the_auditable_convention()
     {
         StockMother.OnHand().Should().BeAssignableTo<IAuditable>();
+    }
+
+    [Fact]
+    public void CreateOnHand_snapshots_the_receiving_provenance_line_and_warehouse()
+    {
+        var warehouseId = Guid.NewGuid();
+
+        var stock = Stock.CreateOnHand(
+            StockMother.NewStockId(),
+            StockMother.MilkSku,
+            StockMother.ReceivingLocation,
+            StockMother.BatchOf(),
+            StockMother.ExpiryOf(),
+            StockMother.QtyOf(100m),
+            StockMother.SourceGrId,
+            line: 3,
+            warehouseId).Value;
+
+        stock.Line.Should().Be(3);
+        stock.WarehouseId.Should().Be(warehouseId);
+    }
+
+    [Fact]
+    public void CreateOnHand_rejects_a_negative_line_as_invalid()
+    {
+        var result = Stock.CreateOnHand(
+            StockMother.NewStockId(),
+            StockMother.MilkSku,
+            StockMother.ReceivingLocation,
+            StockMother.BatchOf(),
+            StockMother.ExpiryOf(),
+            StockMother.QtyOf(100m),
+            StockMother.SourceGrId,
+            line: -1,
+            Guid.NewGuid());
+
+        result.IsFailure.Should().BeTrue();
+        result.ErrorType.Should().Be(ResultErrorType.Validation);
+        result.Error.Code.Should().Be("stock.line_invalid");
+    }
+
+    [Fact]
+    public void CreateOnHand_rejects_an_empty_warehouse_as_invalid()
+    {
+        var result = Stock.CreateOnHand(
+            StockMother.NewStockId(),
+            StockMother.MilkSku,
+            StockMother.ReceivingLocation,
+            StockMother.BatchOf(),
+            StockMother.ExpiryOf(),
+            StockMother.QtyOf(100m),
+            StockMother.SourceGrId,
+            line: 0,
+            warehouseId: Guid.Empty);
+
+        result.IsFailure.Should().BeTrue();
+        result.ErrorType.Should().Be(ResultErrorType.Validation);
+        result.Error.Code.Should().Be("stock.warehouse_required");
     }
 }

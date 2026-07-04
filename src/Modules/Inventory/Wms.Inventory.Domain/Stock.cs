@@ -22,7 +22,9 @@ public sealed class Stock : AggregateRoot<StockId>, IAuditable
         Expiry expiry,
         decimal qty,
         StockStatus status,
-        Guid sourceGrId)
+        Guid sourceGrId,
+        int line,
+        Guid warehouseId)
         : base(id)
     {
         Sku = sku;
@@ -32,6 +34,8 @@ public sealed class Stock : AggregateRoot<StockId>, IAuditable
         Qty = qty;
         Status = status;
         SourceGrId = sourceGrId;
+        Line = line;
+        WarehouseId = warehouseId;
     }
 
     [SuppressMessage(
@@ -62,6 +66,12 @@ public sealed class Stock : AggregateRoot<StockId>, IAuditable
 
     public Guid SourceGrId { get; }
 
+    // Ordinal receivedLine sumber (GRConfirmed) — pasangan (SourceGrId, Line)
+    public int Line { get; }
+
+    // Warehouse asal receiving
+    public Guid WarehouseId { get; }
+
     // Diisi hanya saat balance Picked
     public Guid? PickingTaskId { get; private set; }
 
@@ -87,8 +97,10 @@ public sealed class Stock : AggregateRoot<StockId>, IAuditable
         Batch batch,
         Expiry expiry,
         Quantity qty,
-        Guid sourceGrId)
-        => Create(id, sku, locationId, batch, expiry, qty, sourceGrId, StockStatus.OnHand);
+        Guid sourceGrId,
+        int line,
+        Guid warehouseId)
+        => Create(id, sku, locationId, batch, expiry, qty, sourceGrId, line, warehouseId, StockStatus.OnHand);
 
     // line QcHold ke Quarantine (tidak allocatable, tidak generate PutawayTask).
     public static Result<Stock> CreateQuarantine(
@@ -98,8 +110,10 @@ public sealed class Stock : AggregateRoot<StockId>, IAuditable
         Batch batch,
         Expiry expiry,
         Quantity qty,
-        Guid sourceGrId)
-        => Create(id, sku, locationId, batch, expiry, qty, sourceGrId, StockStatus.Quarantine);
+        Guid sourceGrId,
+        int line,
+        Guid warehouseId)
+        => Create(id, sku, locationId, batch, expiry, qty, sourceGrId, line, warehouseId, StockStatus.Quarantine);
 
     // hanya OnHand ke Available, pindah ke rak.
     public Result PutAway(LocationId rackLocationId)
@@ -197,7 +211,7 @@ public sealed class Stock : AggregateRoot<StockId>, IAuditable
         _reservations.Remove(claim);
         Qty -= claim.Qty;
 
-        var picked = new Stock(pickedStockId, Sku, stagingLocationId, Batch, Expiry, claim.Qty, StockStatus.Picked, SourceGrId)
+        var picked = new Stock(pickedStockId, Sku, stagingLocationId, Batch, Expiry, claim.Qty, StockStatus.Picked, SourceGrId, Line, WarehouseId)
         {
             PickingTaskId = pickingTaskId,
             WaveId = claim.WaveId,
@@ -216,6 +230,8 @@ public sealed class Stock : AggregateRoot<StockId>, IAuditable
         Expiry expiry,
         Quantity qty,
         Guid sourceGrId,
+        int line,
+        Guid warehouseId,
         StockStatus status)
     {
         ArgumentNullException.ThrowIfNull(id);
@@ -230,7 +246,17 @@ public sealed class Stock : AggregateRoot<StockId>, IAuditable
             return Result.Invalid<Stock>(new Error("stock.source_gr_required", "SourceGrId wajib diisi."));
         }
 
-        var stock = new Stock(id, sku, locationId, batch, expiry, qty.Value, status, sourceGrId);
+        if (line < 0)
+        {
+            return Result.Invalid<Stock>(new Error("stock.line_invalid", "Line receiving tidak boleh negatif."));
+        }
+
+        if (warehouseId == Guid.Empty)
+        {
+            return Result.Invalid<Stock>(new Error("stock.warehouse_required", "WarehouseId wajib diisi."));
+        }
+
+        var stock = new Stock(id, sku, locationId, batch, expiry, qty.Value, status, sourceGrId, line, warehouseId);
         stock.Raise(new StockCreated(id, sku, qty.Value, status, sourceGrId));
 
         return Result.Success(stock);
