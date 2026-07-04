@@ -25,8 +25,8 @@ public sealed class DispatcherFailLoud
             }
         }
 
-        // Abstraksi base harus benar-benar terscan.
-        dispatcherFiles.Should().NotBeEmpty("abstraksi OutboxDispatcher (P0.4) harus ter-scan");
+        // Abstraksi base harus terscan.
+        dispatcherFiles.Should().NotBeEmpty("abstraksi OutboxDispatcher harus ter-scan");
         violations.Should().BeEmpty("dispatcher wajib throw saat Result.Failure (named FF)");
     }
 

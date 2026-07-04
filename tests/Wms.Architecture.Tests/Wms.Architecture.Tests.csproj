@@ -34,6 +34,9 @@
     <ProjectReference Include="..\..\src\Platform\Wms.Platform.Local\Wms.Platform.Local.csproj" />
     <ProjectReference Include="..\..\src\Modules\Inbound\Wms.Inbound.Contracts\Wms.Inbound.Contracts.csproj" />
     <ProjectReference Include="..\..\src\Modules\Inbound\Wms.Inbound.Domain\Wms.Inbound.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Inbound\Wms.Inbound.Application\Wms.Inbound.Application.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Inbound\Wms.Inbound.Infrastructure\Wms.Inbound.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Inbound\Wms.Inbound.Api\Wms.Inbound.Api.csproj" />
     <ProjectReference Include="..\..\src\Modules\Inventory\Wms.Inventory.Contracts\Wms.Inventory.Contracts.csproj" />
     <ProjectReference Include="..\..\src\Modules\Outbound\Wms.Outbound.Contracts\Wms.Outbound.Contracts.csproj" />
   </ItemGroup>

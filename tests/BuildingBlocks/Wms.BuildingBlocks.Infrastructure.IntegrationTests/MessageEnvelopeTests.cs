@@ -30,8 +30,6 @@ public sealed class MessageEnvelopeTests
         envelope.DeliveryClass.Should().Be(DeliveryClass.CoreFlow);
         envelope.OccurredAt.Should().Be(_occurredAt);
         envelope.Payload.Should().Contain("GR-1").And.Contain("5");
-
-        // Trace-context deferred sampai P3.1 — field ada, null.
         envelope.Traceparent.Should().BeNull();
         envelope.Tracestate.Should().BeNull();
     }
@@ -48,7 +46,9 @@ public sealed class MessageEnvelopeTests
             _eventId,
             _occurredAt);
 
-        var restored = JsonSerializer.Deserialize<GoodsReceivedTestEvent>(envelope.Payload);
+        var restored = JsonSerializer.Deserialize<GoodsReceivedTestEvent>(
+            envelope.Payload,
+            MessageEnvelope.PayloadSerializerOptions);
 
         restored.Should().Be(payload);
     }

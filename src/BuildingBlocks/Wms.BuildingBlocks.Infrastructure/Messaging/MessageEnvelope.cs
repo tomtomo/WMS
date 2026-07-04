@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using Wms.BuildingBlocks.Application.Messaging;
 
@@ -15,6 +16,11 @@ public sealed partial record MessageEnvelope(
     string? Traceparent,
     string? Tracestate)
 {
+    public static JsonSerializerOptions PayloadSerializerOptions { get; } = new(JsonSerializerDefaults.Web)
+    {
+        Converters = { new JsonStringEnumConverter() },
+    };
+
     public static bool IsValidLogicalName(string? logicalName) =>
         logicalName is not null && LogicalNameRegex().IsMatch(logicalName);
 
@@ -35,11 +41,11 @@ public sealed partial record MessageEnvelope(
                 nameof(logicalName));
         }
 
-        var payload = JsonSerializer.Serialize(integrationEvent, integrationEvent.GetType());
+        var payload = JsonSerializer.Serialize(integrationEvent, integrationEvent.GetType(), PayloadSerializerOptions);
         return new MessageEnvelope(eventId, logicalName, deliveryClass, occurredAt, payload, null, null);
     }
 
-    // Broker-identity {module}.{event}.v{N}
+    // Broker identity {module}.{event}.v{N}
     [GeneratedRegex(@"^[a-z]+\.[a-z0-9_]+\.v\d+$")]
     private static partial Regex LogicalNameRegex();
 }

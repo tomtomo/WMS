@@ -1,0 +1,26 @@
+// Read API internal Inbound
+syntax = "proto3";
+
+package inbound.v1;
+
+option csharp_namespace = "Wms.Inbound.Api.Grpc.V1";
+
+// Sync read GR untuk kebutuhan lintas service internal
+service GoodsReceiptReadService {
+  rpc GetGoodsReceipt (GetGoodsReceiptRequest) returns (GoodsReceiptSummary);
+}
+
+message GetGoodsReceiptRequest {
+  string goods_receipt_id = 1;
+}
+
+message GoodsReceiptSummary {
+  string goods_receipt_id = 1;
+  string po_ref = 2;
+  string supplier_id = 3;
+  string warehouse_id = 4;
+  string dock_door = 5;
+  string status = 6;
+  int32 discrepancy_count = 7;
+  int32 unresolved_discrepancy_count = 8;
+}
