@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Domain layer Inventory: aggregate, value object, domain event murni. Ref hanya BuildingBlocks.Domain -->
+
+  <ItemGroup Label="Seedwork domain">
+    <ProjectReference Include="..\..\..\BuildingBlocks\Wms.BuildingBlocks.Domain\Wms.BuildingBlocks.Domain.csproj" />
+  </ItemGroup>
+
+</Project>
