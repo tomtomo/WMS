@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Api layer Inventory: REST minimal API IEndpoint /v1/stock + /v1/putaway-tasks + gRPC read service inventory.v1 -->
+
+  <ItemGroup Label="Shared framework - minimal API">
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup Label="Protocol - gRPC server, codegen proto">
+    <PackageReference Include="Grpc.AspNetCore" />
+  </ItemGroup>
+
+  <ItemGroup Label="Kontrak proto internal (server, client stub untuk integration test)">
+    <Protobuf Include="Protos\inventory.v1.proto" GrpcServices="Both" />
+  </ItemGroup>
+
+  <ItemGroup Label="Application, published language, kernel Web">
+    <ProjectReference Include="..\Wms.Inventory.Application\Wms.Inventory.Application.csproj" />
+    <ProjectReference Include="..\Wms.Inventory.Contracts\Wms.Inventory.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Wms.BuildingBlocks.Web\Wms.BuildingBlocks.Web.csproj" />
+  </ItemGroup>
+
+</Project>
