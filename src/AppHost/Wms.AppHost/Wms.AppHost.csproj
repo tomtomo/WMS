@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- Orchestrator Aspire lokal. Meng-override net8.0 repo wide ke net10.0 karena Aspire.Hosting menarget net10. -->
+  <!-- Orchestrator Aspire lokal. Mengoverride net8.0 repo wide ke net10.0 karena Aspire.Hosting menarget net10. -->
 
   <Sdk Name="Aspire.AppHost.Sdk" Version="13.4.6" />
 
@@ -11,8 +11,14 @@
     <CentralPackageTransitivePinningEnabled>false</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
 
-  <ItemGroup>
+  <ItemGroup Label="Resource integrations Aspire">
     <PackageReference Include="Aspire.Hosting.AppHost" />
+    <PackageReference Include="Aspire.Hosting.PostgreSQL" />
+    <PackageReference Include="Aspire.Hosting.RabbitMQ" />
+  </ItemGroup>
+
+  <ItemGroup Label="Resource project">
+    <ProjectReference Include="..\..\Tools\Wms.MigrationRunner\Wms.MigrationRunner.csproj" />
   </ItemGroup>
 
 </Project>

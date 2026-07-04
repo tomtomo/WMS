@@ -20,6 +20,9 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="NetArchTest.Rules" />
+    <PackageReference Include="AwesomeAssertions" />
+    <PackageReference Include="YamlDotNet" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
   </ItemGroup>
 
   <ItemGroup Label="Assembly di bawah governance (net8.0)">
