@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Published language Outbound: payload POCO integration-event (immutable, nol metadata envelope).
+       Ref hanya messaging-kernel BuildingBlocks.Application (marker IIntegrationEvent + DeliveryClass) -->
+
+  <ItemGroup Label="Messaging kernel (marker + delivery class)">
+    <ProjectReference Include="..\..\..\BuildingBlocks\Wms.BuildingBlocks.Application\Wms.BuildingBlocks.Application.csproj" />
+  </ItemGroup>
+
+</Project>

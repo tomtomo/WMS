@@ -1,0 +1,510 @@
+asyncapi: 3.0.0
+
+# Katalog integration-event TomSandboxWMS (AsyncAPI 3.0).
+# address tiap channel = LogicalName {module}.{event}.v{N}.
+info:
+  title: TomSandboxWMS Integration Event Catalog
+  version: 1.0.0
+  description: >-
+    Published language lintas-context WMS: Inbound, Inventory, Outbound.
+
+channels:
+  grConfirmed:
+    address: inbound.gr_confirmed.v1
+    x-deliveryClass:
+      - CoreFlow
+    messages:
+      grConfirmed:
+        $ref: '#/components/messages/GRConfirmed'
+  goodsReceiptPendingReview:
+    address: inbound.goods_receipt_pending_review.v1
+    x-deliveryClass:
+      - Notification
+    messages:
+      goodsReceiptPendingReview:
+        $ref: '#/components/messages/GoodsReceiptPendingReview'
+  stockAllocationCompleted:
+    address: inventory.stock_allocation_completed.v1
+    x-deliveryClass:
+      - CoreFlow
+      - Notification
+    messages:
+      stockAllocationCompleted:
+        $ref: '#/components/messages/StockAllocationCompleted'
+  putawayTaskAssigned:
+    address: inventory.putaway_task_assigned.v1
+    x-deliveryClass:
+      - Notification
+    messages:
+      putawayTaskAssigned:
+        $ref: '#/components/messages/PutawayTaskAssigned'
+  putawayCompleted:
+    address: inventory.putaway_completed.v1
+    x-deliveryClass:
+      - CoreFlow
+    messages:
+      putawayCompleted:
+        $ref: '#/components/messages/PutawayCompleted'
+  stockRemoved:
+    address: inventory.stock_removed.v1
+    x-deliveryClass:
+      - CoreFlow
+    messages:
+      stockRemoved:
+        $ref: '#/components/messages/StockRemoved'
+  stockNearExpiry:
+    address: inventory.stock_near_expiry.v1
+    x-deliveryClass:
+      - Notification
+    messages:
+      stockNearExpiry:
+        $ref: '#/components/messages/StockNearExpiry'
+  waveReleased:
+    address: outbound.wave_released.v1
+    x-deliveryClass:
+      - CoreFlow
+    messages:
+      waveReleased:
+        $ref: '#/components/messages/WaveReleased'
+  pickingTaskAssigned:
+    address: outbound.picking_task_assigned.v1
+    x-deliveryClass:
+      - Notification
+    messages:
+      pickingTaskAssigned:
+        $ref: '#/components/messages/PickingTaskAssigned'
+  waveReady:
+    address: outbound.wave_ready.v1
+    x-deliveryClass:
+      - Notification
+    messages:
+      waveReady:
+        $ref: '#/components/messages/WaveReady'
+  pickingCompleted:
+    address: outbound.picking_completed.v1
+    x-deliveryClass:
+      - CoreFlow
+    messages:
+      pickingCompleted:
+        $ref: '#/components/messages/PickingCompleted'
+  shipmentDispatched:
+    address: outbound.shipment_dispatched.v1
+    x-deliveryClass:
+      - CoreFlow
+    messages:
+      shipmentDispatched:
+        $ref: '#/components/messages/ShipmentDispatched'
+
+operations:
+  sendGrConfirmed:
+    action: send
+    channel:
+      $ref: '#/channels/grConfirmed'
+  sendGoodsReceiptPendingReview:
+    action: send
+    channel:
+      $ref: '#/channels/goodsReceiptPendingReview'
+  sendStockAllocationCompleted:
+    action: send
+    channel:
+      $ref: '#/channels/stockAllocationCompleted'
+  sendPutawayTaskAssigned:
+    action: send
+    channel:
+      $ref: '#/channels/putawayTaskAssigned'
+  sendPutawayCompleted:
+    action: send
+    channel:
+      $ref: '#/channels/putawayCompleted'
+  sendStockRemoved:
+    action: send
+    channel:
+      $ref: '#/channels/stockRemoved'
+  sendStockNearExpiry:
+    action: send
+    channel:
+      $ref: '#/channels/stockNearExpiry'
+  sendWaveReleased:
+    action: send
+    channel:
+      $ref: '#/channels/waveReleased'
+  sendPickingTaskAssigned:
+    action: send
+    channel:
+      $ref: '#/channels/pickingTaskAssigned'
+  sendWaveReady:
+    action: send
+    channel:
+      $ref: '#/channels/waveReady'
+  sendPickingCompleted:
+    action: send
+    channel:
+      $ref: '#/channels/pickingCompleted'
+  sendShipmentDispatched:
+    action: send
+    channel:
+      $ref: '#/channels/shipmentDispatched'
+
+components:
+  messages:
+    GRConfirmed:
+      name: inbound.gr_confirmed.v1
+      title: GR Confirmed
+      summary: GR di-confirm SPV; receivedLines create Stock, rejectedLines = metadata.
+      payload:
+        $ref: '#/components/schemas/GRConfirmed'
+    GoodsReceiptPendingReview:
+      name: inbound.goods_receipt_pending_review.v1
+      title: Goods Receipt Pending Review
+      summary: GR masuk Pending, menunggu review SPV.
+      payload:
+        $ref: '#/components/schemas/GoodsReceiptPendingReview'
+    StockAllocationCompleted:
+      name: inventory.stock_allocation_completed.v1
+      title: Stock Allocation Completed
+      summary: Outcome tunggal alokasi wave (status + allocations + shortfalls).
+      payload:
+        $ref: '#/components/schemas/StockAllocationCompleted'
+    PutawayTaskAssigned:
+      name: inventory.putaway_task_assigned.v1
+      title: Putaway Task Assigned
+      payload:
+        $ref: '#/components/schemas/PutawayTaskAssigned'
+    PutawayCompleted:
+      name: inventory.putaway_completed.v1
+      title: Putaway Completed
+      payload:
+        $ref: '#/components/schemas/PutawayCompleted'
+    StockRemoved:
+      name: inventory.stock_removed.v1
+      title: Stock Removed
+      payload:
+        $ref: '#/components/schemas/StockRemoved'
+    StockNearExpiry:
+      name: inventory.stock_near_expiry.v1
+      title: Stock Near Expiry
+      payload:
+        $ref: '#/components/schemas/StockNearExpiry'
+    WaveReleased:
+      name: outbound.wave_released.v1
+      title: Wave Released
+      payload:
+        $ref: '#/components/schemas/WaveReleased'
+    PickingTaskAssigned:
+      name: outbound.picking_task_assigned.v1
+      title: Picking Task Assigned
+      payload:
+        $ref: '#/components/schemas/PickingTaskAssigned'
+    WaveReady:
+      name: outbound.wave_ready.v1
+      title: Wave Ready
+      payload:
+        $ref: '#/components/schemas/WaveReady'
+    PickingCompleted:
+      name: outbound.picking_completed.v1
+      title: Picking Completed
+      payload:
+        $ref: '#/components/schemas/PickingCompleted'
+    ShipmentDispatched:
+      name: outbound.shipment_dispatched.v1
+      title: Shipment Dispatched
+      payload:
+        $ref: '#/components/schemas/ShipmentDispatched'
+
+  schemas:
+    GRConfirmed:
+      type: object
+      required: [grId, warehouseId, supplierId, receivedLines, rejectedLines]
+      properties:
+        grId:
+          type: string
+          format: uuid
+        warehouseId:
+          type: string
+          format: uuid
+        supplierId:
+          type: string
+          format: uuid
+        receivedLines:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReceivedLine'
+        rejectedLines:
+          type: array
+          items:
+            $ref: '#/components/schemas/RejectedLine'
+    ReceivedLine:
+      type: object
+      required: [sku, qty, status]
+      properties:
+        sku:
+          type: string
+        qty:
+          type: number
+        batch:
+          type: string
+          nullable: true
+        expiry:
+          type: string
+          format: date
+          nullable: true
+        status:
+          type: string
+          enum: [Good, QcHold]
+    RejectedLine:
+      type: object
+      required: [sku, qty, reason]
+      properties:
+        sku:
+          type: string
+        qty:
+          type: number
+        reason:
+          type: string
+          enum: [OverDelivery, WrongItem]
+    GoodsReceiptPendingReview:
+      type: object
+      required: [grId, warehouseId, hasOverDelivery, discrepancyCount]
+      properties:
+        grId:
+          type: string
+          format: uuid
+        warehouseId:
+          type: string
+          format: uuid
+        hasOverDelivery:
+          type: boolean
+        discrepancyCount:
+          type: integer
+    StockAllocationCompleted:
+      type: object
+      required: [waveId, status, allocations, shortfalls]
+      properties:
+        waveId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [FullyAllocated, PartiallyAllocated, Unfulfilled]
+        allocations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Allocation'
+        shortfalls:
+          type: array
+          items:
+            $ref: '#/components/schemas/Shortfall'
+    Allocation:
+      type: object
+      required: [orderId, sku, locationId, qty, stockId, reservationId]
+      properties:
+        orderId:
+          type: string
+          format: uuid
+        sku:
+          type: string
+        locationId:
+          type: string
+          format: uuid
+        batch:
+          type: string
+          nullable: true
+        qty:
+          type: number
+        stockId:
+          type: string
+          format: uuid
+        reservationId:
+          type: string
+          format: uuid
+    Shortfall:
+      type: object
+      required: [orderId, sku, requestedQty, allocatedQty, shortQty]
+      properties:
+        orderId:
+          type: string
+          format: uuid
+        sku:
+          type: string
+        requestedQty:
+          type: number
+        allocatedQty:
+          type: number
+        shortQty:
+          type: number
+    PutawayTaskAssigned:
+      type: object
+      required: [putawayTaskId, stockId, sku, assignedTo, warehouseId]
+      properties:
+        putawayTaskId:
+          type: string
+          format: uuid
+        stockId:
+          type: string
+          format: uuid
+        sku:
+          type: string
+        assignedTo:
+          type: string
+          format: uuid
+        warehouseId:
+          type: string
+          format: uuid
+    PutawayCompleted:
+      type: object
+      required: [putawayTaskId, stockId, sku, warehouseId]
+      properties:
+        putawayTaskId:
+          type: string
+          format: uuid
+        stockId:
+          type: string
+          format: uuid
+        sku:
+          type: string
+        warehouseId:
+          type: string
+          format: uuid
+        operatorId:
+          type: string
+          format: uuid
+          nullable: true
+    StockRemoved:
+      type: object
+      required: [waveId, lines]
+      properties:
+        waveId:
+          type: string
+          format: uuid
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/StockRemovedLine'
+    StockRemovedLine:
+      type: object
+      required: [warehouseId, sku, qty]
+      properties:
+        warehouseId:
+          type: string
+          format: uuid
+        sku:
+          type: string
+        batch:
+          type: string
+          nullable: true
+        qty:
+          type: number
+    StockNearExpiry:
+      type: object
+      required: [stockId, sku, warehouseId, locationId, batch, expiry, qty, daysToExpiry]
+      properties:
+        stockId:
+          type: string
+          format: uuid
+        sku:
+          type: string
+        warehouseId:
+          type: string
+          format: uuid
+        locationId:
+          type: string
+          format: uuid
+        batch:
+          type: string
+        expiry:
+          type: string
+          format: date
+        qty:
+          type: number
+        daysToExpiry:
+          type: integer
+    WaveReleased:
+      type: object
+      required: [waveId, lines]
+      properties:
+        waveId:
+          type: string
+          format: uuid
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/WaveLine'
+    WaveLine:
+      type: object
+      required: [orderId, sku, qty]
+      properties:
+        orderId:
+          type: string
+          format: uuid
+        sku:
+          type: string
+        qty:
+          type: number
+    PickingTaskAssigned:
+      type: object
+      required: [pickingTaskId, waveId, stockId, sku, assignedTo, warehouseId]
+      properties:
+        pickingTaskId:
+          type: string
+          format: uuid
+        waveId:
+          type: string
+          format: uuid
+        stockId:
+          type: string
+          format: uuid
+        sku:
+          type: string
+        assignedTo:
+          type: string
+          format: uuid
+        warehouseId:
+          type: string
+          format: uuid
+    WaveReady:
+      type: object
+      required: [waveId, warehouseId]
+      properties:
+        waveId:
+          type: string
+          format: uuid
+        warehouseId:
+          type: string
+          format: uuid
+    PickingCompleted:
+      type: object
+      required: [waveId, pickingTaskId, stockId, reservationId, sku, qty, stagingLocationId]
+      properties:
+        waveId:
+          type: string
+          format: uuid
+        pickingTaskId:
+          type: string
+          format: uuid
+        stockId:
+          type: string
+          format: uuid
+        reservationId:
+          type: string
+          format: uuid
+        sku:
+          type: string
+        batch:
+          type: string
+          nullable: true
+        qty:
+          type: number
+        stagingLocationId:
+          type: string
+          format: uuid
+        operatorId:
+          type: string
+          format: uuid
+          nullable: true
+    ShipmentDispatched:
+      type: object
+      required: [waveId]
+      properties:
+        waveId:
+          type: string
+          format: uuid
