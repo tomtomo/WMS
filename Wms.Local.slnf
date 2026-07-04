@@ -9,6 +9,7 @@
       "src\\BuildingBlocks\\Wms.BuildingBlocks.Web\\Wms.BuildingBlocks.Web.csproj",
       "src\\Platform\\Wms.Platform.Hosting\\Wms.Platform.Hosting.csproj",
       "src\\Platform\\Wms.Platform.Local\\Wms.Platform.Local.csproj",
+      "src\\Tools\\Wms.MigrationRunner\\Wms.MigrationRunner.csproj",
       "tests\\Platform\\Wms.Platform.Hosting.Tests\\Wms.Platform.Hosting.Tests.csproj",
       "tests\\Platform\\Wms.Platform.Local.IntegrationTests\\Wms.Platform.Local.IntegrationTests.csproj",
       "tests\\Wms.Architecture.Tests\\Wms.Architecture.Tests.csproj",

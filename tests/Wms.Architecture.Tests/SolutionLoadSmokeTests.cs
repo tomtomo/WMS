@@ -4,7 +4,7 @@ using Xunit;
 
 namespace Wms.Architecture.Tests;
 
-// Smoke test: untuk membuktikan harness NetArchTest bisa load assembly Wms.* dan jalan end to end, belum aturan arsitektur sungguhan.
+// Smoke test: untuk membuktikan harness NetArchTest bisa load assembly Wms.* dan jalan end to end.
 public sealed class SolutionLoadSmokeTests
 {
     [Fact]
