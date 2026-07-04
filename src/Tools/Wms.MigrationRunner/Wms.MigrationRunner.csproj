@@ -8,6 +8,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Platform\Wms.Platform.Hosting\Wms.Platform.Hosting.csproj" />
+    <!-- Tool di luar governance modul, boleh ref Infrastructure modul untuk migrate. -->
+    <ProjectReference Include="..\..\Modules\Inbound\Wms.Inbound.Infrastructure\Wms.Inbound.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup Label="Driver Postgres">

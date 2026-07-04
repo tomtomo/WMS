@@ -25,6 +25,9 @@ public sealed record ScannedLine
 
     public LineStatus LineStatus { get; }
 
+    // Urutan scan, storage tak menjamin urutan load.
+    public int ScanSequence { get; internal init; }
+
     // Blank dinormalisasi ke null agar grouping (sku, batch, expiry) tidak pecah.
     public static Result<ScannedLine> Create(string sku, decimal actualQty, string? batch, DateOnly? expiry, LineStatus lineStatus)
     {

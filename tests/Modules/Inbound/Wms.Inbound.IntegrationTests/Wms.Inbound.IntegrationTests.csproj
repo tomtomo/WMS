@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Integration test Inbound: pipeline penuh MediatR + InboundDbContext (Testcontainers Postgres),
+       atomicity state+Outbox, attachment via IObjectStore, REST TestServer + gRPC. -->
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup Label="Harness test">
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="coverlet.collector">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="AwesomeAssertions" />
+    <PackageReference Include="NSubstitute" />
+  </ItemGroup>
+
+  <ItemGroup Label="Postgres + host in-memory + client gRPC">
+    <PackageReference Include="Testcontainers.PostgreSql" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="Grpc.Net.Client" />
+  </ItemGroup>
+
+  <ItemGroup Label="Host konkret untuk test DI">
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" />
+  </ItemGroup>
+
+  <ItemGroup Label="Subjek di bawah test">
+    <ProjectReference Include="..\..\..\..\src\Modules\Inbound\Wms.Inbound.Infrastructure\Wms.Inbound.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Modules\Inbound\Wms.Inbound.Api\Wms.Inbound.Api.csproj" />
+  </ItemGroup>
+
+</Project>

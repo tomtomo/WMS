@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Application layer Inbound: vertical slice (command, handler, validator), read-port,
+       translator domain event ke integration event. Ref Domain, Contracts, BB.Application. -->
+
+  <ItemGroup Label="Pipeline (direct use: handler MediatR, validator FluentValidation)">
+    <PackageReference Include="MediatR" />
+    <PackageReference Include="FluentValidation" />
+  </ItemGroup>
+
+  <ItemGroup Label="Domain, published language, seedwork">
+    <ProjectReference Include="..\Wms.Inbound.Domain\Wms.Inbound.Domain.csproj" />
+    <ProjectReference Include="..\Wms.Inbound.Contracts\Wms.Inbound.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Wms.BuildingBlocks.Application\Wms.BuildingBlocks.Application.csproj" />
+  </ItemGroup>
+
+</Project>

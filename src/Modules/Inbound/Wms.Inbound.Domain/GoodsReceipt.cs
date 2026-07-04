@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using Wms.BuildingBlocks.Domain.Auditing;
 using Wms.BuildingBlocks.Domain.Primitives;
 using Wms.BuildingBlocks.Domain.Results;
@@ -40,6 +41,19 @@ public sealed class GoodsReceipt : AggregateRoot<GoodsReceiptId>, IAuditable
         DockDoor = dockDoor;
         _expectedLines = expectedLines;
         Status = GoodsReceiptStatus.InProgress;
+    }
+
+    // Ctor materialization EF (bukan jalur bisnis) — kolom & koleksi diisi via backing field.
+    [SuppressMessage(
+        "Major Code Smell",
+        "S1144:Unused private types or members should be removed",
+        Justification = "Dipanggil EF Core lewat reflection saat materialization — pola DDD dan EF standar.")]
+    private GoodsReceipt()
+        : base(default!)
+    {
+        PoRef = string.Empty;
+        DockDoor = null!;
+        _expectedLines = [];
     }
 
     public string PoRef { get; }
@@ -135,7 +149,8 @@ public sealed class GoodsReceipt : AggregateRoot<GoodsReceiptId>, IAuditable
             return Result.Invalid(new Error("goods_receipt.unexpected_sku", "SKU tidak ada di expected lines; tag sebagai WrongItem."));
         }
 
-        _scannedLines.Add(line);
+        // Urutan penerimaan, karena tidak boleh bergantung urutan load DB.
+        _scannedLines.Add(line with { ScanSequence = _scannedLines.Count });
         return Result.Success();
     }
 
@@ -180,7 +195,7 @@ public sealed class GoodsReceipt : AggregateRoot<GoodsReceiptId>, IAuditable
         return Result.Success();
     }
 
-    // Action wajib sesuai type discrepancy, Re-resolve sebelum Confirm
+    // Action wajib sesuai type discrepancy, resolve sebelum Confirm
     public Result Resolve(Guid discrepancyId, ResolutionAction action, string? note = null)
     {
         if (Status != GoodsReceiptStatus.Pending)
@@ -256,8 +271,9 @@ public sealed class GoodsReceipt : AggregateRoot<GoodsReceiptId>, IAuditable
         => _expectedLines.Exists(expected => string.Equals(expected.Sku, sku, StringComparison.Ordinal));
 
     private List<ScannedLine> AcceptableLinesOf(string sku)
-        => _scannedLines.FindAll(line =>
-            string.Equals(line.Sku, sku, StringComparison.Ordinal) && line.LineStatus != LineStatus.WrongItem);
+        => [.. _scannedLines
+            .Where(line => string.Equals(line.Sku, sku, StringComparison.Ordinal) && line.LineStatus != LineStatus.WrongItem)
+            .OrderBy(line => line.ScanSequence)];
 
     // AcceptPartial: terima apa adanya, RejectExcess: cap di expectedQty
     // SendToQC: terima berstatus QcHold, ReturnToSupplier: seluruh line WrongItem ke rejected.

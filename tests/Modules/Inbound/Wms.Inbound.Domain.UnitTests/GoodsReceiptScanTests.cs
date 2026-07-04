@@ -37,6 +37,19 @@ public sealed class GoodsReceiptScanTests
     }
 
     [Fact]
+    public void Scan_assigns_monotonic_scan_sequence()
+    {
+        // Urutan penerimaan
+        var goodsReceipt = GoodsReceiptMother.InProgress();
+
+        goodsReceipt.Scan(ScannedLine.Create(GoodsReceiptMother.Sku, 40m, "B1", null, LineStatus.Good).Value);
+        goodsReceipt.Scan(ScannedLine.Create(GoodsReceiptMother.Sku, 55m, "B2", null, LineStatus.Good).Value);
+        goodsReceipt.Scan(ScannedLine.Create(GoodsReceiptMother.Sku, 5m, "B3", null, LineStatus.QcHold).Value);
+
+        goodsReceipt.ScannedLines.Select(line => line.ScanSequence).Should().Equal(0, 1, 2);
+    }
+
+    [Fact]
     public void Scan_rejects_an_unexpected_sku_tagged_good_as_invalid()
     {
         var goodsReceipt = GoodsReceiptMother.InProgress();

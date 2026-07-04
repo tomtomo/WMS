@@ -47,9 +47,11 @@ public sealed class RabbitMqMessageSubscriber(
             {
                 var json = Encoding.UTF8.GetString(delivery.Body.Span);
                 var envelope = JsonSerializer.Deserialize<MessageEnvelope>(json);
+
+                // Payload dibaca dengan opsi kontrak(camelCase dan enum nama).
                 var integrationEvent = envelope is null
                     ? default
-                    : JsonSerializer.Deserialize<TIntegrationEvent>(envelope.Payload);
+                    : JsonSerializer.Deserialize<TIntegrationEvent>(envelope.Payload, MessageEnvelope.PayloadSerializerOptions);
                 if (integrationEvent is null)
                 {
                     throw new JsonException($"Envelope atau payload '{logicalName}' tidak bisa dibaca.");

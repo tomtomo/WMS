@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Wms.BuildingBlocks.Domain.Auditing;
 using Wms.BuildingBlocks.Domain.Primitives;
 using Wms.BuildingBlocks.Domain.Results;
@@ -38,6 +39,20 @@ public sealed class GRAttachment : AggregateRoot<GRAttachmentId>, IAuditable
         ContentRef = contentRef;
         UploadedAt = uploadedAt;
         IsActive = true;
+    }
+
+    // Ctor materialization EF (bukan jalur bisnis) — kolom diisi via backing field.
+    [SuppressMessage(
+        "Major Code Smell",
+        "S1144:Unused private types or members should be removed",
+        Justification = "Dipanggil EF Core lewat reflection saat materialization — pola DDD dan EF standar.")]
+    private GRAttachment()
+        : base(default!)
+    {
+        GoodsReceiptId = null!;
+        FileName = string.Empty;
+        ContentType = string.Empty;
+        ContentRef = null!;
     }
 
     public GoodsReceiptId GoodsReceiptId { get; }
