@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Api layer MasterData: REST management minimal API IEndpoint /v1/ + gRPC read service MasterDataLookup. Proto ada di project .Grpc (published language). -->
+
+  <ItemGroup Label="Shared framework - minimal API">
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup Label="Protocol - gRPC server hosting (AddGrpc/MapGrpcService)">
+    <PackageReference Include="Grpc.AspNetCore" />
+  </ItemGroup>
+
+  <ItemGroup Label="Application, published language gRPC, kernel Web">
+    <ProjectReference Include="..\Wms.MasterData.Application\Wms.MasterData.Application.csproj" />
+    <ProjectReference Include="..\Wms.MasterData.Grpc\Wms.MasterData.Grpc.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Wms.BuildingBlocks.Web\Wms.BuildingBlocks.Web.csproj" />
+  </ItemGroup>
+
+</Project>

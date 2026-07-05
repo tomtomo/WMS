@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Integration test MasterData -->
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup Label="Harness test">
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="coverlet.collector">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="AwesomeAssertions" />
+    <PackageReference Include="NSubstitute" />
+    <PackageReference Include="NetArchTest.Rules" />
+  </ItemGroup>
+
+  <ItemGroup Label="Postgres, host in memory, client gRPC, clock">
+    <PackageReference Include="Testcontainers.PostgreSql" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="Grpc.Net.Client" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" />
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
+  </ItemGroup>
+
+  <ItemGroup Label="Subjek di bawah test">
+    <ProjectReference Include="..\..\..\..\src\Modules\MasterData\Wms.MasterData.Infrastructure\Wms.MasterData.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Modules\MasterData\Wms.MasterData.Api\Wms.MasterData.Api.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Modules\MasterData\Wms.MasterData.Grpc\Wms.MasterData.Grpc.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Platform\Wms.Platform.Local\Wms.Platform.Local.csproj" />
+  </ItemGroup>
+
+</Project>

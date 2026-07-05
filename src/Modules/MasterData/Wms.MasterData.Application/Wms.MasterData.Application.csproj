@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Application layer MasterData: CRUD slice (command, handler, validator), read port, cache aside abstraction,
+       read-DTO snapshot. Ref Domain, BB.Application. -->
+
+  <ItemGroup Label="Pipeline (handler MediatR, validator FluentValidation)">
+    <PackageReference Include="MediatR" />
+    <PackageReference Include="FluentValidation" />
+  </ItemGroup>
+
+  <ItemGroup Label="Domain, seedwork">
+    <ProjectReference Include="..\Wms.MasterData.Domain\Wms.MasterData.Domain.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Wms.BuildingBlocks.Application\Wms.BuildingBlocks.Application.csproj" />
+  </ItemGroup>
+
+</Project>
