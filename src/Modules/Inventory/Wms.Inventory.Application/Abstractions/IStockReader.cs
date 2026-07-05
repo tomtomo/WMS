@@ -14,4 +14,7 @@ public interface IStockReader : IReader
 
     // Lookup satu balance by id — sync read lintas modul (gRPC).
     Task<AvailableStockView?> GetByIdAsync(Guid stockId, CancellationToken cancellationToken = default);
+
+    // Balance Available/OnHand dengan expiry ≤ threshold (untuk StockNearExpiry). Bukan transisi state.
+    Task<IReadOnlyList<AvailableStockView>> GetExpiringAsync(DateOnly threshold, CancellationToken cancellationToken = default);
 }

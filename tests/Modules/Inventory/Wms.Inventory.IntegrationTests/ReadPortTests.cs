@@ -34,7 +34,7 @@ public sealed class ReadPortTests(PostgresFixture postgres) : IAsyncLifetime
         available.Should().ContainSingle();
         available[0].Status.Should().Be("Available");
         available[0].Sku.Should().Be("SKU-MILK");
-        available[0].AvailableQty.Should().Be(80m, "P1.4 belum ada reservasi → availableQty = qty");
+        available[0].AvailableQty.Should().Be(80m, "belum ada reservasi, availableQty = qty");
         available[0].Qty.Should().Be(80m);
     }
 
@@ -77,6 +77,25 @@ public sealed class ReadPortTests(PostgresFixture postgres) : IAsyncLifetime
         queue.Should().ContainSingle();
         queue[0].Status.Should().Be("Assigned");
         queue[0].AssignedTo.Should().Be(FakeReceivingPolicy.PutawayAssignee);
+    }
+
+    [Fact]
+    public async Task StockReservationReader_returns_active_reservations_for_wave()
+    {
+        await StockSeeder.SeedAvailableAsync(_provider, qty: 100m);
+        var waveId = Guid.NewGuid();
+        await PipelineRunner.ConsumeAsync(
+            _provider, WaveReleasedFactory.With(waveId, WaveReleasedFactory.Line(Guid.NewGuid(), qty: 30m)), Guid.NewGuid());
+
+        using var scope = _provider.CreateScope();
+        var reader = scope.ServiceProvider.GetRequiredService<IStockReservationReader>();
+        var reservations = await reader.GetByWaveAsync(waveId);
+
+        reservations.Should().ContainSingle();
+        reservations[0].WaveId.Should().Be(waveId);
+        reservations[0].Qty.Should().Be(30m);
+        reservations[0].Status.Should().Be("Active");
+        (await reader.GetByWaveAsync(Guid.NewGuid())).Should().BeEmpty("wave lain tidak punya reservasi");
     }
 
     // Receive Good (OnHand) lalu CompletePutaway (Available) agar balance masuk read availability.

@@ -2,7 +2,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Wms.BuildingBlocks.Infrastructure.Persistence;
 using Wms.Inventory.Application.Abstractions;
+using Wms.Inventory.Application.Features.AllocateWave;
+using Wms.Inventory.Application.Features.DetectNearExpiry;
+using Wms.Inventory.Application.Features.FulfillReservation;
 using Wms.Inventory.Application.Features.ReceiveGoodsReceipt;
+using Wms.Inventory.Application.Features.RemovePickedStock;
 using Wms.Inventory.Infrastructure;
 using Wms.Inventory.Infrastructure.Persistence;
 
@@ -46,13 +50,32 @@ public static class InventoryModuleServiceCollectionExtensions
         services.AddScoped<DbContext>(provider => provider.GetRequiredService<InventoryDbContext>());
 
         services.AddScoped<IStockRepository, StockRepository>();
+        services.AddScoped<IStockReservationRepository, StockReservationRepository>();
         services.AddScoped<IPutawayTaskRepository, PutawayTaskRepository>();
         services.AddScoped<IStockReader, StockReader>();
+        services.AddScoped<IStockReservationReader, StockReservationReader>();
         services.AddScoped<IPutawayTaskReader, PutawayTaskReader>();
 
         // Consumer receiving
         services.AddScoped<ReceiveGoodsReceiptHandler>();
         services.AddScoped<GRConfirmedConsumer>();
+
+        // Consumer alokasi (WaveReleased)
+        services.AddScoped<AllocateWaveHandler>();
+        services.AddScoped<WaveReleasedConsumer>();
+
+        // Consumer picking (PickingCompleted)
+        services.AddScoped<FulfillReservationHandler>();
+        services.AddScoped<PickingCompletedConsumer>();
+
+        // Consumer dispatch (ShipmentDispatched)
+        services.AddScoped<RemovePickedStockHandler>();
+        services.AddScoped<ShipmentDispatchedConsumer>();
+
+        // Scheduler Expiry (DetectNearExpiry)
+        services.AddOptions<InventoryExpiryOptions>();
+        services.AddScoped<DetectNearExpiryJob>();
+        services.AddHostedService<InventoryRecurringJobsRegistrar>();
 
         // Kebijakan penempatan receiving — placeholder
         services.AddOptions<InventoryReceivingOptions>();

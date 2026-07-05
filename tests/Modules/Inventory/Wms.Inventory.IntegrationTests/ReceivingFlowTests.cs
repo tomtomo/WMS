@@ -155,7 +155,7 @@ public sealed class ReceivingFlowTests(PostgresFixture postgres) : IAsyncLifetim
 
         result.IsFailure.Should().BeTrue();
         result.Error.Code.Should().Be("receiving.batch_required");
-        (await AllStocksAsync()).Should().BeEmpty("line 0 valid pun tak ter-commit — anti dual-write (ADR-0007)");
+        (await AllStocksAsync()).Should().BeEmpty("line 0 valid pun tidak tercommit");
         (await PipelineRunner.OutboxRowsAsync(_provider)).Should().BeEmpty();
     }
 

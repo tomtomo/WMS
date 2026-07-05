@@ -16,8 +16,9 @@
     </PackageReference>
   </ItemGroup>
 
-  <ItemGroup Label="Composition - DI">
+  <ItemGroup Label="Composition - DI, hosted registrar recurring job">
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
   </ItemGroup>
 
   <ItemGroup Label="Application, mekanisme rail">

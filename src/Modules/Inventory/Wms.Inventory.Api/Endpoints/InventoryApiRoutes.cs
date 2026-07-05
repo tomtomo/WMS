@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Routing;
 
 namespace Wms.Inventory.Api.Endpoints;
 
-// Group versi /v{n}/stock dan /v{n}/putaway-tasks.
+// Group versi /v{n}/stock, /v{n}/putaway-tasks, /v{n}/reservations.
 internal static class InventoryApiRoutes
 {
     public static RouteGroupBuilder Stock(IEndpointRouteBuilder app) =>
@@ -13,6 +13,9 @@ internal static class InventoryApiRoutes
 
     public static RouteGroupBuilder PutawayTasks(IEndpointRouteBuilder app) =>
         Group(app, "putaway-tasks", "/v{version:apiVersion}/putaway-tasks", "PutawayTasks");
+
+    public static RouteGroupBuilder Reservations(IEndpointRouteBuilder app) =>
+        Group(app, "reservations", "/v{version:apiVersion}/reservations", "Reservations");
 
     private static RouteGroupBuilder Group(IEndpointRouteBuilder app, string versionSetName, string prefix, string tag)
     {

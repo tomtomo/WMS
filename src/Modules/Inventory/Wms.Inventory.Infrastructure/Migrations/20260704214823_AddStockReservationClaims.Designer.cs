@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Wms.Inventory.Infrastructure;
@@ -11,9 +12,11 @@ using Wms.Inventory.Infrastructure;
 namespace Wms.Inventory.Infrastructure.Migrations
 {
     [DbContext(typeof(InventoryDbContext))]
-    partial class InventoryDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260704214823_AddStockReservationClaims")]
+    partial class AddStockReservationClaims
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -336,93 +339,6 @@ namespace Wms.Inventory.Infrastructure.Migrations
                         .HasDatabaseName("ix_stock_warehouse_id_status");
 
                     b.ToTable("stock", "inventory");
-                });
-
-            modelBuilder.Entity("Wms.Inventory.Domain.StockReservation", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<string>("Batch")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)")
-                        .HasColumnName("batch");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
-                        .HasColumnName("created_by");
-
-                    b.Property<DateTimeOffset?>("ModifiedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("modified_at");
-
-                    b.Property<string>("ModifiedBy")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
-                        .HasColumnName("modified_by");
-
-                    b.Property<Guid>("OrderId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("order_id");
-
-                    b.Property<Guid?>("PickingTaskId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("picking_task_id");
-
-                    b.Property<decimal>("Qty")
-                        .HasPrecision(18, 3)
-                        .HasColumnType("numeric(18,3)")
-                        .HasColumnName("qty");
-
-                    b.Property<string>("ReleaseReason")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)")
-                        .HasColumnName("release_reason");
-
-                    b.Property<string>("Sku")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)")
-                        .HasColumnName("sku");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(24)
-                        .HasColumnType("character varying(24)")
-                        .HasColumnName("status");
-
-                    b.Property<Guid>("StockId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("stock_id");
-
-                    b.Property<Guid>("WaveId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("wave_id");
-
-                    b.Property<uint>("xmin")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xid")
-                        .HasColumnName("xmin");
-
-                    b.HasKey("Id")
-                        .HasName("pk_stock_reservation");
-
-                    b.HasIndex("WaveId")
-                        .HasDatabaseName("ix_stock_reservation_wave_id");
-
-                    b.HasIndex("WaveId", "OrderId", "Sku")
-                        .HasDatabaseName("ix_stock_reservation_wave_id_order_id_sku");
-
-                    b.ToTable("stock_reservation", "inventory");
                 });
 
             modelBuilder.Entity("Wms.Inventory.Domain.Stock", b =>

@@ -46,6 +46,17 @@ internal sealed class StockReader(InventoryDbContext context) : IStockReader
         return stock is null ? null : Map(stock);
     }
 
+    public async Task<IReadOnlyList<AvailableStockView>> GetExpiringAsync(
+        DateOnly threshold,
+        CancellationToken cancellationToken = default)
+    {
+        // Filter expiry di memori
+        var active = await context.Set<Stock>().AsNoTracking()
+            .Where(stock => stock.Status == StockStatus.Available || stock.Status == StockStatus.OnHand)
+            .ToListAsync(cancellationToken);
+        return [.. active.Where(stock => stock.Expiry.Value <= threshold).Select(Map)];
+    }
+
     // availableQty dari domain
     private static AvailableStockView Map(Stock stock) => new(
         stock.Id.Value,

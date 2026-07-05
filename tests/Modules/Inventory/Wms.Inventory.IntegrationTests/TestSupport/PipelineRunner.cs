@@ -4,9 +4,13 @@ using Microsoft.Extensions.DependencyInjection;
 using Wms.BuildingBlocks.Domain.Results;
 using Wms.BuildingBlocks.Infrastructure.Outbox;
 using Wms.Inbound.Contracts;
+using Wms.Inventory.Application.Features.AllocateWave;
+using Wms.Inventory.Application.Features.FulfillReservation;
 using Wms.Inventory.Application.Features.ReceiveGoodsReceipt;
+using Wms.Inventory.Application.Features.RemovePickedStock;
 using Wms.Inventory.Domain;
 using Wms.Inventory.Infrastructure;
+using Wms.Outbound.Contracts;
 
 namespace Wms.Inventory.IntegrationTests.TestSupport;
 
@@ -26,6 +30,33 @@ internal static class PipelineRunner
         return await scope.ServiceProvider.GetRequiredService<GRConfirmedConsumer>()
             .ConsumeAsync(integrationEvent, eventId);
     }
+
+    // Consumer alokasi in process
+    public static async Task<Result> ConsumeAsync(IServiceProvider provider, WaveReleased integrationEvent, Guid eventId)
+    {
+        using var scope = provider.CreateScope();
+        return await scope.ServiceProvider.GetRequiredService<WaveReleasedConsumer>()
+            .ConsumeAsync(integrationEvent, eventId);
+    }
+
+    // Consumer picking in process
+    public static async Task<Result> ConsumeAsync(IServiceProvider provider, PickingCompleted integrationEvent, Guid eventId)
+    {
+        using var scope = provider.CreateScope();
+        return await scope.ServiceProvider.GetRequiredService<PickingCompletedConsumer>()
+            .ConsumeAsync(integrationEvent, eventId);
+    }
+
+    // Consumer dispatch in process
+    public static async Task<Result> ConsumeAsync(IServiceProvider provider, ShipmentDispatched integrationEvent, Guid eventId)
+    {
+        using var scope = provider.CreateScope();
+        return await scope.ServiceProvider.GetRequiredService<ShipmentDispatchedConsumer>()
+            .ConsumeAsync(integrationEvent, eventId);
+    }
+
+    public static Task<List<StockReservation>> ReservationsAsync(IServiceProvider provider) =>
+        QueryDbAsync(provider, context => context.Set<StockReservation>().AsNoTracking().ToListAsync());
 
     public static async Task<List<OutboxRecord>> OutboxRowsAsync(IServiceProvider provider, string? logicalName = null)
     {

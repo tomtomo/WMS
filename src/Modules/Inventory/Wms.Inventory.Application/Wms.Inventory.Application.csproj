@@ -1,17 +1,20 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- Application layer Inventory: consumer GRConfirmed (receiving), vertical slice CompletePutaway,
-       read port, abstraksi repo/strategy. Ref Domain, Inventory.Contracts (published), Inbound.Contracts, BB.Application. -->
+  <!-- Application layer Inventory: consumer GRConfirmed (receiving) + WaveReleased/PickingCompleted/ShipmentDispatched
+       (alokasi/picking/dispatch), slice CompletePutaway/DetectNearExpiry, read port, abstraksi repo/strategy.
+       Ref Domain, Inventory.Contracts (published), Inbound.Contracts + Outbound.Contracts (consumed), BB.Application. -->
 
-  <ItemGroup Label="Pipeline (direct use: handler MediatR, validator FluentValidation)">
+  <ItemGroup Label="Pipeline (direct use: handler MediatR, validator FluentValidation) + options recurring job">
     <PackageReference Include="MediatR" />
     <PackageReference Include="FluentValidation" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
   </ItemGroup>
 
   <ItemGroup Label="Domain, published language, seedwork">
     <ProjectReference Include="..\Wms.Inventory.Domain\Wms.Inventory.Domain.csproj" />
     <ProjectReference Include="..\Wms.Inventory.Contracts\Wms.Inventory.Contracts.csproj" />
     <ProjectReference Include="..\..\Inbound\Wms.Inbound.Contracts\Wms.Inbound.Contracts.csproj" />
+    <ProjectReference Include="..\..\Outbound\Wms.Outbound.Contracts\Wms.Outbound.Contracts.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\Wms.BuildingBlocks.Application\Wms.BuildingBlocks.Application.csproj" />
   </ItemGroup>
 

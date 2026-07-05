@@ -61,6 +61,12 @@ public sealed class StockConfiguration : IEntityTypeConfiguration<Stock>
 
         builder.UseXminConcurrencyToken();
 
-        // Owned collection
+        // Klaim reservasi
+        builder.OwnsMany<ReservationClaim>("_reservations", claims =>
+        {
+            claims.ToJson("reservations");
+            claims.Property(claim => claim.ReservationId)
+                .HasConversion(id => id.Value, value => StockReservationId.Create(value).Value);
+        });
     }
 }
