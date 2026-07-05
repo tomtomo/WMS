@@ -9,6 +9,7 @@ builder.AddServiceDefaults();
 // DbContext per modul untuk MigrationWorker.
 builder.Services.AddInboundModule(builder.Configuration);
 builder.Services.AddInventoryModule(builder.Configuration);
+builder.Services.AddOutboundModule(builder.Configuration);
 
 builder.Services.AddHostedService<MigrationWorker>();
 

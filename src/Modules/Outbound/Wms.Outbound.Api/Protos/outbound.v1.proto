@@ -1,0 +1,23 @@
+// Read API internal Outbound
+syntax = "proto3";
+
+package outbound.v1;
+
+option csharp_namespace = "Wms.Outbound.Api.Grpc.V1";
+
+// Sync read detail Wave untuk kebutuhan lintas service internal.
+service OutboundReadService {
+  rpc GetWave (GetWaveRequest) returns (WaveSummary);
+}
+
+message GetWaveRequest {
+  string wave_id = 1;
+}
+
+message WaveSummary {
+  string wave_id = 1;
+  string warehouse_id = 2;
+  string status = 3;
+  int32 picking_task_count = 4;
+  int32 completed_picking_task_count = 5;
+}

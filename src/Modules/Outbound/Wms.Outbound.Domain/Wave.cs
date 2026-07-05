@@ -18,9 +18,10 @@ public sealed class Wave : AggregateRoot<WaveId>, IAuditable
 
     private readonly List<PickingTaskId> _pickingTaskIds = [];
 
-    private Wave(WaveId id, List<OutboundOrderId> orderIds, List<Guid> reservationIds)
+    private Wave(WaveId id, Guid warehouseId, List<OutboundOrderId> orderIds, List<Guid> reservationIds)
         : base(id)
     {
+        WarehouseId = warehouseId;
         _orderIds = orderIds;
         _reservationIds = reservationIds;
         Status = WaveStatus.Active;
@@ -39,6 +40,9 @@ public sealed class Wave : AggregateRoot<WaveId>, IAuditable
 
     public WaveStatus Status { get; private set; }
 
+    // Warehouse tempat wave dieksekusi — dibawa ke payload PickingTaskAssigned/WaveReady.
+    public Guid WarehouseId { get; }
+
     public CancelReason? CancelReason { get; private set; }
 
     public IReadOnlyList<OutboundOrderId> OrderIds => _orderIds.AsReadOnly();
@@ -56,12 +60,21 @@ public sealed class Wave : AggregateRoot<WaveId>, IAuditable
 
     public DateTimeOffset? ModifiedAt { get; set; }
 
-    // SPV membuat wave dari beberapa order. reservationIds diisi saat reservasi Inventory diketahui.
-    public static Result<Wave> Create(WaveId id, IEnumerable<OutboundOrderId> orderIds, IEnumerable<Guid> reservationIds)
+    // SPV membuat wave dari beberapa order di satu warehouse. reservationIds diisi saat reservasi Inventory diketahui.
+    public static Result<Wave> Create(
+        WaveId id,
+        Guid warehouseId,
+        IEnumerable<OutboundOrderId> orderIds,
+        IEnumerable<Guid> reservationIds)
     {
         ArgumentNullException.ThrowIfNull(id);
         ArgumentNullException.ThrowIfNull(orderIds);
         ArgumentNullException.ThrowIfNull(reservationIds);
+
+        if (warehouseId == Guid.Empty)
+        {
+            return Result.Invalid<Wave>(new Error("wave.warehouse_required", "WarehouseId wajib diisi."));
+        }
 
         var orders = orderIds.ToList();
         if (orders.Count == 0)
@@ -69,7 +82,7 @@ public sealed class Wave : AggregateRoot<WaveId>, IAuditable
             return Result.Invalid<Wave>(new Error("wave.orders_required", "Wave harus punya minimal satu order."));
         }
 
-        return Result.Success(new Wave(id, orders, reservationIds.ToList()));
+        return Result.Success(new Wave(id, warehouseId, orders, reservationIds.ToList()));
     }
 
     // daftarkan PickingTask ke wave. Idempotent

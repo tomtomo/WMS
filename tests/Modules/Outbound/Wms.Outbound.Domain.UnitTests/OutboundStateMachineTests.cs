@@ -26,7 +26,7 @@ public sealed class OutboundStateMachineTests
     public void A_dispatched_wave_rejects_every_further_mutation()
     {
         var waveId = WaveMother.NewWaveId();
-        var wave = Wave.Create(waveId, [WaveMother.NewOrderId()], []).Value;
+        var wave = Wave.Create(waveId, WaveMother.WarehouseId, [WaveMother.NewOrderId()], []).Value;
         var task = PickingTaskMother.Completed(waveId);
         wave.AttachPickingTask(task.Id);
         wave.EvaluateReadiness([task]);

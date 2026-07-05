@@ -23,7 +23,7 @@ public sealed class OutboundScenarioTests
         var order = OutboundOrderMother.New(qty: 10m);
         var waveId = WaveMother.NewWaveId();
         order.AssignToWave(waveId);
-        var wave = Wave.Create(waveId, [order.Id], []).Value;
+        var wave = Wave.Create(waveId, WaveMother.WarehouseId, [order.Id], []).Value;
 
         var reservationId = Guid.NewGuid();
         order.ApplyAllocation([new AllocationLine("SKU-MILK", reservationId, 10m)], []);
@@ -47,7 +47,7 @@ public sealed class OutboundScenarioTests
         var order = OutboundOrderMother.New(qty: 10m);
         var waveId = WaveMother.NewWaveId();
         order.AssignToWave(waveId);
-        var wave = Wave.Create(waveId, [order.Id], []).Value;
+        var wave = Wave.Create(waveId, WaveMother.WarehouseId, [order.Id], []).Value;
 
         var reservationId = Guid.NewGuid();
         order.ApplyAllocation(
@@ -78,7 +78,7 @@ public sealed class OutboundScenarioTests
         var order = OutboundOrderMother.New(qty: 10m);
         var waveId = WaveMother.NewWaveId();
         order.AssignToWave(waveId);
-        var wave = Wave.Create(waveId, [order.Id], []).Value;
+        var wave = Wave.Create(waveId, WaveMother.WarehouseId, [order.Id], []).Value;
 
         order.ApplyAllocation([], [new Shortfall("SKU-MILK", 10m, 0m, 10m)]);
         order.OrderLines.Single().AllocationStatus.Should().Be(AllocationStatus.Short);

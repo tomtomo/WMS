@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Application layer Outbound: slice CreateWave/CompletePickingTask/DispatchWave, consumer
+       StockAllocationCompleted (branch Full/Partial/Unfulfilled → PickingTask/backorder/auto-cancel),
+       read port, abstraksi repo/policy. Ref Domain, Outbound.Contracts (published),
+       Inventory.Contracts (consumed — FF#3 lintas-modul hanya *.Contracts), BB.Application. -->
+
+  <ItemGroup Label="Pipeline (handler MediatR, validator FluentValidation)">
+    <PackageReference Include="MediatR" />
+    <PackageReference Include="FluentValidation" />
+  </ItemGroup>
+
+  <ItemGroup Label="Domain, published language, seedwork">
+    <ProjectReference Include="..\Wms.Outbound.Domain\Wms.Outbound.Domain.csproj" />
+    <ProjectReference Include="..\Wms.Outbound.Contracts\Wms.Outbound.Contracts.csproj" />
+    <ProjectReference Include="..\..\Inventory\Wms.Inventory.Contracts\Wms.Inventory.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Wms.BuildingBlocks.Application\Wms.BuildingBlocks.Application.csproj" />
+  </ItemGroup>
+
+</Project>
