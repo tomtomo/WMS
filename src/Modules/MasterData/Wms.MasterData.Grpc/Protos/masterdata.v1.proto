@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package masterdata.v1;
+
+option csharp_namespace = "Wms.MasterData.Grpc.V1";
+
+// Lookup sinkron referensi Master Data untuk core
+service MasterDataLookup {
+  rpc GetWarehouseById (GetWarehouseByIdRequest) returns (WarehouseSnapshot);
+  rpc GetLocationById (GetLocationByIdRequest) returns (LocationSnapshot);
+  rpc GetProductBySku (GetProductBySkuRequest) returns (ProductSnapshot);
+}
+
+message GetWarehouseByIdRequest {
+  string warehouse_id = 1;
+}
+
+message GetLocationByIdRequest {
+  string location_id = 1;
+}
+
+message GetProductBySkuRequest {
+  string sku = 1;
+}
+
+message WarehouseSnapshot {
+  string warehouse_id = 1;
+  string name = 2;
+  string address = 3;
+}
+
+message LocationSnapshot {
+  string location_id = 1;
+  string warehouse_id = 2;
+  string type = 3;
+  string code = 4;
+}
+
+// Sumber field yang di-snapshot Inbound (expectedLines[]) & Outbound (orderLines[]).
+message ProductSnapshot {
+  string sku = 1;
+  string name = 2;
+  string uom = 3;
+  bool batch_tracking_required = 4;
+  bool expiry_tracking_required = 5;
+  bool qc_required_on_receipt = 6;
+  optional int32 shelf_life_days = 7;
+}

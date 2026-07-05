@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Domain layer MasterData: aggregate Warehouse/Location/Product -->
+
+  <ItemGroup Label="Seedwork domain">
+    <ProjectReference Include="..\..\..\BuildingBlocks\Wms.BuildingBlocks.Domain\Wms.BuildingBlocks.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -20,7 +20,7 @@ public sealed class AsyncApiCatalogTests
             var logicalName = IntegrationEventLogicalName.Resolve(eventType);
             _channels.Keys.Should().Contain(
                 logicalName,
-                $"{eventType.Name}: LogicalName '{logicalName}' wajib jadi address channel AsyncAPI (FF#11 nilai)");
+                $"{eventType.Name}: LogicalName '{logicalName}' wajib jadi address channel AsyncAPI");
         }
     }
 

@@ -29,6 +29,13 @@ internal sealed class MigrationWorker(
                 logger.LogInformation("Migration diterapkan: {DbContext}.", dbContext.GetType().Name);
             }
 
+            foreach (var seed in ModuleMigratorRegistry.ModuleSeeders)
+            {
+                await seed(scope.ServiceProvider, stoppingToken).ConfigureAwait(false);
+            }
+
+            logger.LogInformation("MigrationRunner: {Count} module seeder dijalankan.", ModuleMigratorRegistry.ModuleSeeders.Count);
+
             await AdminSeeder.SeedAsync(configuration, logger, stoppingToken).ConfigureAwait(false);
 
             logger.LogInformation("MigrationRunner selesai — exit 0.");

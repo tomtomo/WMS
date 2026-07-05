@@ -10,6 +10,7 @@ builder.AddServiceDefaults();
 builder.Services.AddInboundModule(builder.Configuration);
 builder.Services.AddInventoryModule(builder.Configuration);
 builder.Services.AddOutboundModule(builder.Configuration);
+builder.Services.AddMasterDataModule(builder.Configuration);
 
 builder.Services.AddHostedService<MigrationWorker>();
 

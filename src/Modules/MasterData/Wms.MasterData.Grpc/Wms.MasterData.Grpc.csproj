@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Grpc MasterData: proto masterdata.v1 dipisah dari .Contracts. -->
+
+  <ItemGroup Label="Protocol - gRPC codegen">
+    <PackageReference Include="Grpc.AspNetCore" />
+  </ItemGroup>
+
+  <ItemGroup Label="Kontrak proto published language">
+    <Protobuf Include="Protos\masterdata.v1.proto" GrpcServices="Both" />
+  </ItemGroup>
+
+</Project>
