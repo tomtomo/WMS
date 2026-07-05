@@ -43,6 +43,7 @@
     <ProjectReference Include="..\..\src\Modules\Inventory\Wms.Inventory.Infrastructure\Wms.Inventory.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\Modules\Inventory\Wms.Inventory.Api\Wms.Inventory.Api.csproj" />
     <ProjectReference Include="..\..\src\Modules\Outbound\Wms.Outbound.Contracts\Wms.Outbound.Contracts.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Outbound\Wms.Outbound.Domain\Wms.Outbound.Domain.csproj" />
   </ItemGroup>
 
 </Project>
