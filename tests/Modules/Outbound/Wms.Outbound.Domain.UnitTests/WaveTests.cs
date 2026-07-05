@@ -15,7 +15,7 @@ public sealed class WaveTests
         var orderId = WaveMother.NewOrderId();
         var reservationId = Guid.NewGuid();
 
-        var wave = Wave.Create(WaveMother.NewWaveId(), [orderId], [reservationId]).Value;
+        var wave = Wave.Create(WaveMother.NewWaveId(), WaveMother.WarehouseId, [orderId], [reservationId]).Value;
 
         wave.Status.Should().Be(WaveStatus.Active);
         wave.OrderIds.Should().ContainSingle().Which.Should().Be(orderId);
@@ -24,9 +24,29 @@ public sealed class WaveTests
     }
 
     [Fact]
+    public void A_created_wave_carries_the_warehouse_it_executes_in()
+    {
+        var warehouseId = Guid.NewGuid();
+
+        var wave = Wave.Create(WaveMother.NewWaveId(), warehouseId, [WaveMother.NewOrderId()], []).Value;
+
+        wave.WarehouseId.Should().Be(warehouseId);
+    }
+
+    [Fact]
+    public void Create_rejects_a_wave_without_a_warehouse()
+    {
+        var result = Wave.Create(WaveMother.NewWaveId(), Guid.Empty, [WaveMother.NewOrderId()], []);
+
+        result.IsFailure.Should().BeTrue();
+        result.ErrorType.Should().Be(ResultErrorType.Validation);
+        result.Error.Code.Should().Be("wave.warehouse_required");
+    }
+
+    [Fact]
     public void Create_rejects_a_wave_with_no_orders()
     {
-        var result = Wave.Create(WaveMother.NewWaveId(), [], []);
+        var result = Wave.Create(WaveMother.NewWaveId(), WaveMother.WarehouseId, [], []);
 
         result.IsFailure.Should().BeTrue();
         result.ErrorType.Should().Be(ResultErrorType.Validation);
@@ -62,7 +82,7 @@ public sealed class WaveTests
     public void A_wave_becomes_ready_when_all_its_picking_tasks_are_completed()
     {
         var waveId = WaveMother.NewWaveId();
-        var wave = Wave.Create(waveId, [WaveMother.NewOrderId()], []).Value;
+        var wave = Wave.Create(waveId, WaveMother.WarehouseId, [WaveMother.NewOrderId()], []).Value;
         var task = PickingTaskMother.Completed(waveId);
         wave.AttachPickingTask(task.Id);
 
@@ -78,7 +98,7 @@ public sealed class WaveTests
     {
         // Wave dengan 1 task (porsi teralokasi) dan 1 line short yang tidak punya task ke 2.
         var waveId = WaveMother.NewWaveId();
-        var wave = Wave.Create(waveId, [WaveMother.NewOrderId()], []).Value;
+        var wave = Wave.Create(waveId, WaveMother.WarehouseId, [WaveMother.NewOrderId()], []).Value;
         var doneTask = PickingTaskMother.Completed(waveId);
         wave.AttachPickingTask(doneTask.Id);
 
@@ -91,7 +111,7 @@ public sealed class WaveTests
     public void A_wave_stays_active_while_any_picking_task_is_incomplete()
     {
         var waveId = WaveMother.NewWaveId();
-        var wave = Wave.Create(waveId, [WaveMother.NewOrderId()], []).Value;
+        var wave = Wave.Create(waveId, WaveMother.WarehouseId, [WaveMother.NewOrderId()], []).Value;
         var done = PickingTaskMother.Completed(waveId);
         var pending = PickingTaskMother.Assigned(waveId);
         wave.AttachPickingTask(done.Id);
@@ -120,7 +140,7 @@ public sealed class WaveTests
     public void Dispatch_moves_a_ready_wave_to_dispatched()
     {
         var waveId = WaveMother.NewWaveId();
-        var wave = Wave.Create(waveId, [WaveMother.NewOrderId()], []).Value;
+        var wave = Wave.Create(waveId, WaveMother.WarehouseId, [WaveMother.NewOrderId()], []).Value;
         var task = PickingTaskMother.Completed(waveId);
         wave.AttachPickingTask(task.Id);
         wave.EvaluateReadiness([task]);

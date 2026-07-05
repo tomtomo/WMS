@@ -201,7 +201,7 @@ public sealed class OutboundOrder : AggregateRoot<OutboundOrderId>, IAuditable
 
         if (!_orderLines.TrueForAll(line => line.AllocationStatus == AllocationStatus.Allocated))
         {
-            return Result.Invalid(new Error("outbound_order.not_fully_fulfilled", "Hanya order terpenuhi penuh yang boleh Closed."));
+            return Result.Invalid(new Error("outbound_order.not_fully_fulfilled", "Hanya order terpenuhi semua yang boleh Closed."));
         }
 
         Status = OutboundOrderStatus.Closed;
