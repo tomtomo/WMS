@@ -1,6 +1,5 @@
 using Wms.BuildingBlocks.Application.Messaging;
 using Wms.BuildingBlocks.Domain.Results;
-using Wms.BuildingBlocks.Infrastructure.Messaging;
 
 namespace Wms.BuildingBlocks.Infrastructure.Outbox;
 

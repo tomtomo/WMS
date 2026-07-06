@@ -8,11 +8,10 @@ using RabbitMQ.Client.Events;
 using RabbitMQ.Client.Exceptions;
 using Wms.BuildingBlocks.Application.Abstractions.Ports;
 using Wms.BuildingBlocks.Application.Messaging;
-using Wms.BuildingBlocks.Infrastructure.Messaging;
 
 namespace Wms.Platform.Local.Messaging;
 
-// Subscriber broker Local: queue durable per (service, event)
+// Subscriber broker Local, IMessageSubscriber berbasis RabbitMQ.
 public sealed class RabbitMqMessageSubscriber(
     RabbitMqConnectionFactory connectionFactory,
     IOptions<RabbitMqOptions> options,
@@ -20,57 +19,57 @@ public sealed class RabbitMqMessageSubscriber(
 {
     private readonly ConcurrentBag<IModel> _channels = [];
 
-    public Task SubscribeAsync<TIntegrationEvent>(
-        Func<TIntegrationEvent, CancellationToken, Task> handler,
+    public Task SubscribeAsync(
+        string queueName,
+        IReadOnlyCollection<RailSubscription> subscriptions,
+        Func<MessageEnvelope, CancellationToken, Task<bool>> onMessageAsync,
         CancellationToken cancellationToken = default)
-        where TIntegrationEvent : IIntegrationEvent
     {
-        ArgumentNullException.ThrowIfNull(handler);
+        ArgumentException.ThrowIfNullOrWhiteSpace(queueName);
+        ArgumentNullException.ThrowIfNull(subscriptions);
+        ArgumentNullException.ThrowIfNull(onMessageAsync);
         cancellationToken.ThrowIfCancellationRequested();
 
         var settings = options.Value;
-        var logicalName = IntegrationEventLogicalName.Resolve(typeof(TIntegrationEvent));
-        var queueName = $"{settings.SubscriberQueuePrefix}.{logicalName}";
-
         var channel = connectionFactory.CreateChannel();
         _channels.Add(channel);
 
         channel.ExchangeDeclare(settings.ExchangeName, ExchangeType.Topic, durable: true, autoDelete: false, arguments: null);
         channel.QueueDeclare(queueName, durable: true, exclusive: false, autoDelete: false, arguments: null);
-        channel.QueueBind(queueName, settings.ExchangeName, routingKey: logicalName);
+        foreach (var subscription in subscriptions)
+        {
+            // Bind queue berdasarkan delivery class dan logical name yang disubscribe.
+            channel.QueueBind(
+                queueName,
+                settings.ExchangeName,
+                RabbitMqRouting.RoutingKey(subscription.DeliveryClass, subscription.LogicalName));
+        }
+
         channel.BasicQos(prefetchSize: 0, prefetchCount: 1, global: false);
 
         var consumer = new AsyncEventingBasicConsumer(channel);
         consumer.Received += async (_, delivery) =>
         {
+            var handled = false;
             try
             {
                 var json = Encoding.UTF8.GetString(delivery.Body.Span);
-                var envelope = JsonSerializer.Deserialize<MessageEnvelope>(json);
-
-                // Payload dibaca dengan opsi kontrak(camelCase dan enum nama).
-                var integrationEvent = envelope is null
-                    ? default
-                    : JsonSerializer.Deserialize<TIntegrationEvent>(envelope.Payload, MessageEnvelope.PayloadSerializerOptions);
-                if (integrationEvent is null)
-                {
-                    throw new JsonException($"Envelope atau payload '{logicalName}' tidak bisa dibaca.");
-                }
-
-                await handler(integrationEvent, cancellationToken).ConfigureAwait(false);
-                Acknowledge(channel, delivery.DeliveryTag, processed: true);
+                var envelope = JsonSerializer.Deserialize<MessageEnvelope>(json)
+                    ?? throw new JsonException($"Envelope di queue '{queueName}' tidak bisa dibaca.");
+                handled = await onMessageAsync(envelope, cancellationToken).ConfigureAwait(false);
             }
-#pragma warning disable S2221 // Boundary konsumsi broker: kegagalan apa pun berujung nack no requeue, bukan crash consumer loop.
+#pragma warning disable S2221
             catch (Exception exception)
 #pragma warning restore S2221
             {
                 logger.LogWarning(
                     exception,
-                    "Pesan {LogicalName} gagal diproses; nack tanpa requeue (deliveryTag {DeliveryTag})",
-                    logicalName,
+                    "Pesan di queue {Queue} gagal diproses; nack tanpa requeue (deliveryTag {DeliveryTag})",
+                    queueName,
                     delivery.DeliveryTag);
-                Acknowledge(channel, delivery.DeliveryTag, processed: false);
             }
+
+            Acknowledge(channel, delivery.DeliveryTag, handled);
         };
 
         channel.BasicConsume(queue: queueName, autoAck: false, consumer: consumer);
@@ -85,7 +84,7 @@ public sealed class RabbitMqMessageSubscriber(
         }
     }
 
-    // Race shutdown: Dispose bisa menutup channel saat handler in flight
+    // Channel bisa tertutup saat proses shutdown.
     private void Acknowledge(IModel channel, ulong deliveryTag, bool processed)
     {
         try

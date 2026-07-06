@@ -2,7 +2,6 @@ using System.Text.Json;
 using AwesomeAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Wms.BuildingBlocks.Application.Messaging;
-using Wms.BuildingBlocks.Infrastructure.Messaging;
 using Wms.BuildingBlocks.Infrastructure.Outbox;
 using Wms.Inventory.Contracts;
 using Wms.Inventory.Domain.Enums;

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Wms.BuildingBlocks.Application.Abstractions.Ports;
 using Wms.BuildingBlocks.Application.Messaging;
@@ -5,7 +6,7 @@ using Wms.BuildingBlocks.Infrastructure.Messaging;
 
 namespace Wms.BuildingBlocks.Infrastructure.Outbox;
 
-// Outbox Writer: Add ke DbContext modul dalam transaksi bisnis yang sama.
+// Menyimpan integration event ke outbox dalam transaksi yang sama.
 public sealed class IntegrationEventOutbox(DbContext dbContext, TimeProvider timeProvider) : IIntegrationEventOutbox
 {
     public Task AddAsync<TIntegrationEvent>(
@@ -17,12 +18,22 @@ public sealed class IntegrationEventOutbox(DbContext dbContext, TimeProvider tim
         ArgumentNullException.ThrowIfNull(integrationEvent);
 
         var logicalName = IntegrationEventLogicalName.Resolve(integrationEvent.GetType());
+
+        // Simpan trace context W3C jika tersedia.
+        var activity = Activity.Current;
+        var traceparent = activity?.IdFormat == ActivityIdFormat.W3C ? activity.Id : null;
+        var tracestate = traceparent is not null ? activity!.TraceStateString : null;
+
         var envelope = MessageEnvelope.Create(
             integrationEvent,
             logicalName,
             deliveryClass,
             Guid.NewGuid(),
-            timeProvider.GetUtcNow());
+            timeProvider.GetUtcNow()) with
+        {
+            Traceparent = traceparent,
+            Tracestate = tracestate,
+        };
 
         dbContext.Set<OutboxRecord>().Add(new OutboxRecord
         {

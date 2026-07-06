@@ -2,12 +2,8 @@ using Wms.BuildingBlocks.Application.Messaging;
 
 namespace Wms.BuildingBlocks.Application.Abstractions.Ports;
 
-// Port — message publisher
+// Publisher untuk mengirim message envelope.
 public interface IMessagePublisher
 {
-    Task PublishAsync<TIntegrationEvent>(
-        TIntegrationEvent integrationEvent,
-        DeliveryClass deliveryClass,
-        CancellationToken cancellationToken = default)
-        where TIntegrationEvent : IIntegrationEvent;
+    Task PublishAsync(MessageEnvelope envelope, CancellationToken cancellationToken = default);
 }

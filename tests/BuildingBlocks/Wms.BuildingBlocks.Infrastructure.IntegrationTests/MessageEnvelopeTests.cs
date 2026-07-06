@@ -2,7 +2,6 @@ using System.Text.Json;
 using AwesomeAssertions;
 using Wms.BuildingBlocks.Application.Messaging;
 using Wms.BuildingBlocks.Infrastructure.IntegrationTests.TestDoubles;
-using Wms.BuildingBlocks.Infrastructure.Messaging;
 using Xunit;
 
 namespace Wms.BuildingBlocks.Infrastructure.IntegrationTests;

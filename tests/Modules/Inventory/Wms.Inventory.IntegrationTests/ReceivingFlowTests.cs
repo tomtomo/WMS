@@ -3,7 +3,6 @@ using AwesomeAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Wms.BuildingBlocks.Application.Messaging;
-using Wms.BuildingBlocks.Infrastructure.Messaging;
 using Wms.Inbound.Contracts.Enums;
 using Wms.Inbound.Contracts.Payloads;
 using Wms.Inventory.Contracts;

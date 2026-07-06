@@ -163,6 +163,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wms.Notifications.UnitTests
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wms.Notifications.IntegrationTests", "tests\Modules\Notifications\Wms.Notifications.IntegrationTests\Wms.Notifications.IntegrationTests.csproj", "{134F22AB-2DB4-415C-95C5-3A6923A09A03}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wms.Eventing.IntegrationTests", "tests\Integration\Wms.Eventing.IntegrationTests\Wms.Eventing.IntegrationTests.csproj", "{4F1EC001-D792-4233-A588-4B5145EBA86C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -845,6 +847,18 @@ Global
 		{134F22AB-2DB4-415C-95C5-3A6923A09A03}.Release|x64.Build.0 = Release|Any CPU
 		{134F22AB-2DB4-415C-95C5-3A6923A09A03}.Release|x86.ActiveCfg = Release|Any CPU
 		{134F22AB-2DB4-415C-95C5-3A6923A09A03}.Release|x86.Build.0 = Release|Any CPU
+		{4F1EC001-D792-4233-A588-4B5145EBA86C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4F1EC001-D792-4233-A588-4B5145EBA86C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4F1EC001-D792-4233-A588-4B5145EBA86C}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{4F1EC001-D792-4233-A588-4B5145EBA86C}.Debug|x64.Build.0 = Debug|Any CPU
+		{4F1EC001-D792-4233-A588-4B5145EBA86C}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{4F1EC001-D792-4233-A588-4B5145EBA86C}.Debug|x86.Build.0 = Debug|Any CPU
+		{4F1EC001-D792-4233-A588-4B5145EBA86C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4F1EC001-D792-4233-A588-4B5145EBA86C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4F1EC001-D792-4233-A588-4B5145EBA86C}.Release|x64.ActiveCfg = Release|Any CPU
+		{4F1EC001-D792-4233-A588-4B5145EBA86C}.Release|x64.Build.0 = Release|Any CPU
+		{4F1EC001-D792-4233-A588-4B5145EBA86C}.Release|x86.ActiveCfg = Release|Any CPU
+		{4F1EC001-D792-4233-A588-4B5145EBA86C}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -928,5 +942,6 @@ Global
 		{5CAD844B-E449-970A-E9D0-133982AEC280} = {D7DC9B74-6BC4-2470-2038-1E57C2DCB73B}
 		{FB072375-08B1-464B-BA4B-53DD53AF0361} = {5CAD844B-E449-970A-E9D0-133982AEC280}
 		{134F22AB-2DB4-415C-95C5-3A6923A09A03} = {5CAD844B-E449-970A-E9D0-133982AEC280}
+		{4F1EC001-D792-4233-A588-4B5145EBA86C} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 EndGlobal

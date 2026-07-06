@@ -12,6 +12,7 @@ using Wms.BuildingBlocks.Infrastructure.Outbox;
 using Wms.BuildingBlocks.Infrastructure.Telemetry;
 using Wms.Platform.Local.Analytics;
 using Wms.Platform.Local.Cache;
+using Wms.Platform.Local.Eventing;
 using Wms.Platform.Local.Messaging;
 using Wms.Platform.Local.Notifications;
 using Wms.Platform.Local.ObjectStore;
@@ -41,25 +42,28 @@ public static class LocalPlatformServiceCollectionExtensions
         services.AddValidatedOptions<FileSystemObjectStoreOptions>(FileSystemObjectStoreOptions.SectionName);
         services.AddValidatedOptions<EnvSecretOptions>(EnvSecretOptions.SectionName);
 
-        // Messaging — satu koneksi AMQP lazy per proses; publisher/subscriber stateless di atasnya.
+        // Registrasi messaging RabbitMQ.
         services.TryAddSingleton<RabbitMqConnectionFactory>();
         services.TryAddSingleton<IMessagePublisher, RabbitMqMessagePublisher>();
         services.TryAddSingleton<IMessageSubscriber, RabbitMqMessageSubscriber>();
 
-        // Rail mode invariant (Postgres) — reuse mekanisme Infrastructure, scoped mengikuti DbContext modul.
+        // Gunakan RabbitMQ untuk dispatch outbox.
+        services.TryAddSingleton<OutboxDispatcher, RabbitMqOutboxDispatcher>();
+
+        // Service pendukung untuk outbox, inbox, dead-letter, dan audit log.
         services.TryAddScoped<IIntegrationEventOutbox, IntegrationEventOutbox>();
         services.TryAddScoped<IInboxGuard, InboxGuard>();
         services.TryAddScoped<IDeadLetterStore, DeadLetterStore>();
         services.TryAddSingleton<IAuditLogStore, AuditLogStore>();
 
-        // Store Local-variant di atas NpgsqlDataSource (cloud: Redis / Cosmos-Firestore): stateless di atas pool.
+        // Store Local NpgsqlDataSource (cloud: Redis / Cosmos-Firestore)
         services.TryAddSingleton(CreateDataSource);
         services.TryAddSingleton<IApiIdempotencyStore, PostgresApiIdempotencyStore>();
         services.TryAddSingleton<IProjectionStore, PostgresProjectionStore>();
 
         services.TryAddSingleton<ICacheStore, InMemoryCacheStore>();
 
-        // Endpoint file Local butuh tipe konkret (TryValidateReadUrl) dengan HMAC key yang sama.
+        // Gunakan object store lokal berbasis file system.
         services.TryAddSingleton<FileSystemObjectStore>();
         services.TryAddSingleton<IObjectStore>(provider => provider.GetRequiredService<FileSystemObjectStore>());
 

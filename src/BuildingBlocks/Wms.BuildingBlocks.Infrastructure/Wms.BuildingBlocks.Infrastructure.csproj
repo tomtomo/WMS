@@ -7,6 +7,10 @@
     <ProjectReference Include="..\Wms.BuildingBlocks.Application\Wms.BuildingBlocks.Application.csproj" />
   </ItemGroup>
 
+  <ItemGroup Label="Test seam — worker rail drain/subscribe">
+    <InternalsVisibleTo Include="Wms.Eventing.IntegrationTests" />
+  </ItemGroup>
+
   <ItemGroup Label="Persistence — EF Core + Npgsql (rail tables, interceptor, xmin)">
     <PackageReference Include="Microsoft.EntityFrameworkCore" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
@@ -15,6 +19,7 @@
   <ItemGroup Label="Composition root — DI + OTel logging setup">
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Logging" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
   </ItemGroup>
 
   <ItemGroup Label="Resilience — Polly v8 standard handler (split-timeout)">
