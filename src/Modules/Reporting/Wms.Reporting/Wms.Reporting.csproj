@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Reporting — supporting. -->
+
+  <ItemGroup Label="Shared framework - minimal API endpoint (report read only, rebuild admin)">
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup Label="Persistence - EF Core, Npgsql, snake case (projection store Postgres)">
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="EFCore.NamingConventions" />
+  </ItemGroup>
+
+  <ItemGroup Label="Design time - dotnet ef migrations">
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup Label="Test">
+    <InternalsVisibleTo Include="Wms.Reporting.IntegrationTests" />
+  </ItemGroup>
+
+  <ItemGroup Label="Kernel BuildingBlocks (app/infra/web) + Contracts consume only lintas modul">
+    <ProjectReference Include="..\..\..\BuildingBlocks\Wms.BuildingBlocks.Application\Wms.BuildingBlocks.Application.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Wms.BuildingBlocks.Infrastructure\Wms.BuildingBlocks.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Wms.BuildingBlocks.Web\Wms.BuildingBlocks.Web.csproj" />
+    <ProjectReference Include="..\..\Inbound\Wms.Inbound.Contracts\Wms.Inbound.Contracts.csproj" />
+    <ProjectReference Include="..\..\Inventory\Wms.Inventory.Contracts\Wms.Inventory.Contracts.csproj" />
+    <ProjectReference Include="..\..\Outbound\Wms.Outbound.Contracts\Wms.Outbound.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

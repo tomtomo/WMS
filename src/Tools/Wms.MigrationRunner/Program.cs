@@ -15,6 +15,7 @@ builder.Services.AddInventoryModule(builder.Configuration);
 builder.Services.AddOutboundModule(builder.Configuration);
 builder.Services.AddMasterDataModule(builder.Configuration);
 builder.Services.AddAuthModule(builder.Configuration);
+builder.Services.AddReportingModule(builder.Configuration);
 
 // Password hasher untuk seeding admin Auth.
 builder.Services.TryAddSingleton<IPasswordHasher, Argon2idPasswordHasher>();
