@@ -1,7 +1,6 @@
 using AwesomeAssertions;
 using Wms.BuildingBlocks.Application.Messaging;
 using Wms.BuildingBlocks.Domain.Results;
-using Wms.BuildingBlocks.Infrastructure.Messaging;
 using Wms.BuildingBlocks.Infrastructure.Outbox;
 using Xunit;
 

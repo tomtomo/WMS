@@ -63,7 +63,7 @@ public sealed class ConfirmFlowTests(PostgresFixture postgres) : IAsyncLifetime
 
         var payload = System.Text.Json.JsonSerializer.Deserialize<GRConfirmed>(
             outboxRows[0].Payload,
-            Wms.BuildingBlocks.Infrastructure.Messaging.MessageEnvelope.PayloadSerializerOptions)!;
+            MessageEnvelope.PayloadSerializerOptions)!;
         payload.GrId.Should().Be(grId);
         payload.WarehouseId.Should().Be(GoodsReceiptScenarios.WarehouseId);
         payload.SupplierId.Should().Be(GoodsReceiptScenarios.SupplierId, "supplierId wajib non-null (Reporting per-supplier)");
@@ -94,7 +94,7 @@ public sealed class ConfirmFlowTests(PostgresFixture postgres) : IAsyncLifetime
 
         var payload = System.Text.Json.JsonSerializer.Deserialize<GoodsReceiptPendingReview>(
             rows[0].Payload,
-            Wms.BuildingBlocks.Infrastructure.Messaging.MessageEnvelope.PayloadSerializerOptions)!;
+            MessageEnvelope.PayloadSerializerOptions)!;
         payload.GrId.Should().Be(grId);
         payload.HasOverDelivery.Should().BeTrue();
         payload.DiscrepancyCount.Should().Be(1);

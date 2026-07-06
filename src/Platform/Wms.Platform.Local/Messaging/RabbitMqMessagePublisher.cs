@@ -4,36 +4,24 @@ using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 using Wms.BuildingBlocks.Application.Abstractions.Ports;
 using Wms.BuildingBlocks.Application.Messaging;
-using Wms.BuildingBlocks.Infrastructure.Messaging;
 
 namespace Wms.Platform.Local.Messaging;
 
 // Publisher broker Local (cloud: Service Bus core / Event Grid notif).
 public sealed class RabbitMqMessagePublisher(
     RabbitMqConnectionFactory connectionFactory,
-    IOptions<RabbitMqOptions> options,
-    TimeProvider timeProvider) : IMessagePublisher
+    IOptions<RabbitMqOptions> options) : IMessagePublisher
 {
-    public Task PublishAsync<TIntegrationEvent>(
-        TIntegrationEvent integrationEvent,
-        DeliveryClass deliveryClass,
-        CancellationToken cancellationToken = default)
-        where TIntegrationEvent : IIntegrationEvent
+    public Task PublishAsync(MessageEnvelope envelope, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(integrationEvent);
+        ArgumentNullException.ThrowIfNull(envelope);
         cancellationToken.ThrowIfCancellationRequested();
-
-        var logicalName = IntegrationEventLogicalName.Resolve(integrationEvent.GetType());
-        var envelope = MessageEnvelope.Create(
-            integrationEvent,
-            logicalName,
-            deliveryClass,
-            Guid.NewGuid(),
-            timeProvider.GetUtcNow());
 
         var settings = options.Value;
         using var channel = connectionFactory.CreateChannel();
         channel.ExchangeDeclare(settings.ExchangeName, ExchangeType.Topic, durable: true, autoDelete: false, arguments: null);
+
+        // Pastikan broker menerima message sebelum dianggap berhasil publish.
         channel.ConfirmSelect();
 
         var properties = channel.CreateBasicProperties();
@@ -49,7 +37,7 @@ public sealed class RabbitMqMessagePublisher(
         var body = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(envelope));
         channel.BasicPublish(
             exchange: settings.ExchangeName,
-            routingKey: envelope.LogicalName,
+            routingKey: RabbitMqRouting.RoutingKey(envelope.DeliveryClass, envelope.LogicalName),
             mandatory: false,
             basicProperties: properties,
             body: body);

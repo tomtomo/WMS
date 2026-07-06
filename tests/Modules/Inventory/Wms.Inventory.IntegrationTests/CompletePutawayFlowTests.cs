@@ -4,7 +4,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Wms.BuildingBlocks.Application.Abstractions;
 using Wms.BuildingBlocks.Application.Messaging;
 using Wms.BuildingBlocks.Domain.Results;
-using Wms.BuildingBlocks.Infrastructure.Messaging;
 using Wms.Inventory.Application.Abstractions;
 using Wms.Inventory.Application.Features.CompletePutaway;
 using Wms.Inventory.Contracts;

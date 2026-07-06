@@ -1,12 +1,10 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
-using Wms.BuildingBlocks.Application.Messaging;
 
-namespace Wms.BuildingBlocks.Infrastructure.Messaging;
+namespace Wms.BuildingBlocks.Application.Messaging;
 
-// Envelope berversi: metadata teknis dibungkus di luar payload domain murni.
-// Payload = JSON event POCO. Transport tak perlu inspect tipe.
+// Envelope message untuk membawa metadata dan payload event.
 public sealed partial record MessageEnvelope(
     Guid EventId,
     string LogicalName,
