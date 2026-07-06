@@ -7,6 +7,8 @@ using Wms.Inbound.Infrastructure;
 using Wms.Inventory.Infrastructure;
 using Wms.MasterData.Infrastructure;
 using Wms.MasterData.Infrastructure.Seed;
+using Wms.Notifications.Persistence;
+using Wms.Notifications.Persistence.Seed;
 using Wms.Outbound.Infrastructure;
 using Wms.Reporting.Persistence;
 
@@ -22,6 +24,7 @@ internal static class ModuleMigratorRegistry
         provider => provider.GetRequiredService<MasterDataDbContext>(),
         provider => provider.GetRequiredService<AuthDbContext>(),
         provider => provider.GetRequiredService<ReportingDbContext>(),
+        provider => provider.GetRequiredService<NotificationsDbContext>(),
     ];
 
     // Daftar seeder untuk setiap modul.
@@ -34,5 +37,8 @@ internal static class ModuleMigratorRegistry
                 provider.GetRequiredService<AuthDbContext>(),
                 provider.GetRequiredService<IPasswordHasher>(),
                 cancellationToken),
+        (provider, cancellationToken) =>
+            NotificationSubscriptionSeeder.SeedAsync(
+                provider.GetRequiredService<NotificationsDbContext>(), cancellationToken),
     ];
 }
