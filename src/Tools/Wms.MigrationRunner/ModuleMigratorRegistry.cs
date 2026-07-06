@@ -8,6 +8,7 @@ using Wms.Inventory.Infrastructure;
 using Wms.MasterData.Infrastructure;
 using Wms.MasterData.Infrastructure.Seed;
 using Wms.Outbound.Infrastructure;
+using Wms.Reporting.Persistence;
 
 namespace Wms.MigrationRunner;
 
@@ -20,6 +21,7 @@ internal static class ModuleMigratorRegistry
         provider => provider.GetRequiredService<OutboundDbContext>(),
         provider => provider.GetRequiredService<MasterDataDbContext>(),
         provider => provider.GetRequiredService<AuthDbContext>(),
+        provider => provider.GetRequiredService<ReportingDbContext>(),
     ];
 
     // Daftar seeder untuk setiap modul.
