@@ -1,5 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Wms.Auth.Infrastructure;
+using Wms.Auth.Infrastructure.Seed;
+using Wms.BuildingBlocks.Application.Abstractions.Ports;
 using Wms.Inbound.Infrastructure;
 using Wms.Inventory.Infrastructure;
 using Wms.MasterData.Infrastructure;
@@ -16,12 +19,18 @@ internal static class ModuleMigratorRegistry
         provider => provider.GetRequiredService<InventoryDbContext>(),
         provider => provider.GetRequiredService<OutboundDbContext>(),
         provider => provider.GetRequiredService<MasterDataDbContext>(),
+        provider => provider.GetRequiredService<AuthDbContext>(),
     ];
 
-    // Seed referensi non-transaksional (idempotent) per modul, dijalankan setelah migration.
+    // Daftar seeder untuk setiap modul.
     public static IReadOnlyList<Func<IServiceProvider, CancellationToken, Task>> ModuleSeeders { get; } =
     [
         (provider, cancellationToken) =>
             MasterDataSeeder.SeedAsync(provider.GetRequiredService<MasterDataDbContext>(), cancellationToken),
+        (provider, cancellationToken) =>
+            AuthSeeder.SeedAsync(
+                provider.GetRequiredService<AuthDbContext>(),
+                provider.GetRequiredService<IPasswordHasher>(),
+                cancellationToken),
     ];
 }

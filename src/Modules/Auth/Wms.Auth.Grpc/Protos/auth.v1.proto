@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package auth.v1;
+
+option csharp_namespace = "Wms.Auth.Grpc.V1";
+
+// Menyediakan data User, Role, dan Permission berdasarkan ID.
+service AuthLookup {
+  rpc GetUser (GetUserRequest) returns (UserSnapshot);
+  rpc GetRole (GetRoleRequest) returns (RoleSnapshot);
+  rpc GetPermissions (GetPermissionsRequest) returns (PermissionCatalog);
+}
+
+message GetUserRequest {
+  string user_id = 1;
+}
+
+message GetRoleRequest {
+  string role_id = 1;
+}
+
+message GetPermissionsRequest {
+}
+
+// Data user untuk kebutuhan lookup.
+message UserSnapshot {
+  string user_id = 1;
+  string username = 2;
+  string email = 3;
+  bool is_active = 4;
+  repeated string role_ids = 5;
+  repeated string assigned_warehouse_ids = 6;
+  repeated string permission_codes = 7;
+}
+
+message RoleSnapshot {
+  string role_id = 1;
+  string code = 2;
+  string name = 3;
+  bool is_active = 4;
+  repeated string permission_codes = 5;
+}
+
+message PermissionCatalog {
+  repeated PermissionSnapshot permissions = 1;
+}
+
+message PermissionSnapshot {
+  string permission_id = 1;
+  string code = 2;
+  string description = 3;
+}

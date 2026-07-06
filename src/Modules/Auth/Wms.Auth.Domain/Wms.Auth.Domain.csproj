@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Domain layer Auth: aggregate User/Role/RefreshToken, reference entity Permission. -->
+
+  <ItemGroup Label="Seedwork domain">
+    <ProjectReference Include="..\..\..\BuildingBlocks\Wms.BuildingBlocks.Domain\Wms.BuildingBlocks.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

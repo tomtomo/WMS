@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- Tool migration: migration per-module dan seed admin -->
+  <!-- Tool migration: migration per module dan seed admin -->
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -8,11 +8,12 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Platform\Wms.Platform.Hosting\Wms.Platform.Hosting.csproj" />
-    <!-- Tool di luar governance modul, boleh ref Infrastructure modul untuk migrate. -->
     <ProjectReference Include="..\..\Modules\Inbound\Wms.Inbound.Infrastructure\Wms.Inbound.Infrastructure.csproj" />
     <ProjectReference Include="..\..\Modules\Inventory\Wms.Inventory.Infrastructure\Wms.Inventory.Infrastructure.csproj" />
     <ProjectReference Include="..\..\Modules\Outbound\Wms.Outbound.Infrastructure\Wms.Outbound.Infrastructure.csproj" />
     <ProjectReference Include="..\..\Modules\MasterData\Wms.MasterData.Infrastructure\Wms.MasterData.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Modules\Auth\Wms.Auth.Infrastructure\Wms.Auth.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Platform\Wms.Platform.Local\Wms.Platform.Local.csproj" />
   </ItemGroup>
 
   <ItemGroup Label="Driver Postgres">

@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Grpc Auth: proto auth.v1 dipisah dari modul lain. -->
+
+  <ItemGroup Label="Protocol - gRPC codegen">
+    <PackageReference Include="Grpc.AspNetCore" />
+  </ItemGroup>
+
+  <ItemGroup Label="Kontrak proto published language">
+    <Protobuf Include="Protos\auth.v1.proto" GrpcServices="Both" />
+  </ItemGroup>
+
+</Project>

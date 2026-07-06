@@ -1,15 +1,13 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace Wms.MigrationRunner;
 
-// Worker sekali jalan: apply migration tiap DbContext modul lalu seed admin, lalu hentikan host
+// Jalankan migration dan seeding untuk setiap modul.
 internal sealed class MigrationWorker(
     IServiceProvider services,
-    IConfiguration configuration,
     IHostApplicationLifetime lifetime,
     ILogger<MigrationWorker> logger) : BackgroundService
 {
@@ -36,13 +34,11 @@ internal sealed class MigrationWorker(
 
             logger.LogInformation("MigrationRunner: {Count} module seeder dijalankan.", ModuleMigratorRegistry.ModuleSeeders.Count);
 
-            await AdminSeeder.SeedAsync(configuration, logger, stoppingToken).ConfigureAwait(false);
-
             logger.LogInformation("MigrationRunner selesai — exit 0.");
         }
         catch (Exception ex)
         {
-            // Boundary sekali jalan: apa pun yang gagal maka exit non zero supaya AppHost tahu migration tidak tuntas.
+            // exit code non zero jika migration gagal.
             logger.LogError(ex, "MigrationRunner gagal — exit 1.");
             Environment.ExitCode = 1;
         }
