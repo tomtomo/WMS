@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Application layer Auth: slice authN (Login/Refresh/Logout), read port, security port
+       (IJwtTokenIssuer/IEffectivePermissionResolver/IRefreshTokenFactory), read-DTO. Ref Domain, BB.Application. -->
+
+  <ItemGroup Label="Pipeline (handler MediatR, validator FluentValidation)">
+    <PackageReference Include="MediatR" />
+    <PackageReference Include="FluentValidation" />
+  </ItemGroup>
+
+  <ItemGroup Label="Domain, seedwork">
+    <ProjectReference Include="..\Wms.Auth.Domain\Wms.Auth.Domain.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Wms.BuildingBlocks.Application\Wms.BuildingBlocks.Application.csproj" />
+  </ItemGroup>
+
+</Project>
