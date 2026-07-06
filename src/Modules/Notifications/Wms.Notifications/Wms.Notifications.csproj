@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Notifications — supporting. -->
+
+  <ItemGroup Label="Persistence - EF Core, Npgsql, snake case">
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="EFCore.NamingConventions" />
+  </ItemGroup>
+
+  <ItemGroup Label="Application - MediatR mark read command, FluentValidation, dispatcher hosted service">
+    <PackageReference Include="MediatR" />
+    <PackageReference Include="FluentValidation" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+  </ItemGroup>
+
+  <ItemGroup Label="Design time - dotnet ef migrations">
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup Label="Test">
+    <InternalsVisibleTo Include="Wms.Notifications.UnitTests" />
+    <InternalsVisibleTo Include="Wms.Notifications.IntegrationTests" />
+  </ItemGroup>
+
+  <ItemGroup Label="Kernel BuildingBlocks (app/infra) + Contracts consume only lintas modul">
+    <ProjectReference Include="..\..\..\BuildingBlocks\Wms.BuildingBlocks.Application\Wms.BuildingBlocks.Application.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Wms.BuildingBlocks.Infrastructure\Wms.BuildingBlocks.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Inbound\Wms.Inbound.Contracts\Wms.Inbound.Contracts.csproj" />
+    <ProjectReference Include="..\..\Inventory\Wms.Inventory.Contracts\Wms.Inventory.Contracts.csproj" />
+    <ProjectReference Include="..\..\Outbound\Wms.Outbound.Contracts\Wms.Outbound.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

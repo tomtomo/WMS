@@ -14,6 +14,7 @@
     <ProjectReference Include="..\..\Modules\MasterData\Wms.MasterData.Infrastructure\Wms.MasterData.Infrastructure.csproj" />
     <ProjectReference Include="..\..\Modules\Auth\Wms.Auth.Infrastructure\Wms.Auth.Infrastructure.csproj" />
     <ProjectReference Include="..\..\Modules\Reporting\Wms.Reporting\Wms.Reporting.csproj" />
+    <ProjectReference Include="..\..\Modules\Notifications\Wms.Notifications\Wms.Notifications.csproj" />
     <ProjectReference Include="..\..\Platform\Wms.Platform.Local\Wms.Platform.Local.csproj" />
   </ItemGroup>
 
