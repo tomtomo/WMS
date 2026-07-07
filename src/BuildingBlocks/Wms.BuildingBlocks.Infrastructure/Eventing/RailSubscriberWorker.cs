@@ -3,6 +3,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Wms.BuildingBlocks.Application.Abstractions.Ports;
 using Wms.BuildingBlocks.Application.Messaging;
+using Wms.BuildingBlocks.Infrastructure.DeadLetter;
 
 namespace Wms.BuildingBlocks.Infrastructure.Eventing;
 
@@ -69,21 +70,37 @@ public sealed class RailSubscriberWorker(
             return true;
         }
 
-        // Jalankan setiap consumer dalam scope terpisah.
+        // Jalankan setiap consumer lewat dead letter pipeline.
         foreach (var registration in matches)
         {
-            using var scope = scopeFactory.CreateScope();
-            var result = await registration
-                .InvokeAsync(scope.ServiceProvider, envelope, cancellationToken)
-                .ConfigureAwait(false);
-            if (result.IsFailure)
+            using var deadLetterScope = scopeFactory.CreateScope();
+            var pipeline = deadLetterScope.ServiceProvider.GetRequiredService<ConsumerDeadLetterPipeline>();
+            try
             {
-                logger.LogWarning(
-                    "Rail: consumer {LogicalName}/{DeliveryClass} gagal ({Error}); nack tanpa requeue.",
+                await pipeline
+                    .ExecuteAsync(
+                        envelope.LogicalName,
+                        envelope.Payload,
+                        async attemptCancellation =>
+                        {
+                            using var scope = scopeFactory.CreateScope();
+                            return await registration
+                                .InvokeAsync(scope.ServiceProvider, envelope, attemptCancellation)
+                                .ConfigureAwait(false);
+                        },
+                        cancellationToken)
+                    .ConfigureAwait(false);
+            }
+#pragma warning disable S2221 // Pastikan kegagalan satu consumer tidak menghentikan consumer lain.
+            catch (Exception exception) when (exception is not OperationCanceledException)
+#pragma warning restore S2221
+            {
+                // Log kegagalan pipeline dan lanjutkan consumer berikutnya.
+                logger.LogError(
+                    exception,
+                    "Rail: pipeline consumer {LogicalName}/{DeliveryClass} gagal tak terduga",
                     envelope.LogicalName,
-                    envelope.DeliveryClass,
-                    result.Error.Code);
-                return false;
+                    envelope.DeliveryClass);
             }
         }
 
