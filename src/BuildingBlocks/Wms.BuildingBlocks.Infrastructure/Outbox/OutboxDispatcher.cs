@@ -8,6 +8,9 @@ public abstract class OutboxDispatcher
 {
     public const int BatchSize = 50;
 
+    // Jumlah maksimum percobaan publish sebelum dipindahkan ke dead letter.
+    public const int MaxPublishAttempts = 5;
+
     public static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(5);
 
     public async Task DispatchAsync(MessageEnvelope envelope, CancellationToken cancellationToken = default)

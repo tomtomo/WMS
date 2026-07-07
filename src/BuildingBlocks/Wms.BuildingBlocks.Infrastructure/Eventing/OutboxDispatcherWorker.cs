@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Wms.BuildingBlocks.Application.Abstractions.Ports;
 using Wms.BuildingBlocks.Application.Messaging;
 using Wms.BuildingBlocks.Infrastructure.Outbox;
 
@@ -19,6 +20,7 @@ public sealed class OutboxDispatcherWorker(
         using var scope = scopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<DbContext>();
         var dispatcher = scope.ServiceProvider.GetRequiredService<OutboxDispatcher>();
+        var deadLetterStore = scope.ServiceProvider.GetRequiredService<IDeadLetterStore>();
 
         var pending = await dbContext.Set<OutboxRecord>()
             .Where(row => row.ProcessedAt == null)
@@ -56,12 +58,27 @@ public sealed class OutboxDispatcherWorker(
 #pragma warning restore S2221
             {
                 row.AttemptCount++;
-                logger.LogWarning(
-                    exception,
-                    "Dispatch outbox {LogicalName} (event {EventId}) gagal; row tetap Pending (attempt {Attempt}).",
-                    row.LogicalName,
-                    row.Id,
-                    row.AttemptCount);
+                if (row.AttemptCount >= OutboxDispatcher.MaxPublishAttempts)
+                {
+                    // Tandai row selesai sebelum dicatat ke dead letter agar tidak diproses ulang saat restart.
+                    row.ProcessedAt = timeProvider.GetUtcNow();
+                    await deadLetterStore.StoreAsync(row.LogicalName, row.Payload, exception.Message, cancellationToken).ConfigureAwait(false);
+                    logger.LogError(
+                        exception,
+                        "Dispatch outbox {LogicalName} (event {EventId}) gagal {Attempt}× → dead_letter.",
+                        row.LogicalName,
+                        row.Id,
+                        row.AttemptCount);
+                }
+                else
+                {
+                    logger.LogWarning(
+                        exception,
+                        "Dispatch outbox {LogicalName} (event {EventId}) gagal; row tetap Pending (attempt {Attempt}).",
+                        row.LogicalName,
+                        row.Id,
+                        row.AttemptCount);
+                }
             }
         }
 

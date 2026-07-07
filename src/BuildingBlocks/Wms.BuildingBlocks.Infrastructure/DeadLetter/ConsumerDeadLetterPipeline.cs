@@ -1,8 +1,9 @@
 using Wms.BuildingBlocks.Application.Abstractions.Ports;
+using Wms.BuildingBlocks.Domain.Results;
 
 namespace Wms.BuildingBlocks.Infrastructure.DeadLetter;
 
-// Retry manual dengan MaxAttempts dan delay, lalu dead-letter. Bukan Polly, loop retry DLQ terpisah dari resilience pipeline sinkron.
+// Retry manual dengan MaxAttempts dan delay, lalu dead letter.
 public sealed class ConsumerDeadLetterPipeline(
     IDeadLetterStore deadLetterStore,
     TimeProvider timeProvider,
@@ -40,6 +41,48 @@ public sealed class ConsumerDeadLetterPipeline(
 
                 await Task.Delay(_retryDelay, timeProvider, cancellationToken);
             }
+        }
+    }
+
+    // Perlakukan Result failure seperti exception agar tetap masuk mekanisme retry.
+    public async Task ExecuteAsync(
+        string logicalName,
+        string payload,
+        Func<CancellationToken, Task<Result>> handler,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(handler);
+
+        for (var attempt = 1; attempt <= MaxAttempts; attempt++)
+        {
+            var failureReason = await RunAttemptAsync(handler, cancellationToken);
+            if (failureReason is null)
+            {
+                return;
+            }
+
+            if (attempt == MaxAttempts)
+            {
+                await deadLetterStore.StoreAsync(logicalName, payload, failureReason, cancellationToken);
+                return;
+            }
+
+            await Task.Delay(_retryDelay, timeProvider, cancellationToken);
+        }
+    }
+
+    // Jalankan satu percobaan dan kembalikan alasan kegagalan jika ada.
+    private static async Task<string?> RunAttemptAsync(
+        Func<CancellationToken, Task<Result>> handler, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var result = await handler(cancellationToken);
+            return result.IsSuccess ? null : result.Error.Code;
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            return ex.Message;
         }
     }
 }

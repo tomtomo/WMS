@@ -9,6 +9,7 @@
 
   <ItemGroup Label="Test seam — worker rail drain/subscribe">
     <InternalsVisibleTo Include="Wms.Eventing.IntegrationTests" />
+    <InternalsVisibleTo Include="Wms.Choreography.IntegrationTests" />
   </ItemGroup>
 
   <ItemGroup Label="Persistence — EF Core + Npgsql (rail tables, interceptor, xmin)">
