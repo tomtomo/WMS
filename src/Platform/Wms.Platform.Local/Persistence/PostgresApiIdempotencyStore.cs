@@ -1,41 +1,99 @@
-using System.Globalization;
 using Npgsql;
+using Wms.BuildingBlocks.Application.Abstractions;
 using Wms.BuildingBlocks.Application.Abstractions.Ports;
 
 namespace Wms.Platform.Local.Persistence;
 
-// Idempotency store REST di Postgres — mode Local (cloud: Managed Redis / Memorystore).
+// Store idempotency berbasis Postgres untuk mode local.
+// Klaim dibuat sebagai row pending, row expired boleh diambil alih, dengan owner_token sebagai fencing.
 public sealed class PostgresApiIdempotencyStore(NpgsqlDataSource dataSource, TimeProvider timeProvider)
     : IApiIdempotencyStore
 {
+    private const string StatusPending = "pending";
+    private const string StatusCompleted = "completed";
+
+    // Upgrade schema tetap idempotent, data lama dianggap sudah completed.
     private const string EnsureTableSql = """
         CREATE SCHEMA IF NOT EXISTS infrastructure;
         CREATE TABLE IF NOT EXISTS infrastructure.api_idempotency (
             idempotency_key text PRIMARY KEY,
-            response text NOT NULL,
+            status text NOT NULL,
+            response text NULL,
+            owner_token uuid NULL,
             expires_at timestamptz NOT NULL);
+        ALTER TABLE infrastructure.api_idempotency ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'completed';
+        ALTER TABLE infrastructure.api_idempotency ALTER COLUMN status DROP DEFAULT;
+        ALTER TABLE infrastructure.api_idempotency ALTER COLUMN response DROP NOT NULL;
+        ALTER TABLE infrastructure.api_idempotency ADD COLUMN IF NOT EXISTS owner_token uuid;
         """;
 
     private readonly SemaphoreSlim _bootstrapLock = new(1, 1);
     private volatile bool _bootstrapped;
 
-    public async Task<string?> GetResponseAsync(string idempotencyKey, CancellationToken cancellationToken = default)
+    public async Task<IdempotencyReservation> TryReserveAsync(
+        string idempotencyKey,
+        TimeSpan pendingTimeToLive,
+        CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(idempotencyKey);
-        await EnsureTableAsync(cancellationToken).ConfigureAwait(false);
-
-        var command = dataSource.CreateCommand(
-            "SELECT response FROM infrastructure.api_idempotency WHERE idempotency_key = @key AND expires_at > @now LIMIT 1");
-        await using (command.ConfigureAwait(false))
+        if (pendingTimeToLive <= TimeSpan.Zero)
         {
-            command.Parameters.AddWithValue("key", idempotencyKey);
-            command.Parameters.AddWithValue("now", timeProvider.GetUtcNow());
-            return await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false) as string;
+            throw new ArgumentOutOfRangeException(nameof(pendingTimeToLive), "TTL klaim pending wajib positif.");
         }
+
+        await EnsureTableAsync(cancellationToken).ConfigureAwait(false);
+        var now = timeProvider.GetUtcNow();
+        var ownerToken = Guid.NewGuid();
+
+        var reserve = dataSource.CreateCommand("""
+            INSERT INTO infrastructure.api_idempotency AS existing (idempotency_key, status, response, owner_token, expires_at)
+            VALUES (@key, 'pending', NULL, @ownerToken, @pendingExpiresAt)
+            ON CONFLICT (idempotency_key) DO UPDATE
+                SET status = EXCLUDED.status, response = EXCLUDED.response,
+                    owner_token = EXCLUDED.owner_token, expires_at = EXCLUDED.expires_at
+                WHERE existing.expires_at <= @now
+            """);
+        await using (reserve.ConfigureAwait(false))
+        {
+            reserve.Parameters.AddWithValue("key", idempotencyKey);
+            reserve.Parameters.AddWithValue("ownerToken", ownerToken);
+            reserve.Parameters.AddWithValue("pendingExpiresAt", now.Add(pendingTimeToLive));
+            reserve.Parameters.AddWithValue("now", now);
+            var claimed = await reserve.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+            if (claimed > 0)
+            {
+                return IdempotencyReservation.Reserved(ownerToken);
+            }
+        }
+
+        // Klaim sudah dipegang request lain, cek apakah hasilnya sudah tersedia.
+        var read = dataSource.CreateCommand(
+            "SELECT status, response FROM infrastructure.api_idempotency WHERE idempotency_key = @key AND expires_at > @now LIMIT 1");
+        await using (read.ConfigureAwait(false))
+        {
+            read.Parameters.AddWithValue("key", idempotencyKey);
+            read.Parameters.AddWithValue("now", now);
+            var reader = await read.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+            await using (reader.ConfigureAwait(false))
+            {
+                if (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+                {
+                    var status = reader.GetString(0);
+                    if (status == StatusCompleted && !await reader.IsDBNullAsync(1, cancellationToken).ConfigureAwait(false))
+                    {
+                        return IdempotencyReservation.Completed(reader.GetString(1));
+                    }
+                }
+            }
+        }
+
+        // Jika state berubah di antara query, biarkan retry berikutnya mencoba lagi.
+        return IdempotencyReservation.Pending;
     }
 
-    public async Task SaveResponseAsync(
+    public async Task CompleteAsync(
         string idempotencyKey,
+        Guid ownerToken,
         string response,
         TimeSpan timeToLive,
         CancellationToken cancellationToken = default)
@@ -49,20 +107,36 @@ public sealed class PostgresApiIdempotencyStore(NpgsqlDataSource dataSource, Tim
 
         await EnsureTableAsync(cancellationToken).ConfigureAwait(false);
 
+        // Hanya pemilik klaim aktif yang boleh menyimpan hasil.
         var command = dataSource.CreateCommand("""
-            INSERT INTO infrastructure.api_idempotency AS existing (idempotency_key, response, expires_at)
-            VALUES (@key, @response, @expiresAt)
-            ON CONFLICT (idempotency_key) DO UPDATE
-                SET response = EXCLUDED.response, expires_at = EXCLUDED.expires_at
-                WHERE existing.expires_at <= @now
+            UPDATE infrastructure.api_idempotency
+            SET status = 'completed', response = @response, owner_token = NULL, expires_at = @expiresAt
+            WHERE idempotency_key = @key AND status = 'pending' AND owner_token = @ownerToken
             """);
         await using (command.ConfigureAwait(false))
         {
-            var now = timeProvider.GetUtcNow();
             command.Parameters.AddWithValue("key", idempotencyKey);
+            command.Parameters.AddWithValue("ownerToken", ownerToken);
             command.Parameters.AddWithValue("response", response);
-            command.Parameters.AddWithValue("expiresAt", now.Add(timeToLive));
-            command.Parameters.AddWithValue("now", now);
+            command.Parameters.AddWithValue("expiresAt", timeProvider.GetUtcNow().Add(timeToLive));
+            await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    public async Task ReleaseAsync(string idempotencyKey, Guid ownerToken, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(idempotencyKey);
+        await EnsureTableAsync(cancellationToken).ConfigureAwait(false);
+
+        var command = dataSource.CreateCommand("""
+            DELETE FROM infrastructure.api_idempotency
+            WHERE idempotency_key = @key AND status = @pending AND owner_token = @ownerToken
+            """);
+        await using (command.ConfigureAwait(false))
+        {
+            command.Parameters.AddWithValue("key", idempotencyKey);
+            command.Parameters.AddWithValue("pending", StatusPending);
+            command.Parameters.AddWithValue("ownerToken", ownerToken);
             await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
         }
     }

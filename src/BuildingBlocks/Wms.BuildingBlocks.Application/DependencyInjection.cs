@@ -3,6 +3,8 @@ using FluentValidation;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.FeatureManagement;
 using Wms.BuildingBlocks.Application;
+using Wms.BuildingBlocks.Application.Abstractions;
+using Wms.BuildingBlocks.Application.Abstractions.Ports;
 using Wms.BuildingBlocks.Application.Behaviors;
 
 namespace Microsoft.Extensions.DependencyInjection;
@@ -34,6 +36,13 @@ public static class DependencyInjection
         // Clock untuk AuditLog/Logging.
         services.TryAddSingleton(TimeProvider.System);
 
+        return services;
+    }
+
+    // Daftarkan system actor jika belum ada ICurrentUser lain.
+    public static IServiceCollection AddSystemCurrentUser(this IServiceCollection services)
+    {
+        services.TryAddSingleton<ICurrentUser, SystemCurrentUser>();
         return services;
     }
 }

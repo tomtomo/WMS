@@ -146,6 +146,27 @@ public sealed class RestApiTests(PostgresFixture postgres) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Idempotency_key_duplikat_konkuren_satu_eksekusi()
+    {
+        var responses = await Task.WhenAll(
+            Enumerable.Range(0, 6).Select(async _ =>
+            {
+                using var request = BuildCreateRequest("key-race");
+                return await _client.SendAsync(request);
+            }));
+
+        // Pemenang 201; yang kalah boleh 409 (masih pending) atau 201 replay (sudah completed).
+        responses.Should().OnlyContain(response =>
+            response.StatusCode == HttpStatusCode.Created || response.StatusCode == HttpStatusCode.Conflict);
+        responses.Should().Contain(response => response.StatusCode == HttpStatusCode.Created);
+
+        var total = await PipelineRunner.QueryDbAsync(_app.Services, async context =>
+            await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.CountAsync(
+                context.Set<Wms.Inbound.Domain.GoodsReceipt>()));
+        total.Should().Be(1, "duplikat konkuren tidak boleh menghasilkan side-effect ganda");
+    }
+
+    [Fact]
     public async Task Upload_dan_download_url_attachment_via_rest()
     {
         var grId = await CreateViaRestAsync();

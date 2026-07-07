@@ -8,7 +8,7 @@ internal static class ArchitectureFixture
 {
     private static readonly string[] _moduleLayers = ["Domain", "Application", "Infrastructure", "Api", "Contracts", "Grpc"];
 
-    // Executable/tool Wms yang bukan subjek dependency rule modul (host orchestrator, tool migration, suite ini sendiri).
+    // Project host/tool yang tidak ikut aturan dependency modul.
     private static readonly string[] _excludedFromGovernance = ["Wms.Architecture.Tests", "Wms.AppHost", "Wms.MigrationRunner"];
 
     public static string RepoRoot { get; } = FindRepoRoot();
@@ -51,7 +51,6 @@ internal static class ArchitectureFixture
             && _moduleLayers.Contains(LastSegment(name));
     }
 
-    // 'Wms.Inbound.Domain' → 'Wms.Inbound'
     public static string ModuleKey(Assembly assembly)
     {
         var name = Name(assembly);
@@ -62,6 +61,23 @@ internal static class ArchitectureFixture
     public static string LayerOf(Assembly assembly) => LastSegment(Name(assembly));
 
     public static string Name(Assembly assembly) => assembly.GetName().Name ?? string.Empty;
+
+    // Cek apakah type ini turunan AggregateRoot<TId>.
+    public static bool IsAggregateRoot(Type type)
+    {
+        ArgumentNullException.ThrowIfNull(type);
+
+        for (var current = type.BaseType; current is not null; current = current.BaseType)
+        {
+            if (current.IsGenericType
+                && current.GetGenericTypeDefinition() == typeof(Wms.BuildingBlocks.Domain.Primitives.AggregateRoot<>))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     private static bool HasLayer(Assembly assembly, string layer)
     {
@@ -91,7 +107,7 @@ internal static class ArchitectureFixture
             }
             catch (Exception ex) when (ex is BadImageFormatException or FileLoadException or FileNotFoundException)
             {
-                // DLL tidak terkelola / tak bisa dimuat by identity
+                // Assembly yang tidak bisa dimuat.
             }
         }
 

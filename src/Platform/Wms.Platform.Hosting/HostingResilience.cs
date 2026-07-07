@@ -3,7 +3,7 @@ using Wms.BuildingBlocks.Infrastructure.Resilience;
 
 namespace Microsoft.Extensions.Hosting;
 
-// Default semua HttpClient: standard resilience. Klien gRPC s2s mengoverride profilnya via AddGrpcResilience per klien.
+// Default untuk HttpClient biasa. gRPC internal pakai AddInternalGrpcClient agar tidak kena dua resilience handler.
 public static class HostingResilience
 {
     public static IHostApplicationBuilder AddDefaultHttpClientDefaults(this IHostApplicationBuilder builder)

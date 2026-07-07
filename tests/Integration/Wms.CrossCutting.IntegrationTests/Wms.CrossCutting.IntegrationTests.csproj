@@ -1,0 +1,62 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Cross-cutting hardening : audit, concurrency, resilience sweep lintas modul -->
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup Label="Harness test">
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="coverlet.collector">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="AwesomeAssertions" />
+  </ItemGroup>
+
+  <ItemGroup Label="Testcontainers Postgres, host DI, clock">
+    <PackageReference Include="Testcontainers.PostgreSql" />
+    <PackageReference Include="Npgsql" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" />
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+  </ItemGroup>
+
+  <ItemGroup Label="Seedwork dan platform">
+    <ProjectReference Include="..\..\..\src\BuildingBlocks\Wms.BuildingBlocks.Application\Wms.BuildingBlocks.Application.csproj" />
+    <ProjectReference Include="..\..\..\src\BuildingBlocks\Wms.BuildingBlocks.Infrastructure\Wms.BuildingBlocks.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\src\BuildingBlocks\Wms.BuildingBlocks.Web\Wms.BuildingBlocks.Web.csproj" />
+    <ProjectReference Include="..\..\..\src\Platform\Wms.Platform.Local\Wms.Platform.Local.csproj" />
+    <ProjectReference Include="..\..\..\src\Platform\Wms.Platform.Hosting\Wms.Platform.Hosting.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Label="Modul yang di sweep">
+    <ProjectReference Include="..\..\..\src\Modules\Inbound\Wms.Inbound.Application\Wms.Inbound.Application.csproj" />
+    <ProjectReference Include="..\..\..\src\Modules\Inbound\Wms.Inbound.Infrastructure\Wms.Inbound.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\src\Modules\Inbound\Wms.Inbound.Contracts\Wms.Inbound.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\src\Modules\Inventory\Wms.Inventory.Application\Wms.Inventory.Application.csproj" />
+    <ProjectReference Include="..\..\..\src\Modules\Inventory\Wms.Inventory.Infrastructure\Wms.Inventory.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\src\Modules\Inventory\Wms.Inventory.Contracts\Wms.Inventory.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\src\Modules\Outbound\Wms.Outbound.Application\Wms.Outbound.Application.csproj" />
+    <ProjectReference Include="..\..\..\src\Modules\Outbound\Wms.Outbound.Infrastructure\Wms.Outbound.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\src\Modules\Outbound\Wms.Outbound.Contracts\Wms.Outbound.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\src\Modules\MasterData\Wms.MasterData.Application\Wms.MasterData.Application.csproj" />
+    <ProjectReference Include="..\..\..\src\Modules\MasterData\Wms.MasterData.Infrastructure\Wms.MasterData.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\src\Modules\MasterData\Wms.MasterData.Grpc\Wms.MasterData.Grpc.csproj" />
+    <ProjectReference Include="..\..\..\src\Modules\MasterData\Wms.MasterData.Api\Wms.MasterData.Api.csproj" />
+    <ProjectReference Include="..\..\..\src\Modules\Auth\Wms.Auth.Application\Wms.Auth.Application.csproj" />
+    <ProjectReference Include="..\..\..\src\Modules\Auth\Wms.Auth.Infrastructure\Wms.Auth.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\src\Modules\Notifications\Wms.Notifications\Wms.Notifications.csproj" />
+  </ItemGroup>
+
+</Project>

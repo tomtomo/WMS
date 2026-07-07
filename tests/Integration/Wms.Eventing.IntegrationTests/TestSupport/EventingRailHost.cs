@@ -22,7 +22,7 @@ internal static class EventingRailHost
         var configuration = BuildConfiguration(wmsConnectionString, rabbitConnectionString);
         var services = new ServiceCollection();
         services.AddLogging();
-        services.AddSingleton<ICurrentUser, SystemCurrentUser>();
+        services.AddSystemCurrentUser();
         services.AddBuildingBlocksInfrastructure("wms-inbound-producer");
         services.AddInboundModule(configuration);
         AddRailTransport(services, configuration, exchange);
@@ -36,7 +36,7 @@ internal static class EventingRailHost
         var configuration = BuildConfiguration(wmsConnectionString, rabbitConnectionString);
         var services = new ServiceCollection();
         services.AddLogging();
-        services.AddSingleton<ICurrentUser, SystemCurrentUser>();
+        services.AddSystemCurrentUser();
         services.AddApplicationBuildingBlocks(typeof(ReportingDbContext).Assembly);
         services.AddBuildingBlocksInfrastructure("wms-reporting-consumer");
         services.AddReportingModule(configuration);

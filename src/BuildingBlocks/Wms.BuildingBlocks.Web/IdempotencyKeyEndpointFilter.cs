@@ -1,17 +1,26 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
+using Wms.BuildingBlocks.Application.Abstractions;
 using Wms.BuildingBlocks.Application.Abstractions.Ports;
+using Wms.BuildingBlocks.Domain.Results;
 
 namespace Wms.BuildingBlocks.Web;
 
-// Honor 'Idempotency-Key'
+// Menangani Idempotency Key agar request duplikat tidak diproses ulang.
 public sealed class IdempotencyKeyEndpointFilter(IApiIdempotencyStore store) : IEndpointFilter
 {
     public const string HeaderName = "Idempotency-Key";
 
     private static readonly TimeSpan _timeToLive = TimeSpan.FromHours(24);
 
+    // Pending claim otomatis kedaluwarsa agar key tidak terkunci jika proses berhenti.
+    private static readonly TimeSpan _pendingTimeToLive = TimeSpan.FromMinutes(1);
+
     private static readonly JsonSerializerOptions _serializerOptions = new(JsonSerializerDefaults.Web);
+
+    private static readonly Error _inProgressError = new(
+        "idempotency.in_progress",
+        "Request dengan Idempotency-Key sama sedang diproses; tunggu sampai selesai lalu coba lagi.");
 
     public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
     {
@@ -24,12 +33,12 @@ public sealed class IdempotencyKeyEndpointFilter(IApiIdempotencyStore store) : I
             return await next(context);
         }
 
-        // Key di scope per endpoint (method dan path) — key sama di endpoint berbeda tidak saling replay.
+        // Key yang sama tetap dianggap berbeda jika endpointnya berbeda.
         var storeKey = $"{request.Method}:{request.Path}:{header}";
-        var cached = await store.GetResponseAsync(storeKey, context.HttpContext.RequestAborted);
-        if (cached is not null)
+        var reservation = await store.TryReserveAsync(storeKey, _pendingTimeToLive, context.HttpContext.RequestAborted);
+        if (reservation is { Status: IdempotencyReservationStatus.Completed, StoredResponse: not null })
         {
-            var replay = JsonSerializer.Deserialize<StoredResponse>(cached, _serializerOptions);
+            var replay = JsonSerializer.Deserialize<StoredResponse>(reservation.StoredResponse, _serializerOptions);
             if (replay is not null)
             {
                 return replay.Body is null
@@ -38,9 +47,28 @@ public sealed class IdempotencyKeyEndpointFilter(IApiIdempotencyStore store) : I
             }
         }
 
-        var result = await next(context);
+        if (reservation.Status == IdempotencyReservationStatus.Pending)
+        {
+            var problem = ProblemDetailsMapper.ToProblemDetails(
+                ResultErrorType.Conflict,
+                _inProgressError,
+                CorrelationId.Get(context.HttpContext));
+            return Results.Problem(problem);
+        }
 
-        // Hanya sukses yang disimpan — kegagalan bisnis boleh beda saat retry.
+        object? result;
+        try
+        {
+            result = await next(context);
+        }
+        catch
+        {
+            // Lepas klaim agar request berikutnya bisa retry
+            await ReleaseQuietlyAsync(storeKey, reservation.OwnerToken);
+            throw;
+        }
+
+        // Hanya sukses yang disimpan, kegagalan bisnis boleh beda saat retry.
         var statusCode = (result as IStatusCodeHttpResult)?.StatusCode ?? StatusCodes.Status200OK;
         if (statusCode is >= StatusCodes.Status200OK and < StatusCodes.Status300MultipleChoices)
         {
@@ -48,11 +76,30 @@ public sealed class IdempotencyKeyEndpointFilter(IApiIdempotencyStore store) : I
             var body = value is null ? null : JsonSerializer.Serialize(value, _serializerOptions);
             var stored = JsonSerializer.Serialize(new StoredResponse(statusCode, body), _serializerOptions);
 
-            // Penyimpanan kuitansi tidak boleh batal karena klien disconnect.
-            await store.SaveResponseAsync(storeKey, stored, _timeToLive, CancellationToken.None);
+            // Tetap simpan hasil meski request klien sudah putus.
+            await store.CompleteAsync(storeKey, reservation.OwnerToken, stored, _timeToLive, CancellationToken.None);
+        }
+        else
+        {
+            await ReleaseQuietlyAsync(storeKey, reservation.OwnerToken);
         }
 
         return result;
+    }
+
+    // Gagal release tidak boleh menimpa hasil request asli.
+    private async Task ReleaseQuietlyAsync(string storeKey, Guid ownerToken)
+    {
+        try
+        {
+            await store.ReleaseAsync(storeKey, ownerToken, CancellationToken.None);
+        }
+#pragma warning disable RCS1075
+        catch (Exception)
+        {
+            // Abaikan, klaim pending akan kedaluwarsa sendiri.
+        }
+#pragma warning restore RCS1075
     }
 
     private sealed record StoredResponse(int StatusCode, string? Body);
