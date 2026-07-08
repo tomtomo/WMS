@@ -23,12 +23,13 @@ public sealed partial class AuditCoverageRule
 
         behaviors.Should().Equal(
             [
+                typeof(AuthorizationBehavior<,>),
                 typeof(ValidationBehavior<,>),
                 typeof(TransactionBehavior<,>),
                 typeof(AuditLogBehavior<,>),
                 typeof(LoggingBehavior<,>),
             ],
-            "urutan pipeline Validation, Transaction, AuditLog, Logging (named FF)");
+            "urutan pipeline Authorization, Validation, Transaction, AuditLog, Logging (named FF)");
     }
 
     [Fact]

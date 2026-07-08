@@ -9,7 +9,7 @@ using Wms.BuildingBlocks.Application.Behaviors;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
-// Registrasi kernel Application untuk host: MediatR, 4 pipeline behavior dengan urutan Validation lalu Transaction lalu AuditLog lalu Logging, FluentValidation, feature management.
+// Registrasi kernel Application untuk host: MediatR, 5 pipeline behavior dengan urutan Authorization lalu Validation lalu Transaction lalu AuditLog lalu Logging, FluentValidation, feature management.
 public static class DependencyInjection
 {
     public static IServiceCollection AddApplicationBuildingBlocks(
@@ -24,6 +24,9 @@ public static class DependencyInjection
         services.AddMediatR(configuration =>
         {
             configuration.RegisterServicesFromAssemblies(scanAssemblies);
+
+            // AuthZ paling depan: tolak sebelum validasi/transaksi/handler
+            configuration.AddOpenBehavior(typeof(AuthorizationBehavior<,>));
             configuration.AddOpenBehavior(typeof(ValidationBehavior<,>));
             configuration.AddOpenBehavior(typeof(TransactionBehavior<,>));
             configuration.AddOpenBehavior(typeof(AuditLogBehavior<,>));

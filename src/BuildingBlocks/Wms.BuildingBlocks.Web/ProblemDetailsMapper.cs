@@ -11,6 +11,7 @@ public static class ProblemDetailsMapper
     public static int ToStatusCode(ResultErrorType errorType) => errorType switch
     {
         ResultErrorType.Validation => StatusCodes.Status400BadRequest,
+        ResultErrorType.Forbidden => StatusCodes.Status403Forbidden,
         ResultErrorType.NotFound => StatusCodes.Status404NotFound,
         ResultErrorType.Conflict => StatusCodes.Status409Conflict,
 
@@ -43,6 +44,7 @@ public static class ProblemDetailsMapper
     // URL rujukan
     private static string TypeFor(int status) => status switch
     {
+        StatusCodes.Status403Forbidden => "https://tools.ietf.org/html/rfc9110#section-15.5.4",
         StatusCodes.Status404NotFound => "https://tools.ietf.org/html/rfc9110#section-15.5.5",
         StatusCodes.Status409Conflict => "https://tools.ietf.org/html/rfc9110#section-15.5.10",
         StatusCodes.Status422UnprocessableEntity => "https://tools.ietf.org/html/rfc9110#section-15.5.21",

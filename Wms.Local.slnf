@@ -50,7 +50,8 @@
       "tests\\BuildingBlocks\\Wms.BuildingBlocks.Web.Tests\\Wms.BuildingBlocks.Web.Tests.csproj",
       "tests\\Integration\\Wms.Eventing.IntegrationTests\\Wms.Eventing.IntegrationTests.csproj",
       "tests\\Integration\\Wms.Choreography.IntegrationTests\\Wms.Choreography.IntegrationTests.csproj",
-      "tests\\Integration\\Wms.CrossCutting.IntegrationTests\\Wms.CrossCutting.IntegrationTests.csproj"
+      "tests\\Integration\\Wms.CrossCutting.IntegrationTests\\Wms.CrossCutting.IntegrationTests.csproj",
+      "tests\\Integration\\Wms.Authorization.IntegrationTests\\Wms.Authorization.IntegrationTests.csproj"
     ]
   }
 }

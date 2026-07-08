@@ -17,7 +17,7 @@ namespace Wms.Auth.IntegrationTests;
 [Collection(PostgresCollection.Name)]
 public sealed class GrpcLookupTests(PostgresFixture postgres) : IAsyncLifetime
 {
-    private const int CatalogSize = 16;
+    private const int CatalogSize = 23;
 
     private WebApplication _app = null!;
     private GrpcChannel _channel = null!;

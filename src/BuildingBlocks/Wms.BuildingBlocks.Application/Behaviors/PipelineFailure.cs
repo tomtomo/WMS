@@ -27,6 +27,7 @@ internal static class PipelineFailure
         ResultErrorType.Validation => Result.Invalid(error),
         ResultErrorType.Conflict => Result.Conflict(error),
         ResultErrorType.NotFound => Result.NotFound(error),
+        ResultErrorType.Forbidden => Result.Forbidden(error),
         _ => Result.Failure(error),
     };
 
@@ -43,6 +44,7 @@ internal static class PipelineFailure
             [ResultErrorType.Validation] = Closed(nameof(Result.Invalid)),
             [ResultErrorType.Conflict] = Closed(nameof(Result.Conflict)),
             [ResultErrorType.NotFound] = Closed(nameof(Result.NotFound)),
+            [ResultErrorType.Forbidden] = Closed(nameof(Result.Forbidden)),
             [ResultErrorType.Failure] = Closed(nameof(Result.Failure)),
         };
     }

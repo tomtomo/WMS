@@ -42,6 +42,11 @@ public class Result
 
     public static Result<TValue> NotFound<TValue>(Error error)
         => new(default!, false, ResultErrorType.NotFound, error);
+
+    public static Result Forbidden(Error error) => new(false, ResultErrorType.Forbidden, error);
+
+    public static Result<TValue> Forbidden<TValue>(Error error)
+        => new(default!, false, ResultErrorType.Forbidden, error);
 }
 
 // Result<T> membawa nilai di jalur sukses.
