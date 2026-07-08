@@ -20,22 +20,29 @@ public static class AuthSeeder
 
     private const string AdminRoleCode = "Admin";
 
-    // Daftar permission yang akan di seed.
+    // Daftar permission yang dikenali aplikasi.
     private static readonly (string Code, string Description)[] _catalog =
     [
         ("Inbound.CreateGR", "Buat Goods Receipt"),
-        ("Inbound.ScanItem", "Scan item saat receiving"),
+        ("Inbound.ScanGR", "Scan item saat receiving"),
+        ("Inbound.CompleteScanGR", "Selesaikan scan Goods Receipt"),
+        ("Inbound.ResolveGR", "Selesaikan discrepancy GR"),
         ("Inbound.PostGR", "Posting/konfirmasi Goods Receipt"),
         ("Inbound.HoldGR", "Tahan Goods Receipt"),
-        ("Inbound.ResolveDiscrepancy", "Selesaikan discrepancy GR"),
+        ("Inbound.UploadGRAttachment", "Unggah attachment GR"),
+        ("Inbound.DeleteGRAttachment", "Hapus attachment GR"),
+        ("Inbound.ReadGR", "Lihat Goods Receipt"),
         ("Inventory.CompletePutaway", "Selesaikan putaway"),
+        ("Inventory.ReadStock", "Lihat stok"),
         ("Inventory.AdjustStock", "Penyesuaian stok"),
         ("Outbound.CreateWave", "Buat wave"),
-        ("Outbound.CompletePicking", "Selesaikan picking"),
+        ("Outbound.CompletePickingTask", "Selesaikan picking task"),
         ("Outbound.DispatchWave", "Dispatch wave"),
+        ("Outbound.Read", "Lihat outbound"),
         ("MasterData.ManageWarehouse", "Kelola warehouse"),
         ("MasterData.ManageLocation", "Kelola location"),
         ("MasterData.ManageProduct", "Kelola product"),
+        ("MasterData.Read", "Lihat master data"),
         ("Auth.ManageUser", "Kelola user"),
         ("Auth.ManageRole", "Kelola role"),
         ("Auth.AssignPermission", "Assign permission ke role"),
@@ -47,22 +54,29 @@ public static class AuthSeeder
         (AdminRoleCode, "Administrator", []),
         ("WarehouseManager", "Warehouse Manager",
         [
-            "Inbound.CreateGR", "Inbound.ScanItem", "Inbound.PostGR", "Inbound.HoldGR", "Inbound.ResolveDiscrepancy",
-            "Inventory.CompletePutaway", "Inventory.AdjustStock",
-            "Outbound.CreateWave", "Outbound.CompletePicking", "Outbound.DispatchWave",
-            "MasterData.ManageWarehouse", "MasterData.ManageLocation", "MasterData.ManageProduct",
+            "Inbound.CreateGR", "Inbound.ScanGR", "Inbound.CompleteScanGR", "Inbound.ResolveGR", "Inbound.PostGR",
+            "Inbound.HoldGR", "Inbound.UploadGRAttachment", "Inbound.DeleteGRAttachment", "Inbound.ReadGR",
+            "Inventory.CompletePutaway", "Inventory.AdjustStock", "Inventory.ReadStock",
+            "Outbound.CreateWave", "Outbound.CompletePickingTask", "Outbound.DispatchWave", "Outbound.Read",
+            "MasterData.ManageWarehouse", "MasterData.ManageLocation", "MasterData.ManageProduct", "MasterData.Read",
         ]),
         ("Supervisor", "Supervisor",
         [
-            "Inbound.PostGR", "Inbound.HoldGR", "Inbound.ResolveDiscrepancy",
-            "Outbound.CreateWave", "Outbound.DispatchWave",
+            "Inbound.PostGR", "Inbound.HoldGR", "Inbound.ResolveGR", "Inbound.ReadGR",
+            "Inventory.ReadStock",
+            "Outbound.CreateWave", "Outbound.DispatchWave", "Outbound.Read",
+            "MasterData.Read",
         ]),
         ("Operator", "Operator",
         [
-            "Inbound.CreateGR", "Inbound.ScanItem",
-            "Inventory.CompletePutaway", "Outbound.CompletePicking",
+            "Inbound.CreateGR", "Inbound.ScanGR", "Inbound.CompleteScanGR", "Inbound.ReadGR",
+            "Inventory.CompletePutaway", "Inventory.ReadStock",
+            "Outbound.CompletePickingTask", "Outbound.Read",
         ]),
-        ("Viewer", "Viewer", []),
+        ("Viewer", "Viewer",
+        [
+            "Inbound.ReadGR", "Inventory.ReadStock", "Outbound.Read", "MasterData.Read",
+        ]),
     ];
 
     public static async Task SeedAsync(
@@ -77,6 +91,9 @@ public static class AuthSeeder
         await SeedRolesAsync(context, permissionsByCode, cancellationToken);
         await SeedAdminAsync(context, passwordHasher, cancellationToken);
     }
+
+    // Kode katalog ter-seed — dibaca FF anti-drift (enforced ⊆ katalog) tanpa langgar FF#3.
+    public static IReadOnlyList<string> CatalogCodes() => Array.ConvertAll(_catalog, entry => entry.Code);
 
     private static async Task<Dictionary<string, Guid>> SeedPermissionsAsync(AuthDbContext context, CancellationToken cancellationToken)
     {

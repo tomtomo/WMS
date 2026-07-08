@@ -5,6 +5,7 @@ using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using Wms.Auth.Application.Abstractions;
 using Wms.Auth.Domain;
+using Wms.BuildingBlocks.Application.Abstractions;
 using Wms.BuildingBlocks.Application.Abstractions.Ports;
 
 namespace Wms.Auth.Infrastructure.Security;
@@ -48,11 +49,11 @@ internal sealed class JwtTokenIssuer(
 
         var claims = new List<Claim>
         {
-            new("sub", user.Id.Value.ToString()),
-            new("username", user.Username),
+            new(WmsClaimTypes.Subject, user.Id.Value.ToString()),
+            new(WmsClaimTypes.Username, user.Username),
         };
-        claims.AddRange(permissionCodes.Select(code => new Claim("permission", code)));
-        claims.AddRange(user.AssignedWarehouseIds.Select(id => new Claim("warehouse", id.ToString())));
+        claims.AddRange(permissionCodes.Select(code => new Claim(WmsClaimTypes.Permission, code)));
+        claims.AddRange(user.AssignedWarehouseIds.Select(id => new Claim(WmsClaimTypes.Warehouse, id.ToString())));
 
         var descriptor = new SecurityTokenDescriptor
         {

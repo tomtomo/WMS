@@ -4,6 +4,7 @@ using Wms.Auth.Application.Abstractions;
 using Wms.Auth.Infrastructure;
 using Wms.Auth.Infrastructure.Persistence;
 using Wms.Auth.Infrastructure.Security;
+using Wms.BuildingBlocks.Application.Abstractions.Ports;
 using Wms.BuildingBlocks.Infrastructure.Persistence;
 
 namespace Microsoft.Extensions.DependencyInjection;
@@ -56,6 +57,9 @@ public static class AuthModuleServiceCollectionExtensions
         // Security
         services.AddScoped<IJwtTokenIssuer, JwtTokenIssuer>();
         services.AddSingleton<IRefreshTokenFactory, RefreshTokenFactory>();
+
+        // Adapter status aktif untuk IsActive filter (BuildingBlocks.Web) via IUserReader (null = Disabled).
+        services.AddScoped<IActiveUserChecker, ActiveUserChecker>();
 
         return services;
     }

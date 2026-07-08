@@ -11,6 +11,7 @@ public static class GrpcStatusMapper
     public static StatusCode ToStatusCode(ResultErrorType errorType) => errorType switch
     {
         ResultErrorType.Validation => StatusCode.InvalidArgument,
+        ResultErrorType.Forbidden => StatusCode.PermissionDenied,
         ResultErrorType.NotFound => StatusCode.NotFound,
         ResultErrorType.Conflict => StatusCode.Aborted,
 

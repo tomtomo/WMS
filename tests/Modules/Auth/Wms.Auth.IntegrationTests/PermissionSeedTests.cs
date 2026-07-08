@@ -13,7 +13,7 @@ namespace Wms.Auth.IntegrationTests;
 [Collection(PostgresCollection.Name)]
 public sealed class PermissionSeedTests(PostgresFixture postgres) : IAsyncLifetime
 {
-    private const int CatalogSize = 16;
+    private const int CatalogSize = 23;
 
     private ServiceProvider _provider = null!;
 
@@ -77,19 +77,19 @@ public sealed class PermissionSeedTests(PostgresFixture postgres) : IAsyncLifeti
         await AuthTestHost.SeedAsync(_provider);
 
         Guid postGr;
-        Guid scanItem;
+        Guid scanGr;
         Guid holdGr;
         using (var seedScope = _provider.CreateScope())
         {
             var catalog = await seedScope.ServiceProvider.GetRequiredService<IPermissionReader>().ListAsync();
             postGr = catalog.First(permission => permission.Code == "Inbound.PostGR").PermissionId;
-            scanItem = catalog.First(permission => permission.Code == "Inbound.ScanItem").PermissionId;
+            scanGr = catalog.First(permission => permission.Code == "Inbound.ScanGR").PermissionId;
             holdGr = catalog.First(permission => permission.Code == "Inbound.HoldGR").PermissionId;
         }
 
-        // Dua role dengan permission tumpang tindih di Inbound.ScanItem.
-        var roleA = await AuthScenarios.CreateRoleAsync(_provider, "OverlapA", "Overlap A", [postGr, scanItem]);
-        var roleB = await AuthScenarios.CreateRoleAsync(_provider, "OverlapB", "Overlap B", [scanItem, holdGr]);
+        // Dua role dengan permission tumpang tindih di Inbound.ScanGR.
+        var roleA = await AuthScenarios.CreateRoleAsync(_provider, "OverlapA", "Overlap A", [postGr, scanGr]);
+        var roleB = await AuthScenarios.CreateRoleAsync(_provider, "OverlapB", "Overlap B", [scanGr, holdGr]);
         var userId = await AuthScenarios.CreateUserAsync(_provider, "overlapuser", "P@ssw0rd-123", roleIds: [roleA, roleB]);
 
         using var scope = _provider.CreateScope();
@@ -97,6 +97,6 @@ public sealed class PermissionSeedTests(PostgresFixture postgres) : IAsyncLifeti
 
         dto.Should().NotBeNull();
         dto!.PermissionCodes.Should().HaveCount(3).And.OnlyHaveUniqueItems("union tanpa duplikat meski dua role overlap");
-        dto.PermissionCodes.Should().Contain("Inbound.PostGR").And.Contain("Inbound.ScanItem").And.Contain("Inbound.HoldGR");
+        dto.PermissionCodes.Should().Contain("Inbound.PostGR").And.Contain("Inbound.ScanGR").And.Contain("Inbound.HoldGR");
     }
 }
