@@ -18,9 +18,9 @@ public sealed class WarehouseEndpoints : IEndpoint
         var group = MasterDataApiRoutes.Warehouses(app);
         group.MapGet("/", ListAsync).WithName("ListWarehouses");
         group.MapGet("/{warehouseId:guid}", GetByIdAsync).WithName("GetWarehouse");
-        group.MapPost("/", CreateAsync).WithName("CreateWarehouse");
-        group.MapPut("/{warehouseId:guid}", UpdateAsync).WithName("UpdateWarehouse");
-        group.MapDelete("/{warehouseId:guid}", DeactivateAsync).WithName("DeactivateWarehouse");
+        group.MapPost("/", CreateAsync).WithName("CreateWarehouse").WithIdempotencyKey();
+        group.MapPut("/{warehouseId:guid}", UpdateAsync).WithName("UpdateWarehouse").WithIdempotencyKey();
+        group.MapDelete("/{warehouseId:guid}", DeactivateAsync).WithName("DeactivateWarehouse").WithIdempotencyKey();
     }
 
     private static async Task<IResult> ListAsync(

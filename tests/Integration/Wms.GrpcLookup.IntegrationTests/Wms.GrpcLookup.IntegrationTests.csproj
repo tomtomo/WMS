@@ -1,0 +1,58 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- core memakai gRPC lookup MasterData -->
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup Label="Harness test">
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="coverlet.collector">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="AwesomeAssertions" />
+  </ItemGroup>
+
+  <ItemGroup Label="Postgres, host in memory, client gRPC">
+    <PackageReference Include="Testcontainers.PostgreSql" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="Grpc.Net.Client" />
+    <PackageReference Include="Npgsql" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" />
+  </ItemGroup>
+
+  <ItemGroup Label="MasterData service">
+    <ProjectReference Include="..\..\..\src\Modules\MasterData\Wms.MasterData.Api\Wms.MasterData.Api.csproj" />
+    <ProjectReference Include="..\..\..\src\Modules\MasterData\Wms.MasterData.Application\Wms.MasterData.Application.csproj" />
+    <ProjectReference Include="..\..\..\src\Modules\MasterData\Wms.MasterData.Infrastructure\Wms.MasterData.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\src\Modules\MasterData\Wms.MasterData.Grpc\Wms.MasterData.Grpc.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Label="Adapter reader core (subjek di bawah test)">
+    <ProjectReference Include="..\..\..\src\Modules\Inbound\Wms.Inbound.Infrastructure\Wms.Inbound.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\src\Modules\Outbound\Wms.Outbound.Infrastructure\Wms.Outbound.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Label="Auth service, IUserDirectory adapter Notifications (subjek di bawah test)">
+    <ProjectReference Include="..\..\..\src\Modules\Auth\Wms.Auth.Api\Wms.Auth.Api.csproj" />
+    <ProjectReference Include="..\..\..\src\Modules\Auth\Wms.Auth.Infrastructure\Wms.Auth.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\src\Modules\Notifications\Wms.Notifications\Wms.Notifications.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Label="Kernel, platform Local">
+    <ProjectReference Include="..\..\..\src\BuildingBlocks\Wms.BuildingBlocks.Application\Wms.BuildingBlocks.Application.csproj" />
+    <ProjectReference Include="..\..\..\src\BuildingBlocks\Wms.BuildingBlocks.Infrastructure\Wms.BuildingBlocks.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\src\BuildingBlocks\Wms.BuildingBlocks.Web\Wms.BuildingBlocks.Web.csproj" />
+    <ProjectReference Include="..\..\..\src\Platform\Wms.Platform.Local\Wms.Platform.Local.csproj" />
+  </ItemGroup>
+
+</Project>

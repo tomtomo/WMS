@@ -69,6 +69,23 @@ public sealed class AuthLookupService(
         return snapshot;
     }
 
+    public override async Task<RoleMembers> GetRoleMembers(GetRoleMembersRequest request, ServerCallContext context)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(context);
+
+        if (!Guid.TryParse(request.RoleId, out var roleId))
+        {
+            throw new ResultFailureException(ResultErrorType.Validation, new Error("role.id_invalid", "roleId bukan GUID valid."));
+        }
+
+        var userIds = await userReader.GetUserIdsInRoleAsync(roleId, context.CancellationToken);
+
+        var members = new RoleMembers();
+        members.UserIds.AddRange(userIds.Select(id => id.ToString()));
+        return members;
+    }
+
     public override async Task<PermissionCatalog> GetPermissions(GetPermissionsRequest request, ServerCallContext context)
     {
         ArgumentNullException.ThrowIfNull(request);

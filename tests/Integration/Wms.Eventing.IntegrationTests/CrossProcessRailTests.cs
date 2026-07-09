@@ -3,6 +3,7 @@ using AwesomeAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Wms.BuildingBlocks.Application.Abstractions.Ports;
 using Wms.BuildingBlocks.Application.Messaging;
+using Wms.Contracts.Abstractions;
 using Wms.Eventing.IntegrationTests.TestSupport;
 using Wms.Inbound.Contracts;
 using Wms.Inbound.Contracts.Enums;

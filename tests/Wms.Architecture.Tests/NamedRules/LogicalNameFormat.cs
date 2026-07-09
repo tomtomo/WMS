@@ -1,7 +1,7 @@
 using System.Text.RegularExpressions;
 using AwesomeAssertions;
-using Wms.BuildingBlocks.Application.Messaging;
 using Wms.BuildingBlocks.Infrastructure.Messaging;
+using Wms.Contracts.Abstractions;
 using Xunit;
 
 namespace Wms.Architecture.Tests.NamedRules;

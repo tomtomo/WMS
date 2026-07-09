@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Wms.BuildingBlocks.Application.Abstractions.Ports;
 using Wms.BuildingBlocks.Application.Messaging;
 using Wms.BuildingBlocks.Infrastructure.Messaging;
+using Wms.Contracts.Abstractions;
 
 namespace Wms.BuildingBlocks.Infrastructure.Outbox;
 

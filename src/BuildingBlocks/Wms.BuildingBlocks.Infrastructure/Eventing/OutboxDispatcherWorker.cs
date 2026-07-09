@@ -62,7 +62,7 @@ public sealed class OutboxDispatcherWorker(
                 {
                     // Tandai row selesai sebelum dicatat ke dead letter agar tidak diproses ulang saat restart.
                     row.ProcessedAt = timeProvider.GetUtcNow();
-                    await deadLetterStore.StoreAsync(row.LogicalName, row.Payload, exception.Message, cancellationToken).ConfigureAwait(false);
+                    await deadLetterStore.StoreAsync(row.LogicalName, row.Payload, exception.Message, row.AttemptCount, cancellationToken).ConfigureAwait(false);
                     logger.LogError(
                         exception,
                         "Dispatch outbox {LogicalName} (event {EventId}) gagal {Attempt}× → dead_letter.",

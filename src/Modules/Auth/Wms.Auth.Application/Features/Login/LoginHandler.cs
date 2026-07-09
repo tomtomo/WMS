@@ -15,6 +15,7 @@ internal sealed class LoginHandler(
     IRefreshTokenRepository refreshTokenRepository,
     IRefreshTokenFactory refreshTokenFactory,
     IUnitOfWork unitOfWork,
+    IAuditLogStore auditLogStore,
     TimeProvider timeProvider)
     : ICommandHandler<LoginCommand, LoginResponse>
 {
@@ -52,6 +53,10 @@ internal sealed class LoginHandler(
         {
             user.RecordFailedLogin(now);
             await unitOfWork.SaveChangesAsync(cancellationToken);
+
+            // Login gagal tetap dicatat karena bisa mengubah status lockout,
+            // sementara AuditLogBehavior hanya mencatat flow yang berhasil.
+            await auditLogStore.RecordAsync(new AuditLogEntry(command.Username, "LoginFailed", now), cancellationToken);
             return InvalidCredentials();
         }
 

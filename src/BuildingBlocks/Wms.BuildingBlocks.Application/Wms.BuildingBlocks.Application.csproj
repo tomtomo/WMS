@@ -3,8 +3,9 @@
   <!-- Application kernel: kontrak CQRS (ICommand/IQuery), pipeline behavior MediatR
        (Validation -> Transaction -> AuditLog -> Logging), dan semua port platform abstrak. -->
 
-  <ItemGroup Label="Seedwork (satu-satunya ref project)">
+  <ItemGroup Label="Referensi project: domain seedwork dan abstraksi kontrak antar modul">
     <ProjectReference Include="..\Wms.BuildingBlocks.Domain\Wms.BuildingBlocks.Domain.csproj" />
+    <ProjectReference Include="..\Wms.Contracts.Abstractions\Wms.Contracts.Abstractions.csproj" />
   </ItemGroup>
 
   <ItemGroup Label="Pipeline">

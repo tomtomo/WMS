@@ -66,8 +66,9 @@ public static class OutboundModuleServiceCollectionExtensions
         services.AddScoped<HandleStockAllocationCompletedHandler>();
         services.AddScoped<StockAllocationCompletedConsumer>();
 
-        // Kebijakan assign picker — placeholder
-        services.AddOptions<OutboundPickingOptions>();
+        // Konfigurasi picking tetap bisa dibind meski guid policy belum diisi.
+        // Nilai defaultnya akan dijaga saat policy benar-benar dipakai.
+        services.AddValidatedOptions<OutboundPickingOptions>(configuration, OutboundPickingOptions.SectionName);
         services.AddScoped<IPickAssignmentPolicy, DefaultPickAssignmentPolicy>();
 
         // Saga orchestrator in proc, state di DB Outbound — reserved orchestrated compensation.

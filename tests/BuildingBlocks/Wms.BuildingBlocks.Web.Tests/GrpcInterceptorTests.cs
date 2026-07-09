@@ -14,6 +14,7 @@ public sealed class GrpcInterceptorTests
 {
     [Theory]
     [InlineData(ResultErrorType.Validation, StatusCode.InvalidArgument)]
+    [InlineData(ResultErrorType.Forbidden, StatusCode.PermissionDenied)]
     [InlineData(ResultErrorType.NotFound, StatusCode.NotFound)]
     [InlineData(ResultErrorType.Conflict, StatusCode.Aborted)]
     [InlineData(ResultErrorType.Failure, StatusCode.FailedPrecondition)]

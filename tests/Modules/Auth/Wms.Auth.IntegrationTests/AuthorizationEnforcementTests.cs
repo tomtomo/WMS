@@ -10,6 +10,7 @@ using Microsoft.Extensions.Options;
 using Wms.Auth.Domain;
 using Wms.Auth.Infrastructure;
 using Wms.Auth.Infrastructure.Security;
+using Wms.Auth.Infrastructure.Seed;
 using Wms.Auth.IntegrationTests.TestSupport;
 using Wms.BuildingBlocks.Application.Abstractions.Ports;
 using Xunit;
@@ -46,9 +47,21 @@ public sealed class AuthorizationEnforcementTests(PostgresFixture postgres) : IA
     [Fact]
     public async Task Anonymous_request_to_a_protected_endpoint_is_401()
     {
-        var response = await _client.PostAsJsonAsync("/v1/auth/users", CreateUserBody());
+        var response = await _client.PostAsJsonAsync("/v1/users", CreateUserBody());
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task Login_stays_reachable_anonymously_under_deny_by_default()
+    {
+        // Login harus tetap publik meski FallbackPolicy deny by default,
+        // karena user belum punya token saat meminta token pertama.
+        var response = await _client.PostAsJsonAsync(
+            "/v1/login",
+            new { username = AuthSeeder.DefaultAdminUsername, password = AuthSeeder.DefaultAdminPassword });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
     [Fact]
@@ -56,7 +69,7 @@ public sealed class AuthorizationEnforcementTests(PostgresFixture postgres) : IA
     {
         Authorize(await IssueTokenAsync(_adminId, "Inbound.ReadGR"));
 
-        var response = await _client.PostAsJsonAsync("/v1/auth/users", CreateUserBody());
+        var response = await _client.PostAsJsonAsync("/v1/users", CreateUserBody());
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
@@ -66,7 +79,7 @@ public sealed class AuthorizationEnforcementTests(PostgresFixture postgres) : IA
     {
         Authorize(await IssueTokenAsync(_adminId, "Auth.ManageUser"));
 
-        var response = await _client.PostAsJsonAsync("/v1/auth/users", CreateUserBody());
+        var response = await _client.PostAsJsonAsync("/v1/users", CreateUserBody());
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
     }
@@ -77,7 +90,7 @@ public sealed class AuthorizationEnforcementTests(PostgresFixture postgres) : IA
         var disabledId = await CreateDisabledUserAsync();
         Authorize(await IssueTokenAsync(disabledId, "Auth.ManageUser"));
 
-        var response = await _client.PostAsJsonAsync("/v1/auth/users", CreateUserBody());
+        var response = await _client.PostAsJsonAsync("/v1/users", CreateUserBody());
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }

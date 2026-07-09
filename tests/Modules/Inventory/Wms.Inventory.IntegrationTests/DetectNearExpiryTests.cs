@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Time.Testing;
 using Wms.BuildingBlocks.Application.Messaging;
 using Wms.BuildingBlocks.Infrastructure.Outbox;
+using Wms.Contracts.Abstractions;
 using Wms.Inventory.Application.Features.DetectNearExpiry;
 using Wms.Inventory.Contracts;
 using Wms.Inventory.Domain.Enums;

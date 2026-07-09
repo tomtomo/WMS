@@ -1,10 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- Infrastructure layer Outbound: OutboundDbContext (schema outbound, rail infrastructure, saga state),
-       repository/reader EF, OutboundSagaOrchestrator (persist DB), pick assignment policy, migration,
-       composition AddOutboundModule. -->
+  <!-- Infrastructure Outbound: DbContext, repository EF, saga state, policy picking,
+     migration, dan composition root untuk mendaftarkan modul. -->
 
-  <ItemGroup Label="Persistence - EF Core, Npgsql, snake_case">
+  <ItemGroup Label="Persistence: EF Core, Npgsql, snake_case">
     <PackageReference Include="Microsoft.EntityFrameworkCore" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     <PackageReference Include="EFCore.NamingConventions" />
@@ -25,6 +24,10 @@
   <ItemGroup Label="Application, mekanisme rail">
     <ProjectReference Include="..\Wms.Outbound.Application\Wms.Outbound.Application.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\Wms.BuildingBlocks.Infrastructure\Wms.BuildingBlocks.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Label="gRPC MasterData lookup">
+    <ProjectReference Include="..\..\MasterData\Wms.MasterData.Grpc\Wms.MasterData.Grpc.csproj" />
   </ItemGroup>
 
 </Project>

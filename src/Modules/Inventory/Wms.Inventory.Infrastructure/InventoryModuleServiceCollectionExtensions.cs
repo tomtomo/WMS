@@ -37,7 +37,7 @@ public static class InventoryModuleServiceCollectionExtensions
                 })
                 .UseSnakeCaseNamingConvention();
 
-            // MigrationRunner tidak punya ICurrentUser — audit interceptor hanya dipasang bila tersedia.
+            // MigrationRunner tidak punya ICurrentUser — audit interceptor hanya dipasang jika tersedia.
             var auditableInterceptor = provider.GetService<AuditableInterceptor>();
             if (auditableInterceptor is not null)
             {
@@ -73,12 +73,13 @@ public static class InventoryModuleServiceCollectionExtensions
         services.AddScoped<ShipmentDispatchedConsumer>();
 
         // Scheduler Expiry (DetectNearExpiry)
-        services.AddOptions<InventoryExpiryOptions>();
+        services.AddValidatedOptions<InventoryExpiryOptions>(configuration, InventoryExpiryOptions.SectionName);
         services.AddScoped<DetectNearExpiryJob>();
         services.AddHostedService<InventoryRecurringJobsRegistrar>();
 
-        // Kebijakan penempatan receiving — placeholder
-        services.AddOptions<InventoryReceivingOptions>();
+        // Konfigurasi receiving tetap bisa dibind meski guid policy belum diisi.
+        // Nilai defaultnya akan dijaga saat policy benar-benar dipakai.
+        services.AddValidatedOptions<InventoryReceivingOptions>(configuration, InventoryReceivingOptions.SectionName);
         services.AddScoped<IReceivingPolicy, DefaultReceivingPolicy>();
 
         return services;

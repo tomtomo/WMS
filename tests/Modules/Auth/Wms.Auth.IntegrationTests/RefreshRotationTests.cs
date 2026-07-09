@@ -1,6 +1,9 @@
 using AwesomeAssertions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Wms.Auth.Infrastructure;
 using Wms.Auth.IntegrationTests.TestSupport;
+using Wms.BuildingBlocks.Infrastructure.AuditLog;
 using Xunit;
 
 namespace Wms.Auth.IntegrationTests;
@@ -48,6 +51,23 @@ public sealed class RefreshRotationTests(PostgresFixture postgres) : IAsyncLifet
         // rt2 ikut ditolak karena masih berada dalam rotation chain yang sama.
         (await AuthScenarios.RefreshAsync(_provider, rt2)).IsFailure
             .Should().BeTrue("chain-revoke mematikan sesi terkini juga");
+    }
+
+    [Fact]
+    public async Task Detecting_a_reused_refresh_token_writes_an_audit_row()
+    {
+        var rt1 = await LoginAndGetRefreshTokenAsync("rot-audit");
+        await AuthScenarios.RefreshAsync(_provider, rt1);
+
+        (await AuthScenarios.RefreshAsync(_provider, rt1)).Error.Code
+            .Should().Be("auth.refresh_token_reused");
+
+        using var scope = _provider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
+        var audits = await context.Set<AuditLogRecord>()
+            .Where(record => record.Action == "RefreshTokenReuseDetected")
+            .ToListAsync();
+        audits.Should().ContainSingle("Reuse refresh token harus tercatat di audit log karena seluruh rotation chain ikut dicabut");
     }
 
     [Fact]

@@ -1,0 +1,52 @@
+@page "/reports/stock"
+@inject IHttpClientFactory HttpClientFactory
+
+<PageTitle>WMS — Stock on Hand</PageTitle>
+
+<MudText Typo="Typo.h4" GutterBottom="true">Stock on Hand</MudText>
+
+@if (_error)
+{
+    <MudAlert Severity="Severity.Warning"></MudAlert>
+}
+else if (_rows.Count == 0)
+{
+    <MudText>Tidak ada data stock.</MudText>
+}
+else
+{
+    <MudTable Items="_rows" Hover="true">
+        <HeaderContent>
+            <MudTh>SKU</MudTh>
+            <MudTh>Warehouse</MudTh>
+            <MudTh>Qty</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="SKU">@context.Sku</MudTd>
+            <MudTd DataLabel="Warehouse">@context.WarehouseId</MudTd>
+            <MudTd DataLabel="Qty">@context.Quantity</MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+@code {
+    private List<StockRow> _rows = [];
+    private bool _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var client = HttpClientFactory.CreateClient(BffExtensions.GatewayClientName);
+            var page = await client.GetFromJsonAsync<PagedResponse<StockRow>>(
+                "/reporting/v1/reports/stock-on-hand?page=1&pageSize=20");
+            _rows = page?.Items ?? [];
+        }
+        catch (HttpRequestException)
+        {
+            _error = true;
+        }
+    }
+
+    private sealed record StockRow(string Sku, Guid WarehouseId, decimal Quantity);
+}

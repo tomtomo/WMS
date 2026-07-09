@@ -13,6 +13,10 @@ public sealed class CorrelationIdMiddleware(RequestDelegate next, ILogger<Correl
         var correlationId = ResolveCorrelationId(context);
         CorrelationId.Set(context, correlationId);
 
+        // Pastikan correlation id ikut terbawa di request berikutnya,
+        // termasuk saat request diteruskan gateway lewat YARP.
+        context.Request.Headers[CorrelationId.HeaderName] = correlationId;
+
         // Set header tepat sebelum response flush, aman dari "headers read-only".
         context.Response.OnStarting(
             static state =>

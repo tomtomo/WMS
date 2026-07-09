@@ -10,7 +10,7 @@ using Wms.MasterData.Infrastructure;
 
 namespace Wms.CrossCutting.IntegrationTests.TestSupport;
 
-// Host REST MasterData in-memory untuk bukti full chain xmin ke HTTP 409.
+// Host REST MasterData in memory untuk test alur conflict sampai menjadi HTTP 409.
 internal static class MasterDataApiHost
 {
     public static async Task<WebApplication> StartAsync(string connectionString)
@@ -29,6 +29,10 @@ internal static class MasterDataApiHost
         builder.Services.AddSingleton<ConflictInjector>();
         builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ConflictInjectionBehavior<,>));
         builder.Services.AddWebBuildingBlocks();
+
+        // Endpoint MasterData yang mengubah data memakai idempotency key.
+        // Di host lokal ini, storenya cukup pakai in memory.
+        builder.Services.AddSingleton<IApiIdempotencyStore, InMemoryApiIdempotencyStore>();
 
         var app = builder.Build();
         app.UseWebBuildingBlocks();

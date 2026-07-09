@@ -3,6 +3,7 @@ using Wms.BuildingBlocks.Application.Messaging;
 using Wms.BuildingBlocks.Domain.Results;
 using Wms.BuildingBlocks.Infrastructure.Eventing;
 using Wms.BuildingBlocks.Infrastructure.Messaging;
+using Wms.Contracts.Abstractions;
 
 namespace Microsoft.Extensions.DependencyInjection;
 

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Wms.Inventory.Application.Abstractions;
 using Wms.Inventory.Domain;
+using Wms.Inventory.Domain.Allocation;
 using Wms.Inventory.Domain.Enums;
 using Wms.Inventory.Domain.ValueObjects;
 
@@ -22,13 +23,14 @@ internal sealed class StockRepository(InventoryDbContext context) : IStockReposi
     public Task<bool> ExistsForReceiptLineAsync(Guid sourceGrId, int line, CancellationToken cancellationToken = default) =>
         context.Set<Stock>().AnyAsync(stock => stock.SourceGrId == sourceGrId && stock.Line == line, cancellationToken);
 
-    // Kandidat alokasi FEFO: Available per SKU, urut expiry terdekat
-    public async Task<IReadOnlyList<Stock>> GetAllocatableAsync(Sku sku, CancellationToken cancellationToken = default) =>
-        await context.Set<Stock>()
+    // Kandidat alokasi FEFO: Available per SKU, urutkan via FefoSelector domain
+    public async Task<IReadOnlyList<Stock>> GetAllocatableAsync(Sku sku, CancellationToken cancellationToken = default)
+    {
+        var candidates = await context.Set<Stock>()
             .Where(stock => stock.Sku == sku && stock.Status == StockStatus.Available)
-            .OrderBy(stock => stock.Expiry)
-            .ThenBy(stock => stock.Batch)
             .ToListAsync(cancellationToken);
+        return FefoSelector.Order(candidates);
+    }
 
     public async Task<IReadOnlyList<Stock>> GetPickedByWaveAsync(Guid waveId, CancellationToken cancellationToken = default) =>
         await context.Set<Stock>()

@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Wms.BuildingBlocks.Application.Abstractions.Ports;
 using Wms.BuildingBlocks.Application.Messaging;
 using Wms.Choreography.IntegrationTests.TestSupport;
+using Wms.Contracts.Abstractions;
 using Wms.Inventory.Contracts;
 using Wms.Inventory.Domain;
 using Wms.Inventory.Domain.Enums;

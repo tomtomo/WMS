@@ -14,10 +14,11 @@ public sealed class ReadOnlyToCoreArchTests
             .Where(name => name.StartsWith("Wms.", StringComparison.Ordinal))
             .ToList();
 
-        // Lintas modul hanya boleh via *.Contracts.
+        // Lintas modul hanya boleh via lewat kontrak (*.Contracts).
         var forbidden = referenced
             .Where(name => !name.StartsWith("Wms.BuildingBlocks.", StringComparison.Ordinal)
-                && !name.EndsWith(".Contracts", StringComparison.Ordinal))
+                && !name.EndsWith(".Contracts", StringComparison.Ordinal)
+                && !name.Equals("Wms.Contracts.Abstractions", StringComparison.Ordinal))
             .ToList();
 
         forbidden.Should().BeEmpty(

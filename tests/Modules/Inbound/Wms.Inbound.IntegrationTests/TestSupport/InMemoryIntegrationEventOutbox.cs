@@ -1,5 +1,5 @@
 using Wms.BuildingBlocks.Application.Abstractions.Ports;
-using Wms.BuildingBlocks.Application.Messaging;
+using Wms.Contracts.Abstractions;
 
 namespace Wms.Inbound.IntegrationTests.TestSupport;
 

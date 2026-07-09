@@ -44,7 +44,7 @@ public sealed class AuthNBaselineTests(PostgresFixture postgres) : IAsyncLifetim
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         var create = await _client.PostAsJsonAsync(
-            "/v1/auth/roles",
+            "/v1/roles",
             new { code = "AuditedRole", name = "Audited", permissionIds = Array.Empty<Guid>() });
         create.StatusCode.Should().Be(HttpStatusCode.Created);
         var roleId = (await create.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("roleId").GetGuid();
@@ -58,7 +58,7 @@ public sealed class AuthNBaselineTests(PostgresFixture postgres) : IAsyncLifetim
     public async Task Without_a_token_the_audit_actor_falls_back_to_system()
     {
         var create = await _client.PostAsJsonAsync(
-            "/v1/auth/roles",
+            "/v1/roles",
             new { code = "SystemRole", name = "System", permissionIds = Array.Empty<Guid>() });
         create.StatusCode.Should().Be(HttpStatusCode.Created);
         var roleId = (await create.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("roleId").GetGuid();
@@ -69,7 +69,7 @@ public sealed class AuthNBaselineTests(PostgresFixture postgres) : IAsyncLifetim
     private async Task<(string Token, Guid UserId)> LoginAdminAsync()
     {
         var response = await _client.PostAsJsonAsync(
-            "/v1/auth/login",
+            "/v1/login",
             new { username = AuthSeeder.DefaultAdminUsername, password = AuthSeeder.DefaultAdminPassword });
         var token = (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("accessToken").GetString()!;
 

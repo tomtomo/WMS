@@ -18,9 +18,9 @@ public sealed class LocationEndpoints : IEndpoint
         var group = MasterDataApiRoutes.Locations(app);
         group.MapGet("/", ListAsync).WithName("ListLocations");
         group.MapGet("/{locationId:guid}", GetByIdAsync).WithName("GetLocation");
-        group.MapPost("/", CreateAsync).WithName("CreateLocation");
-        group.MapPut("/{locationId:guid}", UpdateAsync).WithName("UpdateLocation");
-        group.MapDelete("/{locationId:guid}", DeactivateAsync).WithName("DeactivateLocation");
+        group.MapPost("/", CreateAsync).WithName("CreateLocation").WithIdempotencyKey();
+        group.MapPut("/{locationId:guid}", UpdateAsync).WithName("UpdateLocation").WithIdempotencyKey();
+        group.MapDelete("/{locationId:guid}", DeactivateAsync).WithName("DeactivateLocation").WithIdempotencyKey();
     }
 
     private static async Task<IResult> ListAsync(

@@ -1,5 +1,5 @@
 using System.Reflection;
-using Wms.BuildingBlocks.Application.Messaging;
+using Wms.Contracts.Abstractions;
 
 namespace Wms.Contracts.Tests;
 

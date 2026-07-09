@@ -26,9 +26,14 @@
     <InternalsVisibleTo Include="Wms.Notifications.IntegrationTests" />
   </ItemGroup>
 
-  <ItemGroup Label="Kernel BuildingBlocks (app/infra) + Contracts consume only lintas modul">
+  <ItemGroup Label="Referensi gRPC Auth lookup untuk membaca user dan anggota role">
+    <ProjectReference Include="..\..\Auth\Wms.Auth.Grpc\Wms.Auth.Grpc.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Label="Kernel BuildingBlocks">
     <ProjectReference Include="..\..\..\BuildingBlocks\Wms.BuildingBlocks.Application\Wms.BuildingBlocks.Application.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\Wms.BuildingBlocks.Infrastructure\Wms.BuildingBlocks.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Wms.BuildingBlocks.Web\Wms.BuildingBlocks.Web.csproj" />
     <ProjectReference Include="..\..\Inbound\Wms.Inbound.Contracts\Wms.Inbound.Contracts.csproj" />
     <ProjectReference Include="..\..\Inventory\Wms.Inventory.Contracts\Wms.Inventory.Contracts.csproj" />
     <ProjectReference Include="..\..\Outbound\Wms.Outbound.Contracts\Wms.Outbound.Contracts.csproj" />

@@ -1,6 +1,6 @@
 using System.Reflection;
 using AwesomeAssertions;
-using Wms.BuildingBlocks.Application.Messaging;
+using Wms.Contracts.Abstractions;
 using Wms.Inbound.Contracts;
 using Wms.Inventory.Contracts;
 using Wms.Inventory.Contracts.Enums;

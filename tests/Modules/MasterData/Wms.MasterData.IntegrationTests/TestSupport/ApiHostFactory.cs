@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
+using Wms.BuildingBlocks.Application.Abstractions.Ports;
 using Wms.MasterData.Api.Endpoints;
 using Wms.MasterData.Api.GrpcServices;
 
@@ -18,6 +19,9 @@ internal static class ApiHostFactory
         MasterDataTestHost.AddMasterDataComposition(builder.Services, connectionString);
         builder.Services.AddWebBuildingBlocks();
         builder.Services.AddGrpcWebBuildingBlocks();
+
+        // Test cukup pakai store in memory untuk idempotency key. Adapter Postgres dipasang di host lewat AddLocalPlatform.
+        builder.Services.AddSingleton<IApiIdempotencyStore, InMemoryApiIdempotencyStore>();
 
         var app = builder.Build();
         app.UseWebBuildingBlocks();

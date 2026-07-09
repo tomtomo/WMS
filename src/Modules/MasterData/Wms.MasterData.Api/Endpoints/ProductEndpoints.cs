@@ -18,9 +18,9 @@ public sealed class ProductEndpoints : IEndpoint
         var group = MasterDataApiRoutes.Products(app);
         group.MapGet("/", ListAsync).WithName("ListProducts");
         group.MapGet("/{sku}", GetBySkuAsync).WithName("GetProduct");
-        group.MapPost("/", CreateAsync).WithName("CreateProduct");
-        group.MapPut("/{sku}", UpdateAsync).WithName("UpdateProduct");
-        group.MapDelete("/{sku}", DeactivateAsync).WithName("DeactivateProduct");
+        group.MapPost("/", CreateAsync).WithName("CreateProduct").WithIdempotencyKey();
+        group.MapPut("/{sku}", UpdateAsync).WithName("UpdateProduct").WithIdempotencyKey();
+        group.MapDelete("/{sku}", DeactivateAsync).WithName("DeactivateProduct").WithIdempotencyKey();
     }
 
     private static async Task<IResult> ListAsync(

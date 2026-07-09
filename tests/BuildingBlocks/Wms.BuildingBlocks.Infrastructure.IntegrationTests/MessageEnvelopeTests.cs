@@ -2,6 +2,7 @@ using System.Text.Json;
 using AwesomeAssertions;
 using Wms.BuildingBlocks.Application.Messaging;
 using Wms.BuildingBlocks.Infrastructure.IntegrationTests.TestDoubles;
+using Wms.Contracts.Abstractions;
 using Xunit;
 
 namespace Wms.BuildingBlocks.Infrastructure.IntegrationTests;

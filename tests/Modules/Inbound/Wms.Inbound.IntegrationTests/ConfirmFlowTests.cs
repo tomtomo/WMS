@@ -4,6 +4,7 @@ using Wms.BuildingBlocks.Application.Abstractions;
 using Wms.BuildingBlocks.Application.Abstractions.Ports;
 using Wms.BuildingBlocks.Application.Messaging;
 using Wms.BuildingBlocks.Domain.Results;
+using Wms.Contracts.Abstractions;
 using Wms.Inbound.Application.Abstractions;
 using Wms.Inbound.Application.EventTranslation;
 using Wms.Inbound.Application.Features.ConfirmGoodsReceipt;

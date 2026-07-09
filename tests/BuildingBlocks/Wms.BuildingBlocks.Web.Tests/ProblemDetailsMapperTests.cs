@@ -10,6 +10,7 @@ public sealed class ProblemDetailsMapperTests
 {
     [Theory]
     [InlineData(ResultErrorType.Validation, StatusCodes.Status400BadRequest)]
+    [InlineData(ResultErrorType.Forbidden, StatusCodes.Status403Forbidden)]
     [InlineData(ResultErrorType.NotFound, StatusCodes.Status404NotFound)]
     [InlineData(ResultErrorType.Conflict, StatusCodes.Status409Conflict)]
     [InlineData(ResultErrorType.Failure, StatusCodes.Status422UnprocessableEntity)]

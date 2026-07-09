@@ -6,6 +6,7 @@ using Wms.BuildingBlocks.Application.Messaging;
 using Wms.BuildingBlocks.Infrastructure.DeadLetter;
 using Wms.BuildingBlocks.Infrastructure.Eventing;
 using Wms.BuildingBlocks.Infrastructure.Outbox;
+using Wms.Contracts.Abstractions;
 using Wms.Platform.Local.Eventing;
 using Wms.Platform.Local.Messaging;
 

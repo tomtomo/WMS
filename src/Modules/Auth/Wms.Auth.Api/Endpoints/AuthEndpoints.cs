@@ -9,12 +9,17 @@ using Wms.BuildingBlocks.Web;
 
 namespace Wms.Auth.Api.Endpoints;
 
-// REST session /v1/auth: login, refresh, logout.
+// REST session /v1: login, refresh, logout.
 public sealed class AuthEndpoints : IEndpoint
 {
     public static void MapEndpoint(IEndpointRouteBuilder app)
     {
         var group = AuthApiRoutes.Auth(app);
+
+        // Endpoint sesi harus bisa diakses tanpa bearer token,
+        // karena kredensial dikirim lewat body saat login/refresh/logout.
+        group.AllowAnonymous();
+
         group.MapPost("/login", LoginAsync).WithName("Login").WithIdempotencyKey();
         group.MapPost("/refresh", RefreshAsync).WithName("RefreshAccessToken").WithIdempotencyKey();
         group.MapPost("/logout", LogoutAsync).WithName("Logout").WithIdempotencyKey();

@@ -1,0 +1,51 @@
+@page "/inbox"
+@inject IHttpClientFactory HttpClientFactory
+
+<PageTitle>WMS — Inbox</PageTitle>
+
+<MudText Typo="Typo.h4" GutterBottom="true">In-app Inbox</MudText>
+
+@if (_error)
+{
+    <MudAlert Severity="Severity.Warning">Inbox belum tersedia</MudAlert>
+}
+else if (_items.Count == 0)
+{
+    <MudText>Tidak ada notifikasi.</MudText>
+}
+else
+{
+    <MudTable Items="_items" Hover="true">
+        <HeaderContent>
+            <MudTh>Waktu</MudTh>
+            <MudTh>Judul</MudTh>
+            <MudTh>Status</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Waktu">@context.CreatedAt.LocalDateTime</MudTd>
+            <MudTd DataLabel="Judul">@context.Title</MudTd>
+            <MudTd DataLabel="Status">@(context.IsRead ? "dibaca" : "baru")</MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+@code {
+    private List<InboxItem> _items = [];
+    private bool _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var client = HttpClientFactory.CreateClient(BffExtensions.GatewayClientName);
+            var page = await client.GetFromJsonAsync<PagedResponse<InboxItem>>("/notifications/v1/inbox?page=1&pageSize=20");
+            _items = page?.Items ?? [];
+        }
+        catch (HttpRequestException)
+        {
+            _error = true;
+        }
+    }
+
+    private sealed record InboxItem(Guid DeliveryId, string Title, string Body, string EventType, bool IsRead, DateTimeOffset CreatedAt);
+}

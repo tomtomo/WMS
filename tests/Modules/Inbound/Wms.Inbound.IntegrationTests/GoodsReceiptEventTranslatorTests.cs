@@ -1,5 +1,5 @@
 using AwesomeAssertions;
-using Wms.BuildingBlocks.Application.Messaging;
+using Wms.Contracts.Abstractions;
 using Wms.Inbound.Application.EventTranslation;
 using Wms.Inbound.Contracts;
 using Wms.Inbound.Domain;

@@ -18,11 +18,13 @@ public sealed class ReadOnlyToCoreArchTests
 
         var forbidden = referenced
             .Where(name => !name.StartsWith("Wms.BuildingBlocks.", StringComparison.Ordinal)
-                && !name.EndsWith(".Contracts", StringComparison.OrdinalIgnoreCase))
+                && !name.EndsWith(".Contracts", StringComparison.OrdinalIgnoreCase)
+                && !name.EndsWith(".Grpc", StringComparison.OrdinalIgnoreCase)
+                && !name.Equals("Wms.Contracts.Abstractions", StringComparison.Ordinal))
             .ToList();
 
         forbidden.Should().BeEmpty(
-            "Notifications read-only ke core: lintas-modul hanya via *.Contracts, nol Domain/Infrastructure/Api modul lain (FF#3)");
+            "Notifications hanya boleh membaca data core lewat kontrak (*.Contracts) atau lookup read-only (*.Grpc)");
     }
 
     [Fact]

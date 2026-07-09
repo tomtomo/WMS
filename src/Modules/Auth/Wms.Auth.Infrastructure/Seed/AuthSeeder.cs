@@ -20,6 +20,10 @@ public static class AuthSeeder
 
     private const string AdminRoleCode = "Admin";
 
+    // Warehouse default untuk data dev lokal. Admin ikut di-scope ke warehouse ini
+    // supaya akses ke data lokal tidak selalu gagal karena belum ada claim multi warehouse.
+    private static readonly Guid _defaultDevWarehouseId = Guid.Parse("a0000000-0000-0000-0000-000000000001");
+
     // Daftar permission yang dikenali aplikasi.
     private static readonly (string Code, string Description)[] _catalog =
     [
@@ -92,7 +96,7 @@ public static class AuthSeeder
         await SeedAdminAsync(context, passwordHasher, cancellationToken);
     }
 
-    // Kode katalog ter-seed — dibaca FF anti-drift (enforced ⊆ katalog) tanpa langgar FF#3.
+    // Kode katalog ter seed
     public static IReadOnlyList<string> CatalogCodes() => Array.ConvertAll(_catalog, entry => entry.Code);
 
     private static async Task<Dictionary<string, Guid>> SeedPermissionsAsync(AuthDbContext context, CancellationToken cancellationToken)
@@ -164,7 +168,7 @@ public static class AuthSeeder
             "admin@wms.local",
             passwordHash,
             [adminRole.Id.Value],
-            []);
+            [_defaultDevWarehouseId]);
         context.Add(admin.Value);
         await context.SaveChangesAsync(cancellationToken);
     }

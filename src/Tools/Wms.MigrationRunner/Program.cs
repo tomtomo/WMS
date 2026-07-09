@@ -9,14 +9,8 @@ using Wms.Platform.Local.Security;
 var builder = Host.CreateApplicationBuilder(args);
 builder.AddServiceDefaults();
 
-// Daftarkan DbContext dari setiap modul
-builder.Services.AddInboundModule(builder.Configuration);
-builder.Services.AddInventoryModule(builder.Configuration);
-builder.Services.AddOutboundModule(builder.Configuration);
-builder.Services.AddMasterDataModule(builder.Configuration);
-builder.Services.AddAuthModule(builder.Configuration);
-builder.Services.AddReportingModule(builder.Configuration);
-builder.Services.AddNotificationsModule(builder.Configuration);
+// Daftarkan DbContext tiap modul
+builder.Services.AddAllModules(builder.Configuration);
 
 // Password hasher untuk seeding admin Auth.
 builder.Services.TryAddSingleton<IPasswordHasher, Argon2idPasswordHasher>();
