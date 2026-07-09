@@ -35,7 +35,7 @@ public sealed class ConsumerDeadLetterPipeline(
                 // Batas retry tercapai, lalu dead letter.
                 if (attempt == MaxAttempts)
                 {
-                    await deadLetterStore.StoreAsync(logicalName, payload, ex.Message, cancellationToken);
+                    await deadLetterStore.StoreAsync(logicalName, payload, ex.Message, attempt, cancellationToken);
                     return;
                 }
 
@@ -63,7 +63,7 @@ public sealed class ConsumerDeadLetterPipeline(
 
             if (attempt == MaxAttempts)
             {
-                await deadLetterStore.StoreAsync(logicalName, payload, failureReason, cancellationToken);
+                await deadLetterStore.StoreAsync(logicalName, payload, failureReason, attempt, cancellationToken);
                 return;
             }
 

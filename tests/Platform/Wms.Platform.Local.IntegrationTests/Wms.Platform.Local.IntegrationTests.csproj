@@ -35,6 +35,11 @@
     <PackageReference Include="Microsoft.Extensions.Logging" />
   </ItemGroup>
 
+  <ItemGroup Label="Host in-memory, clock">
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
+  </ItemGroup>
+
   <ItemGroup Label="Subjek di bawah test">
     <ProjectReference Include="..\..\..\src\Platform\Wms.Platform.Local\Wms.Platform.Local.csproj" />
   </ItemGroup>

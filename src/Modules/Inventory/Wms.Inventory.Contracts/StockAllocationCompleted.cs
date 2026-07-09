@@ -1,5 +1,5 @@
 using System.Collections.Immutable;
-using Wms.BuildingBlocks.Application.Messaging;
+using Wms.Contracts.Abstractions;
 using Wms.Inventory.Contracts.Enums;
 using Wms.Inventory.Contracts.Payloads;
 

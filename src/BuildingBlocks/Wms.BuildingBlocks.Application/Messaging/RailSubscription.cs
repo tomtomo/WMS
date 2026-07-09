@@ -1,3 +1,5 @@
+using Wms.Contracts.Abstractions;
+
 namespace Wms.BuildingBlocks.Application.Messaging;
 
 // Subscription modul terhadap integration event tertentu.

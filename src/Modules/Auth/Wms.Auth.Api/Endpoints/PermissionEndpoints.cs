@@ -6,7 +6,7 @@ using Wms.BuildingBlocks.Web;
 
 namespace Wms.Auth.Api.Endpoints;
 
-// REST katalog /v1/auth/permissions
+// REST katalog /v1/permissions
 public sealed class PermissionEndpoints : IEndpoint
 {
     public static void MapEndpoint(IEndpointRouteBuilder app)

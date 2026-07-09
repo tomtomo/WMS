@@ -1,9 +1,9 @@
 using AwesomeAssertions;
 using Microsoft.Extensions.DependencyInjection;
-using Wms.BuildingBlocks.Application.Messaging;
 using Wms.BuildingBlocks.Domain.Results;
 using Wms.BuildingBlocks.Infrastructure.DeadLetter;
 using Wms.Choreography.IntegrationTests.TestSupport;
+using Wms.Contracts.Abstractions;
 using Wms.Inbound.Contracts;
 using Wms.Inbound.Contracts.Enums;
 using Wms.Inbound.Contracts.Payloads;

@@ -1,9 +1,9 @@
 using AwesomeAssertions;
 using Microsoft.EntityFrameworkCore;
-using Wms.BuildingBlocks.Application.Messaging;
 using Wms.BuildingBlocks.Infrastructure.IntegrationTests.TestDoubles;
 using Wms.BuildingBlocks.Infrastructure.IntegrationTests.TestSupport;
 using Wms.BuildingBlocks.Infrastructure.Outbox;
+using Wms.Contracts.Abstractions;
 using Xunit;
 
 namespace Wms.BuildingBlocks.Infrastructure.IntegrationTests;

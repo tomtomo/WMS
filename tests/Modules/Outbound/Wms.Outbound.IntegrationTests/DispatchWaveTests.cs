@@ -1,7 +1,7 @@
 using AwesomeAssertions;
 using Microsoft.Extensions.DependencyInjection;
-using Wms.BuildingBlocks.Application.Messaging;
 using Wms.BuildingBlocks.Domain.Results;
+using Wms.Contracts.Abstractions;
 using Wms.Outbound.Application.Features.CompletePickingTask;
 using Wms.Outbound.Application.Features.CreateWave;
 using Wms.Outbound.Application.Features.DispatchWave;

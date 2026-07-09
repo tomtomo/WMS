@@ -1,6 +1,6 @@
 using AwesomeAssertions;
 using Microsoft.Extensions.DependencyInjection;
-using Wms.BuildingBlocks.Application.Messaging;
+using Wms.Contracts.Abstractions;
 using Wms.Outbound.Application.Features.CreateWave;
 using Wms.Outbound.Contracts;
 using Wms.Outbound.Domain.Enums;

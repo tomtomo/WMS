@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <!-- Gateway edge lokal: YARP reverse proxy. Cloud = APIM/API Gateway. -->
+
+  <ItemGroup Label="YARP, service discovery">
+    <PackageReference Include="Yarp.ReverseProxy" />
+    <PackageReference Include="Microsoft.Extensions.ServiceDiscovery.Yarp" />
+  </ItemGroup>
+
+  <ItemGroup Label="Platform, Web kernel">
+    <ProjectReference Include="..\..\Platform\Wms.Platform.Hosting\Wms.Platform.Hosting.csproj" />
+    <ProjectReference Include="..\..\BuildingBlocks\Wms.BuildingBlocks.Web\Wms.BuildingBlocks.Web.csproj" />
+  </ItemGroup>
+
+</Project>

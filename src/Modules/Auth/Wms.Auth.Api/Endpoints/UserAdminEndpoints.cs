@@ -12,7 +12,7 @@ using Wms.BuildingBlocks.Web;
 
 namespace Wms.Auth.Api.Endpoints;
 
-// REST admin /v1/auth/users
+// REST admin /v1/users
 public sealed class UserAdminEndpoints : IEndpoint
 {
     public static void MapEndpoint(IEndpointRouteBuilder app)
@@ -58,7 +58,7 @@ public sealed class UserAdminEndpoints : IEndpoint
             request.AssignedWarehouseIds ?? []);
         var result = await sender.Send(command, cancellationToken);
         return result.IsSuccess
-            ? Results.Created($"/v1/auth/users/{result.Value}", new { userId = result.Value })
+            ? Results.Created($"/v1/users/{result.Value}", new { userId = result.Value })
             : result.ToProblem(httpContext);
     }
 

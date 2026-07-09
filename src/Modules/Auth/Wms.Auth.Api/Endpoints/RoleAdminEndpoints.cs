@@ -9,7 +9,7 @@ using Wms.BuildingBlocks.Web;
 
 namespace Wms.Auth.Api.Endpoints;
 
-// REST admin /v1/auth/roles
+// REST admin /v1/roles
 public sealed class RoleAdminEndpoints : IEndpoint
 {
     public static void MapEndpoint(IEndpointRouteBuilder app)
@@ -47,7 +47,7 @@ public sealed class RoleAdminEndpoints : IEndpoint
         var command = new CreateRoleCommand(request.Code, request.Name, request.PermissionIds ?? []);
         var result = await sender.Send(command, cancellationToken);
         return result.IsSuccess
-            ? Results.Created($"/v1/auth/roles/{result.Value}", new { roleId = result.Value })
+            ? Results.Created($"/v1/roles/{result.Value}", new { roleId = result.Value })
             : result.ToProblem(httpContext);
     }
 

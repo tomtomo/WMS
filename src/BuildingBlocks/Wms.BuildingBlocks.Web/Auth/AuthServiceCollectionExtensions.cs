@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using Wms.BuildingBlocks.Application.Abstractions.Ports;
+using Wms.BuildingBlocks.Web;
 using Wms.BuildingBlocks.Web.Auth;
 
 namespace Microsoft.Extensions.DependencyInjection;
@@ -10,13 +11,15 @@ namespace Microsoft.Extensions.DependencyInjection;
 // DI auth host REST: validasi JWT dan populate ICurrentUser.
 public static class AuthServiceCollectionExtensions
 {
-    // ICurrentUser dari HttpContext (SYSTEM fallback)
+    // Ambil user dan correlation id dari HttpContext.
+    // Kalau tidak ada user aktif, sistem akan pakai fallback system.
     public static IServiceCollection AddHttpContextCurrentUser(this IServiceCollection services)
     {
         ArgumentNullException.ThrowIfNull(services);
 
         services.AddHttpContextAccessor();
         services.TryAddScoped<ICurrentUser, HttpContextCurrentUser>();
+        services.TryAddScoped<ICorrelationContext, HttpContextCorrelationContext>();
 
         return services;
     }

@@ -24,4 +24,8 @@
     <ProjectReference Include="..\..\..\BuildingBlocks\Wms.BuildingBlocks.Infrastructure\Wms.BuildingBlocks.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup Label="MasterData lookup">
+    <ProjectReference Include="..\..\MasterData\Wms.MasterData.Grpc\Wms.MasterData.Grpc.csproj" />
+  </ItemGroup>
+
 </Project>

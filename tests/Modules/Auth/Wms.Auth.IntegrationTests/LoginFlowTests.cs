@@ -5,6 +5,7 @@ using Microsoft.Extensions.Time.Testing;
 using Wms.Auth.Domain;
 using Wms.Auth.Infrastructure;
 using Wms.Auth.IntegrationTests.TestSupport;
+using Wms.BuildingBlocks.Infrastructure.AuditLog;
 using Xunit;
 
 namespace Wms.Auth.IntegrationTests;
@@ -52,6 +53,10 @@ public sealed class LoginFlowTests(PostgresFixture postgres) : IAsyncLifetime
         var context = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
         var user = await context.Set<User>().FirstAsync(candidate => candidate.Id == UserId.Create(userId).Value);
         user.FailedLoginCount.Should().Be(1, "gagal login wajib persist walau Result gagal (TransactionBehavior skip commit)");
+
+        // Login gagal tetap harus masuk audit log, karena percobaan ini bisa mengubah status lockout user.
+        var audits = await context.Set<AuditLogRecord>().Where(record => record.Action == "LoginFailed").ToListAsync();
+        audits.Should().ContainSingle().Which.Actor.Should().Be("op2");
     }
 
     [Fact]

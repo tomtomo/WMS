@@ -1,0 +1,18 @@
+@page "/login"
+
+<PageTitle>WMS — Login</PageTitle>
+
+<MudText Typo="Typo.h4" GutterBottom="true">Login</MudText>
+<MudText Class="mb-4"></MudText>
+
+<form method="post" action="/bff/login">
+    <div class="mt-2">
+        <label for="username">Username</label><br />
+        <input id="username" name="username" value="admin" />
+    </div>
+    <div class="mt-2">
+        <label for="password">Password</label><br />
+        <input id="password" name="password" type="password" />
+    </div>
+    <button type="submit" class="mt-4">Masuk</button>
+</form>

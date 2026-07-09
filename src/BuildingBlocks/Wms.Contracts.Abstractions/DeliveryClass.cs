@@ -1,4 +1,4 @@
-namespace Wms.BuildingBlocks.Application.Messaging;
+namespace Wms.Contracts.Abstractions;
 
 public enum DeliveryClass
 {

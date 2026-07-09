@@ -10,7 +10,7 @@ using Xunit;
 
 namespace Wms.Auth.IntegrationTests;
 
-// REST /v1/auth — camelCase
+// REST /v1 — camelCase
 [Collection(PostgresCollection.Name)]
 public sealed class RestApiTests(PostgresFixture postgres) : IAsyncLifetime
 {
@@ -35,7 +35,7 @@ public sealed class RestApiTests(PostgresFixture postgres) : IAsyncLifetime
     public async Task Login_returns_200_with_camel_case_tokens()
     {
         var response = await _client.PostAsJsonAsync(
-            "/v1/auth/login",
+            "/v1/login",
             new { username = AuthSeeder.DefaultAdminUsername, password = AuthSeeder.DefaultAdminPassword });
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -46,7 +46,7 @@ public sealed class RestApiTests(PostgresFixture postgres) : IAsyncLifetime
     [Fact]
     public async Task Login_with_a_blank_username_returns_400_problem_details()
     {
-        var response = await _client.PostAsJsonAsync("/v1/auth/login", new { username = string.Empty, password = "x" });
+        var response = await _client.PostAsJsonAsync("/v1/login", new { username = string.Empty, password = "x" });
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         response.Content.Headers.ContentType!.MediaType.Should().Be("application/problem+json");
@@ -56,7 +56,7 @@ public sealed class RestApiTests(PostgresFixture postgres) : IAsyncLifetime
     public async Task Login_with_a_wrong_password_is_a_problem_details_400()
     {
         var response = await _client.PostAsJsonAsync(
-            "/v1/auth/login",
+            "/v1/login",
             new { username = AuthSeeder.DefaultAdminUsername, password = "wrong-password" });
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -66,7 +66,7 @@ public sealed class RestApiTests(PostgresFixture postgres) : IAsyncLifetime
     public async Task Create_role_returns_201_with_a_camel_case_body()
     {
         var response = await _client.PostAsJsonAsync(
-            "/v1/auth/roles",
+            "/v1/roles",
             new { code = "Auditor", name = "Auditor", permissionIds = Array.Empty<Guid>() });
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -78,15 +78,15 @@ public sealed class RestApiTests(PostgresFixture postgres) : IAsyncLifetime
     public async Task Creating_a_role_with_a_duplicate_code_returns_409()
     {
         var role = new { code = "DupRole", name = "Dup", permissionIds = Array.Empty<Guid>() };
-        (await _client.PostAsJsonAsync("/v1/auth/roles", role)).StatusCode.Should().Be(HttpStatusCode.Created);
+        (await _client.PostAsJsonAsync("/v1/roles", role)).StatusCode.Should().Be(HttpStatusCode.Created);
 
-        (await _client.PostAsJsonAsync("/v1/auth/roles", role)).StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await _client.PostAsJsonAsync("/v1/roles", role)).StatusCode.Should().Be(HttpStatusCode.Conflict);
     }
 
     [Fact]
     public async Task The_permission_catalog_endpoint_returns_the_seeded_codes()
     {
-        var response = await _client.GetAsync("/v1/auth/permissions");
+        var response = await _client.GetAsync("/v1/permissions");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         (await response.Content.ReadAsStringAsync()).Should().Contain("Auth.ManageUser");

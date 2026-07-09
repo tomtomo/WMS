@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <!-- Host Local modul Notifications: worker consumer (subscribe-only), delivery dispatcher, REST inbox read. -->
+
+  <ItemGroup Label="Platform">
+    <ProjectReference Include="..\..\..\Platform\Wms.Platform.Hosting\Wms.Platform.Hosting.csproj" />
+    <ProjectReference Include="..\..\..\Platform\Wms.Platform.Local\Wms.Platform.Local.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Label="BuildingBlocks">
+    <ProjectReference Include="..\..\..\BuildingBlocks\Wms.BuildingBlocks.Application\Wms.BuildingBlocks.Application.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Wms.BuildingBlocks.Infrastructure\Wms.BuildingBlocks.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Wms.BuildingBlocks.Web\Wms.BuildingBlocks.Web.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Label="Modul Notifications">
+    <ProjectReference Include="..\..\..\Modules\Notifications\Wms.Notifications\Wms.Notifications.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -15,12 +15,17 @@ public sealed class AuditLogStore(IServiceScopeFactory scopeFactory) : IAuditLog
 
         await using var scope = scopeFactory.CreateAsyncScope();
         var context = scope.ServiceProvider.GetRequiredService<DbContext>();
+
+        // Ambil correlation id dari request yang sedang berjalan, kalau tersedia.
+        var correlationId = scope.ServiceProvider.GetService<ICorrelationContext>()?.CorrelationId;
+
         context.Set<AuditLogRecord>().Add(new AuditLogRecord
         {
             Id = Guid.NewGuid(),
             Actor = entry.Actor,
             Action = entry.Action,
             OccurredAt = entry.OccurredAt,
+            CorrelationId = correlationId,
         });
         await context.SaveChangesAsync(cancellationToken);
     }

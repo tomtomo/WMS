@@ -5,20 +5,20 @@ using Microsoft.AspNetCore.Routing;
 
 namespace Wms.Auth.Api.Endpoints;
 
-// Group versi /v{n}/auth dan /v{n}/auth/{users,roles,permissions}
+// Group versi /v{n} (session) dan /v{n}/{users,roles,permissions} (admin)
 internal static class AuthApiRoutes
 {
     public static RouteGroupBuilder Auth(IEndpointRouteBuilder app) =>
-        Group(app, "auth", "/v{version:apiVersion}/auth", "Auth");
+        Group(app, "auth", "/v{version:apiVersion}", "Auth");
 
     public static RouteGroupBuilder Users(IEndpointRouteBuilder app) =>
-        Group(app, "auth-users", "/v{version:apiVersion}/auth/users", "AuthUsers");
+        Group(app, "auth-users", "/v{version:apiVersion}/users", "AuthUsers");
 
     public static RouteGroupBuilder Roles(IEndpointRouteBuilder app) =>
-        Group(app, "auth-roles", "/v{version:apiVersion}/auth/roles", "AuthRoles");
+        Group(app, "auth-roles", "/v{version:apiVersion}/roles", "AuthRoles");
 
     public static RouteGroupBuilder Permissions(IEndpointRouteBuilder app) =>
-        Group(app, "auth-permissions", "/v{version:apiVersion}/auth/permissions", "AuthPermissions");
+        Group(app, "auth-permissions", "/v{version:apiVersion}/permissions", "AuthPermissions");
 
     private static RouteGroupBuilder Group(IEndpointRouteBuilder app, string versionSetName, string prefix, string tag)
     {

@@ -1,4 +1,4 @@
-using Wms.BuildingBlocks.Application.Messaging;
+using Wms.Contracts.Abstractions;
 using Wms.Outbound.Contracts.Payloads;
 
 namespace Wms.Outbound.Contracts;

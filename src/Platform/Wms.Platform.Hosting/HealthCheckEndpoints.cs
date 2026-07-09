@@ -5,7 +5,7 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace Microsoft.Extensions.Hosting;
 
-// Probe orkestrator (ACA/Cloud Run/Aspire)
+// Endpoint health check untuk platform runtime seperti ACA, Cloud Run, dan Aspire.
 public static class HealthCheckEndpoints
 {
     private const string LivenessTag = "self";
@@ -24,11 +24,12 @@ public static class HealthCheckEndpoints
     {
         ArgumentNullException.ThrowIfNull(app);
 
-        app.MapHealthChecks("/health");
+        // Health check harus bisa diakses tanpa token, karena dipakai host, gateway, dan orchestrator untuk mengecek status aplikasi.
+        app.MapHealthChecks("/health").AllowAnonymous();
         app.MapHealthChecks("/alive", new HealthCheckOptions
         {
             Predicate = registration => registration.Tags.Contains(LivenessTag),
-        });
+        }).AllowAnonymous();
 
         return app;
     }

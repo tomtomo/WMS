@@ -3,6 +3,7 @@ using AwesomeAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Wms.BuildingBlocks.Application.Messaging;
 using Wms.BuildingBlocks.Infrastructure.Outbox;
+using Wms.Contracts.Abstractions;
 using Wms.Inventory.Contracts;
 using Wms.Inventory.Domain.Enums;
 using Wms.Inventory.IntegrationTests.TestSupport;

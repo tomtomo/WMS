@@ -24,4 +24,20 @@ public static class EventingRailServiceCollectionExtensions
 
         return services;
     }
+
+    // Untuk host yang hanya consume event. Daftarkan subscriber rail saja,
+    // tanpa outbox dispatcher, karena host ini tidak punya tabel outbox untuk dipolling.
+    public static IServiceCollection AddEventingRailSubscriber(this IServiceCollection services, string moduleQueueName)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        ArgumentException.ThrowIfNullOrWhiteSpace(moduleQueueName);
+
+        services.TryAddSingleton(TimeProvider.System);
+        services.AddSingleton(new EventingRailOptions { ModuleQueueName = moduleQueueName });
+
+        services.TryAddSingleton<RailSubscriberWorker>();
+        services.AddHostedService(provider => provider.GetRequiredService<RailSubscriberWorker>());
+
+        return services;
+    }
 }

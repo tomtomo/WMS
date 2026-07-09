@@ -3,6 +3,7 @@ using AwesomeAssertions;
 using Microsoft.EntityFrameworkCore;
 using Wms.BuildingBlocks.Application.Messaging;
 using Wms.Choreography.IntegrationTests.TestSupport;
+using Wms.Contracts.Abstractions;
 using Wms.Inbound.Application.Features.CompleteScan;
 using Wms.Inbound.Application.Features.ConfirmGoodsReceipt;
 using Wms.Inbound.Application.Features.CreateGoodsReceiptHeader;

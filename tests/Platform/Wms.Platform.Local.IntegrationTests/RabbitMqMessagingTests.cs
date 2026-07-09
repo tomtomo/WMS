@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client.Exceptions;
 using Wms.BuildingBlocks.Application.Messaging;
+using Wms.Contracts.Abstractions;
 using Wms.Platform.Local.IntegrationTests.TestSupport;
 using Wms.Platform.Local.Messaging;
 using Xunit;

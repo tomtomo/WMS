@@ -85,4 +85,28 @@ public sealed class RestApiTests(PostgresFixture postgres) : IAsyncLifetime
         var get = await _client.GetAsync($"/v1/warehouses/{warehouseId}");
         get.StatusCode.Should().Be(HttpStatusCode.NotFound, "soft-deleted tersembunyi dari lookup default");
     }
+
+    [Fact]
+    public async Task Repeated_post_with_the_same_idempotency_key_creates_one_side_effect()
+    {
+        var payload = new { name = "DC Idempotent", address = "Jl. Idem No. 1" };
+
+        var firstId = await PostWarehouseWithKeyAsync(payload, "warehouse-idem-1");
+        var secondId = await PostWarehouseWithKeyAsync(payload, "warehouse-idem-1");
+
+        secondId.Should().Be(firstId, "POST kedua dgn Idempotency-Key sama = replay respons tersimpan, bukan create baru");
+    }
+
+    private async Task<Guid> PostWarehouseWithKeyAsync(object payload, string idempotencyKey)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/v1/warehouses")
+        {
+            Content = JsonContent.Create(payload),
+        };
+        request.Headers.Add("Idempotency-Key", idempotencyKey);
+
+        var response = await _client.SendAsync(request);
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        return (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("warehouseId").GetGuid();
+    }
 }

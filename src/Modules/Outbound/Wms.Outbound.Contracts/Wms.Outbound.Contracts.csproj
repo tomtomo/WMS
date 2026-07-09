@@ -1,10 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- Published language Outbound: payload POCO integration-event (immutable, nol metadata envelope).
-       Ref hanya messaging-kernel BuildingBlocks.Application (marker IIntegrationEvent + DeliveryClass) -->
+  <!-- Kontrak event yang dipublish Outbound. Payload tetap berupa POCO sederhana,
+     tanpa metadata envelope, dan hanya bergantung ke Contracts.Abstractions. -->
 
-  <ItemGroup Label="Messaging kernel (marker + delivery class)">
-    <ProjectReference Include="..\..\..\BuildingBlocks\Wms.BuildingBlocks.Application\Wms.BuildingBlocks.Application.csproj" />
+  <ItemGroup Label="Referensi kontrak event Outbound">
+    <ProjectReference Include="..\..\..\BuildingBlocks\Wms.Contracts.Abstractions\Wms.Contracts.Abstractions.csproj" />
   </ItemGroup>
 
 </Project>

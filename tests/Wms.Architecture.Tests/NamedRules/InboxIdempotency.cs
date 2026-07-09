@@ -3,11 +3,12 @@ using Xunit;
 
 namespace Wms.Architecture.Tests.NamedRules;
 
-// Named FF — tiap consumer integration event di back Inbox (HasProcessedAsync + MarkProcessedAsync) sehingga
-// pengiriman ganda broker jadi no-op.
+// Setiap consumer event dicek lewat Inbox sebelum diproses. Kalau broker mengirim event yang sama lagi, handler cukup skip.
 public sealed class InboxIdempotency
 {
-    private const string InboxGuardMarker = "MarkProcessedAsync";
+    // Guard harus lengkap: cek sudah diproses dan tandai setelah berhasil. Kalau bagian cek hilang, event ganda masih bisa lolos.
+    private const string InboxReadMarker = "HasProcessedAsync";
+    private const string InboxWriteMarker = "MarkProcessedAsync";
 
     [Fact]
     public void Integration_event_consumers_use_inbox_guard()
@@ -15,13 +16,16 @@ public sealed class InboxIdempotency
         var violations = new List<string>();
         foreach (var consumerFile in ConsumerFiles(SourceScan.SrcPath("Modules")))
         {
-            if (!File.ReadAllText(consumerFile).Contains(InboxGuardMarker, StringComparison.Ordinal))
+            var source = File.ReadAllText(consumerFile);
+            if (!source.Contains(InboxReadMarker, StringComparison.Ordinal)
+                || !source.Contains(InboxWriteMarker, StringComparison.Ordinal))
             {
                 violations.Add(consumerFile);
             }
         }
 
-        violations.Should().BeEmpty("consumer integration event wajib pakai Inbox guard (named FF)");
+        violations.Should().BeEmpty(
+            "consumer integration event wajib pakai Inbox guard dua sisi: HasProcessedAsync (baca) + MarkProcessedAsync (tulis) (named FF)");
     }
 
     // Konvensi handler integration event: *EventHandler.cs / *Consumer.cs di modul.

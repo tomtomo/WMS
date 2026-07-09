@@ -41,7 +41,7 @@ public static class AuthModuleServiceCollectionExtensions
         services.AddScoped<DbContext>(provider => provider.GetRequiredService<AuthDbContext>());
 
         // Issuer JWT membaca section "Jwt"
-        services.Configure<JwtIssuerOptions>(configuration.GetSection(JwtIssuerOptions.SectionName));
+        services.AddValidatedOptions<JwtIssuerOptions>(configuration, JwtIssuerOptions.SectionName);
 
         // Write side.
         services.AddScoped<IUserRepository, UserRepository>();

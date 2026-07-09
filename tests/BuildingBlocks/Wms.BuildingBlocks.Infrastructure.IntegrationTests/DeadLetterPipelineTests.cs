@@ -35,6 +35,7 @@ public sealed class DeadLetterPipelineTests(PostgresFixture postgres)
         deadLetters[0].Source.Should().Be("inbound.gr_confirmed.v1");
         deadLetters[0].Error.Should().Contain("handler boom");
         deadLetters[0].Payload.Should().Be("{\"id\":1}");
+        deadLetters[0].AttemptCount.Should().Be(ConsumerDeadLetterPipeline.MaxAttempts);
     }
 
     [Fact]

@@ -1,6 +1,7 @@
 using Wms.Auth.Application.Abstractions;
 using Wms.Auth.Domain;
 using Wms.BuildingBlocks.Application.Abstractions;
+using Wms.BuildingBlocks.Application.Abstractions.Ports;
 using Wms.BuildingBlocks.Application.Messaging;
 using Wms.BuildingBlocks.Domain.Results;
 
@@ -13,6 +14,7 @@ internal sealed class RefreshAccessTokenHandler(
     IJwtTokenIssuer jwtTokenIssuer,
     IEffectivePermissionResolver permissionResolver,
     IUnitOfWork unitOfWork,
+    IAuditLogStore auditLogStore,
     TimeProvider timeProvider)
     : ICommandHandler<RefreshAccessTokenCommand, RefreshAccessTokenResponse>
 {
@@ -37,6 +39,11 @@ internal sealed class RefreshAccessTokenHandler(
         {
             await RevokeRotationChainAsync(stored, now, cancellationToken);
             await unitOfWork.SaveChangesAsync(cancellationToken);
+
+            // Reuse refresh token tetap dicatat karena mencabut seluruh rotation chain,
+            // sementara AuditLogBehavior hanya mencatat flow yang berhasil.
+            await auditLogStore.RecordAsync(
+                new AuditLogEntry(stored.UserId.Value.ToString(), "RefreshTokenReuseDetected", now), cancellationToken);
             return Result.Conflict<RefreshAccessTokenResponse>(
                 new Error("auth.refresh_token_reused", "Refresh token sudah dipakai; seluruh sesi dicabut."));
         }

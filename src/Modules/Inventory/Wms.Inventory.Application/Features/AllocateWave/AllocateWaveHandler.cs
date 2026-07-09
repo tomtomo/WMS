@@ -1,6 +1,6 @@
 using Wms.BuildingBlocks.Application.Abstractions.Ports;
-using Wms.BuildingBlocks.Application.Messaging;
 using Wms.BuildingBlocks.Domain.Results;
+using Wms.Contracts.Abstractions;
 using Wms.Inventory.Application.Abstractions;
 using Wms.Inventory.Contracts;
 using Wms.Inventory.Contracts.Payloads;

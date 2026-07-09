@@ -4,11 +4,12 @@ package auth.v1;
 
 option csharp_namespace = "Wms.Auth.Grpc.V1";
 
-// Menyediakan data User, Role, dan Permission berdasarkan ID.
+// Lookup data User, Role, dan Permission berdasarkan ID.
 service AuthLookup {
   rpc GetUser (GetUserRequest) returns (UserSnapshot);
   rpc GetRole (GetRoleRequest) returns (RoleSnapshot);
   rpc GetPermissions (GetPermissionsRequest) returns (PermissionCatalog);
+  rpc GetRoleMembers (GetRoleMembersRequest) returns (RoleMembers);
 }
 
 message GetUserRequest {
@@ -17,6 +18,15 @@ message GetUserRequest {
 
 message GetRoleRequest {
   string role_id = 1;
+}
+
+message GetRoleMembersRequest {
+  string role_id = 1;
+}
+
+// Daftar user aktif dalam satu role, dipakai saat notifikasi perlu dikirim ke semua anggota role.
+message RoleMembers {
+  repeated string user_ids = 1;
 }
 
 message GetPermissionsRequest {

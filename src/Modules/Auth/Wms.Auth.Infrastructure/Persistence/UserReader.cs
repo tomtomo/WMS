@@ -28,6 +28,13 @@ internal sealed class UserReader(AuthDbContext context, IEffectivePermissionReso
         return Map(user, permissionCodes);
     }
 
+    public async Task<IReadOnlyList<Guid>> GetUserIdsInRoleAsync(Guid roleId, CancellationToken cancellationToken = default)
+    {
+        // RoleIds disimpan sebagai jsonb lewat converter, jadi Contains belum bisa diterjemahkan EF ke SQL. (cloud: query jsonb GIN atau tabel membership)
+        var users = await context.Set<User>().AsNoTracking().ToListAsync(cancellationToken);
+        return [.. users.Where(user => user.RoleIds.Contains(roleId)).Select(user => user.Id.Value)];
+    }
+
     public async Task<PagedResult<UserDto>> ListAsync(
         int page,
         int pageSize,

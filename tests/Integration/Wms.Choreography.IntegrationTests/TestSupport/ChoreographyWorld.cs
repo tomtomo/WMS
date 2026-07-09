@@ -8,6 +8,7 @@ using Wms.BuildingBlocks.Domain.Results;
 using Wms.BuildingBlocks.Infrastructure.Eventing;
 using Wms.BuildingBlocks.Infrastructure.Inbox;
 using Wms.BuildingBlocks.Infrastructure.Outbox;
+using Wms.Contracts.Abstractions;
 using Wms.Inbound.Infrastructure;
 using Wms.Inventory.Infrastructure;
 using Wms.Notifications.Abstractions;
