@@ -18,6 +18,9 @@ public sealed class OutboxConfiguration : IEntityTypeConfiguration<OutboxRecord>
         builder.Property(record => record.Payload).HasColumnName("payload");
         builder.Property(record => record.Traceparent).HasColumnName("traceparent").HasMaxLength(64);
         builder.Property(record => record.Tracestate).HasColumnName("tracestate").HasMaxLength(256);
+
+        // 128 = batas panjang session id Service Bus, ikut jadi batas kunci lintas cloud.
+        builder.Property(record => record.PartitionKey).HasColumnName("partition_key").HasMaxLength(128);
         builder.Property(record => record.ProcessedAt).HasColumnName("processed_at");
         builder.Property(record => record.AttemptCount).HasColumnName("attempt_count");
     }

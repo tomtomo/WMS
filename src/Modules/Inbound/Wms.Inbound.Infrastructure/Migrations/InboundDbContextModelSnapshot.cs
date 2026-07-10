@@ -151,6 +151,11 @@ namespace Wms.Inbound.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("occurred_at");
 
+                    b.Property<string>("PartitionKey")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("partition_key");
+
                     b.Property<string>("Payload")
                         .IsRequired()
                         .HasColumnType("text")

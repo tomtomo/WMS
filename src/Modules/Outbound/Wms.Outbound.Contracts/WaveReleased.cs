@@ -6,9 +6,11 @@ namespace Wms.Outbound.Contracts;
 // Outbound ke Inventory: wave dirilis. Inventory alokasi Stock Available (FEFO) via reservasi.
 public sealed record WaveReleased(
     Guid WaveId,
-    IReadOnlyList<WaveLine> Lines) : IIntegrationEvent
+    IReadOnlyList<WaveLine> Lines) : IIntegrationEvent, IHasPartitionKey
 {
     public const string LogicalName = "outbound.wave_released.v1";
 
     public const DeliveryClass DeliveryClass = DeliveryClass.CoreFlow;
+
+    string IHasPartitionKey.PartitionKey => WaveId.ToString();
 }

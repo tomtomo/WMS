@@ -6,9 +6,11 @@ namespace Wms.Inventory.Contracts;
 // Inventory ke Reporting: stok Picked dihapus setelah ShipmentDispatched. Diemit Inventory, bukan diturunkan dari event Outbound.
 public sealed record StockRemoved(
     Guid WaveId,
-    IReadOnlyList<StockRemovedLine> Lines) : IIntegrationEvent
+    IReadOnlyList<StockRemovedLine> Lines) : IIntegrationEvent, IHasPartitionKey
 {
     public const string LogicalName = "inventory.stock_removed.v1";
 
     public const DeliveryClass DeliveryClass = DeliveryClass.CoreFlow;
+
+    string IHasPartitionKey.PartitionKey => WaveId.ToString();
 }

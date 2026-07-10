@@ -6,6 +6,7 @@ using Wms.Contracts.Abstractions;
 namespace Wms.BuildingBlocks.Application.Messaging;
 
 // Envelope message untuk membawa metadata dan payload event.
+// PartitionKey opsional di akhir: identitas aliran untuk transport berordering, null = tanpa kebutuhan ordering.
 public sealed partial record MessageEnvelope(
     Guid EventId,
     string LogicalName,
@@ -13,7 +14,8 @@ public sealed partial record MessageEnvelope(
     DateTimeOffset OccurredAt,
     string Payload,
     string? Traceparent,
-    string? Tracestate)
+    string? Tracestate,
+    string? PartitionKey = null)
 {
     public static JsonSerializerOptions PayloadSerializerOptions { get; } = new(JsonSerializerDefaults.Web)
     {
@@ -41,7 +43,8 @@ public sealed partial record MessageEnvelope(
         }
 
         var payload = JsonSerializer.Serialize(integrationEvent, integrationEvent.GetType(), PayloadSerializerOptions);
-        return new MessageEnvelope(eventId, logicalName, deliveryClass, occurredAt, payload, null, null);
+        var partitionKey = (integrationEvent as IHasPartitionKey)?.PartitionKey;
+        return new MessageEnvelope(eventId, logicalName, deliveryClass, occurredAt, payload, null, null, partitionKey);
     }
 
     // Broker identity {module}.{event}.v{N}

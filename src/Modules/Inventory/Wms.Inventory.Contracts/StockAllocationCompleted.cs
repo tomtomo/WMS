@@ -10,7 +10,7 @@ public sealed record StockAllocationCompleted(
     Guid WaveId,
     AllocationStatus Status,
     IReadOnlyList<Allocation> Allocations,
-    IReadOnlyList<Shortfall> Shortfalls) : IIntegrationEvent
+    IReadOnlyList<Shortfall> Shortfalls) : IIntegrationEvent, IHasPartitionKey
 {
     public const string LogicalName = "inventory.stock_allocation_completed.v1";
 
@@ -18,4 +18,6 @@ public sealed record StockAllocationCompleted(
 
     public static readonly ImmutableArray<DeliveryClass> DeliveryClasses =
         [DeliveryClass.CoreFlow, DeliveryClass.Notification];
+
+    string IHasPartitionKey.PartitionKey => WaveId.ToString();
 }

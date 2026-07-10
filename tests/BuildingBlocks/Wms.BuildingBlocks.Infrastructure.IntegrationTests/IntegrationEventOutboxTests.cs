@@ -35,6 +35,33 @@ public sealed class IntegrationEventOutboxTests(PostgresFixture postgres)
         row.Traceparent.Should().BeNull();
     }
 
+    [Fact]
+    public async Task Persists_the_partition_key_declared_by_the_contract()
+    {
+        await using var context = await NewContextAsync();
+        var outbox = new IntegrationEventOutbox(context, new FixedTimeProvider(_occurredAt));
+        var orderedEvent = new OrderedStreamTestEvent(Guid.NewGuid());
+
+        await outbox.AddAsync(orderedEvent, DeliveryClass.CoreFlow);
+        await context.SaveChangesAsync();
+
+        var row = await context.Set<OutboxRecord>().SingleAsync();
+        row.PartitionKey.Should().Be(((IHasPartitionKey)orderedEvent).PartitionKey);
+    }
+
+    [Fact]
+    public async Task Leaves_partition_key_null_for_a_contract_without_ordering_need()
+    {
+        await using var context = await NewContextAsync();
+        var outbox = new IntegrationEventOutbox(context, new FixedTimeProvider(_occurredAt));
+
+        await outbox.AddAsync(new GoodsReceivedTestEvent("GR-7", 2), DeliveryClass.CoreFlow);
+        await context.SaveChangesAsync();
+
+        var row = await context.Set<OutboxRecord>().SingleAsync();
+        row.PartitionKey.Should().BeNull();
+    }
+
     private async Task<RailTestDbContext> NewContextAsync()
     {
         var connectionString = await postgres.CreateFreshDatabaseAsync();
