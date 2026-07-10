@@ -40,9 +40,16 @@ internal static class ServiceBusRailTopology
                 .RuleExistsAsync(topicName, subscriptionName, RuleProperties.DefaultRuleName, cancellationToken)
                 .ConfigureAwait(false))
         {
-            await administrationClient
-                .DeleteRuleAsync(topicName, subscriptionName, RuleProperties.DefaultRuleName, cancellationToken)
-                .ConfigureAwait(false);
+            try
+            {
+                await administrationClient
+                    .DeleteRuleAsync(topicName, subscriptionName, RuleProperties.DefaultRuleName, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+            catch (ServiceBusException exception) when (exception.Reason == ServiceBusFailureReason.MessagingEntityNotFound)
+            {
+                // Rule sudah lebih dulu dihapus oleh host lain, jadi tidak perlu diproses lagi.
+            }
         }
 
         foreach (var logicalName in logicalNames)

@@ -12,7 +12,8 @@ namespace Wms.Platform.Azure.Messaging;
 // Publisher untuk stream event bisnis lewat Event Hubs. Jika payload punya partition key, event dikirim sesuai key tersebut.
 public sealed class EventHubsEventStreamPublisher : IEventStreamPublisher, IAsyncDisposable
 {
-    private readonly ConcurrentDictionary<string, EventHubProducerClient> _producers = new(StringComparer.Ordinal);
+    // Lazy per key: factory GetOrAdd berjalan di luar lock.
+    private readonly ConcurrentDictionary<string, Lazy<EventHubProducerClient>> _producers = new(StringComparer.Ordinal);
     private readonly Func<string, EventHubProducerClient> _producerFactory;
 
     public EventHubsEventStreamPublisher(IOptions<AzureMessagingOptions> options, IConfiguration configuration)
@@ -35,7 +36,9 @@ public sealed class EventHubsEventStreamPublisher : IEventStreamPublisher, IAsyn
         ArgumentException.ThrowIfNullOrWhiteSpace(streamName);
         ArgumentNullException.ThrowIfNull(payload);
 
-        var producer = _producers.GetOrAdd(streamName, _producerFactory);
+        var producer = _producers
+            .GetOrAdd(streamName, name => new Lazy<EventHubProducerClient>(() => _producerFactory(name)))
+            .Value;
         var eventData = new EventData(JsonSerializer.SerializeToUtf8Bytes(payload, payload.GetType()))
         {
             ContentType = "application/json",
@@ -48,9 +51,9 @@ public sealed class EventHubsEventStreamPublisher : IEventStreamPublisher, IAsyn
 
     public async ValueTask DisposeAsync()
     {
-        foreach (var producer in _producers.Values)
+        foreach (var producer in _producers.Values.Where(lazy => lazy.IsValueCreated))
         {
-            await producer.DisposeAsync().ConfigureAwait(false);
+            await producer.Value.DisposeAsync().ConfigureAwait(false);
         }
     }
 

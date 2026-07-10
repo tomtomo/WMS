@@ -66,7 +66,7 @@ public sealed class SagaParityTests
     [Fact]
     public async Task Saga_runs_every_step_in_order_when_all_succeed()
     {
-        var calls = RecordActivityCalls(failOn: null);
+        var calls = RecordActivityCalls();
         var definition = new SagaDefinition(
             [new SagaStep("CancelWave", "ReopenWave"), new SagaStep("ReleaseReservation", "ReReserve")],
             """{"waveId":"W1"}""");
@@ -80,7 +80,7 @@ public sealed class SagaParityTests
     [Fact]
     public async Task Failure_mid_saga_compensates_completed_steps_in_reverse_order()
     {
-        var calls = RecordActivityCalls(failOn: "ShipConfirm");
+        var calls = RecordActivityCalls("ShipConfirm");
         var definition = new SagaDefinition(
             [
                 new SagaStep("CancelWave", "ReopenWave"),
@@ -100,7 +100,7 @@ public sealed class SagaParityTests
     [Fact]
     public async Task Step_without_compensation_is_skipped_during_rollback()
     {
-        var calls = RecordActivityCalls(failOn: "StepC");
+        var calls = RecordActivityCalls("StepC");
         var definition = new SagaDefinition(
             [new SagaStep("StepA"), new SagaStep("StepB", "UndoB"), new SagaStep("StepC")],
             "{}");
@@ -111,7 +111,22 @@ public sealed class SagaParityTests
         calls.Should().Equal("StepA", "StepB", "StepC", "UndoB");
     }
 
-    private List<string> RecordActivityCalls(string? failOn)
+    [Fact]
+    public async Task Compensation_failure_does_not_stop_the_remaining_rollback()
+    {
+        var calls = RecordActivityCalls("StepC", "UndoB");
+        var definition = new SagaDefinition(
+            [new SagaStep("StepA", "UndoA"), new SagaStep("StepB", "UndoB"), new SagaStep("StepC", "UndoC")],
+            "{}");
+
+        var outcome = await new SagaOrchestration().RunAsync(_context, definition);
+
+        // Kompensasi tidak tuntas harus terbedakan dari rollback bersih, dan UndoA tetap dijalankan.
+        outcome.Should().Be(SagaOutcome.CompensationIncomplete("StepC", "UndoB"));
+        calls.Should().Equal("StepA", "StepB", "StepC", "UndoB", "UndoA");
+    }
+
+    private List<string> RecordActivityCalls(params string[] failOn)
     {
         var calls = new List<string>();
         _context.CallActivityAsync<object?>(Arg.Any<TaskName>(), Arg.Any<object?>(), Arg.Any<TaskOptions?>())
@@ -119,7 +134,7 @@ public sealed class SagaParityTests
             {
                 var name = callInfo.Arg<TaskName>().Name;
                 calls.Add(name);
-                return string.Equals(name, failOn, StringComparison.Ordinal)
+                return failOn.Contains(name, StringComparer.Ordinal)
                     ? Task.FromException<object?>(new InvalidOperationException($"activity {name} gagal"))
                     : Task.FromResult<object?>(null);
             });

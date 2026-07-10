@@ -13,7 +13,7 @@ public sealed class DurableFunctionsSagaOrchestrator(DurableTaskClient client) :
         ArgumentException.ThrowIfNullOrWhiteSpace(sagaId);
         ArgumentNullException.ThrowIfNull(data);
 
-        // Samakan perilaku dengan adapter in process: saga yang masih berjalan tidak boleh distart ulang.
+        // Agar konsisten dengan adapter in process: saga yang masih jalan tidak boleh dimulai lagi.
         var existing = await client.GetInstanceAsync(sagaId, cancellationToken).ConfigureAwait(false);
         if (existing is { IsCompleted: false })
         {

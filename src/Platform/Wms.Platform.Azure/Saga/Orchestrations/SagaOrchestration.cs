@@ -22,13 +22,26 @@ public sealed class SagaOrchestration : TaskOrchestrator<SagaDefinition, SagaOut
 #pragma warning restore S2221
             {
                 var compensations = Enumerable.Reverse(completed)
-                    .Where(done => done.CompensationActivityName is not null);
-                foreach (var done in compensations)
+                    .Where(done => done.CompensationActivityName is not null)
+                    .Select(done => done.CompensationActivityName!);
+                string? failedCompensation = null;
+                foreach (var compensationName in compensations)
                 {
-                    await context.CallActivityAsync<object?>(new TaskName(done.CompensationActivityName!), input.PayloadJson);
+                    try
+                    {
+                        await context.CallActivityAsync<object?>(new TaskName(compensationName), input.PayloadJson);
+                    }
+#pragma warning disable S2221 // Satu kompensasi gagal tidak boleh menghentikan sisa rollback.
+                    catch (Exception)
+#pragma warning restore S2221
+                    {
+                        failedCompensation ??= compensationName;
+                    }
                 }
 
-                return SagaOutcome.Compensated(step.ActivityName);
+                return failedCompensation is null
+                    ? SagaOutcome.Compensated(step.ActivityName)
+                    : SagaOutcome.CompensationIncomplete(step.ActivityName, failedCompensation);
             }
 
             completed.Add(step);
@@ -44,10 +57,16 @@ public sealed record SagaStep(string ActivityName, string? CompensationActivityN
 // Definisi saga berisi urutan langkah dan payload JSON yang dikirim ke setiap activity.
 public sealed record SagaDefinition(IReadOnlyList<SagaStep> Steps, string PayloadJson);
 
-// Hasil akhir saga: selesai semua, atau sudah dikompensasi setelah satu activity gagal.
-public sealed record SagaOutcome(bool IsCompensated, string? FailedActivityName)
+// Hasil akhir saga: selesai semua, terkompensasi bersih, atau kompensasi tidak tuntas.
+public sealed record SagaOutcome(
+    bool IsCompensated,
+    string? FailedActivityName,
+    string? FailedCompensationActivityName = null)
 {
     public static SagaOutcome Completed() => new(false, null);
 
     public static SagaOutcome Compensated(string failedActivityName) => new(true, failedActivityName);
+
+    public static SagaOutcome CompensationIncomplete(string failedActivityName, string failedCompensationActivityName) =>
+        new(true, failedActivityName, failedCompensationActivityName);
 }

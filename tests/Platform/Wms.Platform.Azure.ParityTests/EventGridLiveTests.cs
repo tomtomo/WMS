@@ -59,7 +59,7 @@ public sealed class EventGridLiveTests
                         return true;
                     }
 
-                    queue.DeleteMessage(message.MessageId, message.PopReceipt);
+                    // Message milik run lain dibiarkan
                 }
 
                 return false;
