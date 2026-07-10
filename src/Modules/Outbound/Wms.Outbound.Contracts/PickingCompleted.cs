@@ -12,9 +12,11 @@ public sealed record PickingCompleted(
     string? Batch,
     decimal Qty,
     Guid StagingLocationId,
-    Guid? OperatorId) : IIntegrationEvent
+    Guid? OperatorId) : IIntegrationEvent, IHasPartitionKey
 {
     public const string LogicalName = "outbound.picking_completed.v1";
 
     public const DeliveryClass DeliveryClass = DeliveryClass.CoreFlow;
+
+    string IHasPartitionKey.PartitionKey => WaveId.ToString();
 }

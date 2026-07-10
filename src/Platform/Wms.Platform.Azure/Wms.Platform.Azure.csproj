@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Adapter Azure yang mengimplementasikan port messaging/eventing (Service Bus core-flow,
+       Event Grid notification, Event Hubs stream, Durable Task saga, SB scheduled delay). -->
+
+  <ItemGroup Label="Kernel — port">
+    <ProjectReference Include="..\..\BuildingBlocks\Wms.BuildingBlocks.Application\Wms.BuildingBlocks.Application.csproj" />
+    <ProjectReference Include="..\..\BuildingBlocks\Wms.BuildingBlocks.Infrastructure\Wms.BuildingBlocks.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Label="Internals untuk test">
+    <InternalsVisibleTo Include="Wms.Platform.Azure.ParityTests" />
+  </ItemGroup>
+
+  <ItemGroup Label="Stack Azure per concern">
+    <PackageReference Include="Azure.Messaging.ServiceBus" />
+    <PackageReference Include="Azure.Messaging.EventGrid" />
+    <PackageReference Include="Azure.Messaging.EventHubs" />
+    <PackageReference Include="Microsoft.DurableTask.Client" />
+    <PackageReference Include="Microsoft.DurableTask.Abstractions" />
+  </ItemGroup>
+
+</Project>

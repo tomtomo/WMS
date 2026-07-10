@@ -4,8 +4,8 @@ using Xunit;
 
 namespace Wms.Architecture.Tests.FitnessFunctions;
 
-// FF#1 — SDK cloud (Azure/Microsoft.Azure/Google.Cloud/Amazon/AWSSDK) hanya boleh hidup di Platform.<Cloud>+Hosts.
-// Kernel + modul + Platform agnostic (Hosting/Local) nol SDK cloud. Diverifikasi di source.
+// SDK cloud (Azure/Microsoft.Azure/Google.Cloud/Amazon/AWSSDK) hanya boleh ada di Platform.<Cloud>+Hosts.
+// Kernel, modul, Platform agnostic tidak boleh ada SDK cloud. Diverifikasi di source.
 public sealed partial class Ff01_NoCloudSdk
 {
     private static readonly string[] _cloudSdkPrefixes = ["Azure.", "Microsoft.Azure", "Google.Cloud", "Amazon", "AWSSDK"];
@@ -43,11 +43,33 @@ public sealed partial class Ff01_NoCloudSdk
             }
         }
 
-        violations.Should().BeEmpty("SDK cloud hanya boleh di Platform.<Cloud>+Hosts (FF#1)");
+        violations.Should().BeEmpty("SDK cloud hanya boleh di Platform.<Cloud>+Hosts");
+    }
+
+    [Fact]
+    public void Azure_sdk_is_confined_to_platform_azure_and_hosts()
+    {
+        var platformAzureRoot = SourceScan.SrcPath("Platform", "Wms.Platform.Azure");
+        string[] allowedRoots = [platformAzureRoot, SourceScan.SrcPath("Hosts")];
+
+        // Pastikan root yang dikecualikan ada, agar test tidak lolos hanya karena path salah.
+        SourceScan.ProjectFiles(platformAzureRoot).Should().NotBeEmpty("Wms.Platform.Azure wajib ada");
+
+        var violations = SourceScan.SourceFiles(SourceScan.SrcPath())
+            .Where(file => !allowedRoots.Any(root => file.StartsWith(root, StringComparison.OrdinalIgnoreCase)))
+            .SelectMany(file => File.ReadLines(file)
+                .Where(line => AzureUsingRegex().IsMatch(line))
+                .Select(line => $"{file}: {line.Trim()}"))
+            .ToList();
+
+        violations.Should().BeEmpty("Azure.* hanya boleh ada di Platform.Azure dan Hosts ");
     }
 
     [GeneratedRegex(@"<PackageReference\s+Include=""([^""]+)""")]
     private static partial Regex PackageReferenceRegex();
+
+    [GeneratedRegex(@"^\s*(global\s+)?using\s+(static\s+)?(Azure|Microsoft\.Azure)[\.;]")]
+    private static partial Regex AzureUsingRegex();
 
     [GeneratedRegex(@"^\s*(global\s+)?using\s+(static\s+)?(Azure|Microsoft\.Azure|Google\.Cloud|Amazon)[\.;]")]
     private static partial Regex CloudUsingRegex();

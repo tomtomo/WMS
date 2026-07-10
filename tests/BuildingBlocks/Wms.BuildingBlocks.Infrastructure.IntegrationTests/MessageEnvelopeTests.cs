@@ -53,6 +53,36 @@ public sealed class MessageEnvelopeTests
         restored.Should().Be(payload);
     }
 
+    [Fact]
+    public void Create_extracts_partition_key_from_a_contract_that_declares_one()
+    {
+        var payload = new OrderedStreamTestEvent(Guid.Parse("99999999-9999-9999-9999-999999999999"));
+
+        var envelope = MessageEnvelope.Create(
+            payload,
+            OrderedStreamTestEvent.LogicalName,
+            DeliveryClass.CoreFlow,
+            _eventId,
+            _occurredAt);
+
+        envelope.PartitionKey.Should().Be(payload.StreamId.ToString());
+        envelope.Payload.Should().NotContainEquivalentOf(
+            "partitionKey", "identitas aliran = metadata envelope, bukan payload");
+    }
+
+    [Fact]
+    public void Create_leaves_partition_key_null_for_a_contract_without_ordering_need()
+    {
+        var envelope = MessageEnvelope.Create(
+            new GoodsReceivedTestEvent("GR-1", 1),
+            "inbound.gr_confirmed.v1",
+            DeliveryClass.Notification,
+            _eventId,
+            _occurredAt);
+
+        envelope.PartitionKey.Should().BeNull();
+    }
+
     [Theory]
     [InlineData("inbound.gr_confirmed.v1")]
     [InlineData("inventory.stock_allocation_completed.v1")]

@@ -11,6 +11,7 @@ public sealed class OutboxRecord
     public string Payload { get; set; } = string.Empty;
     public string? Traceparent { get; set; }
     public string? Tracestate { get; set; }
+    public string? PartitionKey { get; set; }
     public DateTimeOffset? ProcessedAt { get; set; }
     public int AttemptCount { get; set; }
 }

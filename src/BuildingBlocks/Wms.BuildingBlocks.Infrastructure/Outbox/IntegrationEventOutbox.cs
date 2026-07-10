@@ -45,6 +45,7 @@ public sealed class IntegrationEventOutbox(DbContext dbContext, TimeProvider tim
             Payload = envelope.Payload,
             Traceparent = envelope.Traceparent,
             Tracestate = envelope.Tracestate,
+            PartitionKey = envelope.PartitionKey,
         });
         return Task.CompletedTask;
     }

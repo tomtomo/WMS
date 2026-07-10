@@ -8,9 +8,11 @@ public sealed record PutawayCompleted(
     Guid StockId,
     string Sku,
     Guid WarehouseId,
-    Guid? OperatorId) : IIntegrationEvent
+    Guid? OperatorId) : IIntegrationEvent, IHasPartitionKey
 {
     public const string LogicalName = "inventory.putaway_completed.v1";
 
     public const DeliveryClass DeliveryClass = DeliveryClass.CoreFlow;
+
+    string IHasPartitionKey.PartitionKey => StockId.ToString();
 }

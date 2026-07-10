@@ -43,7 +43,8 @@ public sealed class OutboxDispatcherWorker(
                 row.OccurredAt,
                 row.Payload,
                 row.Traceparent,
-                row.Tracestate);
+                row.Tracestate,
+                row.PartitionKey);
             try
             {
                 await dispatcher.DispatchAsync(envelope, cancellationToken).ConfigureAwait(false);

@@ -9,9 +9,11 @@ public sealed record GRConfirmed(
     Guid WarehouseId,
     Guid SupplierId,
     IReadOnlyList<ReceivedLine> ReceivedLines,
-    IReadOnlyList<RejectedLine> RejectedLines) : IIntegrationEvent
+    IReadOnlyList<RejectedLine> RejectedLines) : IIntegrationEvent, IHasPartitionKey
 {
     public const string LogicalName = "inbound.gr_confirmed.v1";
 
     public const DeliveryClass DeliveryClass = DeliveryClass.CoreFlow;
+
+    string IHasPartitionKey.PartitionKey => GrId.ToString();
 }
