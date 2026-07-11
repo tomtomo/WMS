@@ -24,12 +24,19 @@
     <PackageReference Include="Microsoft.Extensions.Configuration" />
     <PackageReference Include="Testcontainers.ServiceBus" />
     <PackageReference Include="Testcontainers.EventHubs" />
+    <PackageReference Include="Testcontainers.Redis" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
     <PackageReference Include="Xunit.SkippableFact" />
     <PackageReference Include="Azure.Storage.Queues" />
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
   </ItemGroup>
 
   <ItemGroup Label="Subjek di bawah test">
     <ProjectReference Include="..\..\..\src\Platform\Wms.Platform.Azure\Wms.Platform.Azure.csproj" />
+    <ProjectReference Include="..\..\..\src\Platform\Wms.Platform.Shared\Wms.Platform.Shared.csproj" />
+  </ItemGroup>
+  <ItemGroup Label="Oracle parity">
+    <ProjectReference Include="..\..\..\src\Platform\Wms.Platform.Local\Wms.Platform.Local.csproj" />
   </ItemGroup>
 
 </Project>

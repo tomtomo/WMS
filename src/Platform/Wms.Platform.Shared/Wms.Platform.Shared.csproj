@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Adapter portable -->
+
+  <ItemGroup Label="Kernel — port">
+    <ProjectReference Include="..\..\BuildingBlocks\Wms.BuildingBlocks.Application\Wms.BuildingBlocks.Application.csproj" />
+  </ItemGroup>
+
+  <!-- IHubContext/Hub untuk channel in app. -->
+  <ItemGroup Label="Shared framework">
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup Label="Stack portable per concern">
+    <PackageReference Include="StackExchange.Redis" />
+    <PackageReference Include="FirebaseAdmin" />
+    <PackageReference Include="Konscious.Security.Cryptography.Argon2" />
+  </ItemGroup>
+
+  <ItemGroup Label="Internals untuk test">
+    <InternalsVisibleTo Include="Wms.Platform.Azure.ParityTests" />
+    <InternalsVisibleTo Include="Wms.Platform.Local.IntegrationTests" />
+  </ItemGroup>
+
+</Project>

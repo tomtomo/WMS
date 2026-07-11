@@ -1,0 +1,15 @@
+# .dockerignore — deny by default
+
+*
+
+!src/
+!Directory.Build.props
+!Directory.Packages.props
+!global.json
+!nuget.config
+!.editorconfig
+!dotnet-tools.json
+
+**/bin/
+**/obj/
+**/.vs/

@@ -19,6 +19,9 @@ public sealed partial class Ff01_NoCloudSdk
             SourceScan.SrcPath("Modules"),
             SourceScan.SrcPath("Platform", "Wms.Platform.Hosting"),
             SourceScan.SrcPath("Platform", "Wms.Platform.Local"),
+
+            // Adapter shared digunakan lintas platform, jadi tidak boleh bergantung pada SDK cloud tertentu.
+            SourceScan.SrcPath("Platform", "Wms.Platform.Shared"),
         ];
 
         var violations = new List<string>();

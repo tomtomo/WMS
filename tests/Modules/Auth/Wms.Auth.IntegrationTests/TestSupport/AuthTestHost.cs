@@ -5,7 +5,7 @@ using Wms.Auth.Application;
 using Wms.Auth.Infrastructure;
 using Wms.Auth.Infrastructure.Seed;
 using Wms.BuildingBlocks.Application.Abstractions.Ports;
-using Wms.Platform.Local.Security;
+using Wms.Platform.Shared.Security;
 
 namespace Wms.Auth.IntegrationTests.TestSupport;
 

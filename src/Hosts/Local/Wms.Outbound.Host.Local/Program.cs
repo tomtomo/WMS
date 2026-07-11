@@ -51,7 +51,9 @@ app.UseAuthorization();
 
 app.MapDefaultEndpoints();
 app.MapEndpoints(typeof(CreateWaveEndpoint).Assembly);
-app.MapGrpcService<OutboundReadGrpcService>();
+
+// Endpoint gRPC internal tidak menggunakan JWT dan hanya boleh diakses dari jaringan internal.
+app.MapGrpcService<OutboundReadGrpcService>().AllowAnonymous();
 
 await app.RunAsync();
 

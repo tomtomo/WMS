@@ -8,7 +8,7 @@ using Wms.MasterData.Domain;
 using Wms.MasterData.Infrastructure;
 using Wms.Migration.IntegrationTests.TestSupport;
 using Wms.MigrationRunner;
-using Wms.Platform.Local.Security;
+using Wms.Platform.Shared.Security;
 using Xunit;
 
 namespace Wms.Migration.IntegrationTests;

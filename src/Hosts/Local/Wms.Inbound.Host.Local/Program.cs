@@ -52,7 +52,9 @@ app.UseAuthorization();
 
 app.MapDefaultEndpoints();
 app.MapEndpoints(typeof(CreateGoodsReceiptEndpoint).Assembly);
-app.MapGrpcService<GoodsReceiptGrpcService>();
+
+// Endpoint gRPC internal tidak menggunakan JWT dan hanya boleh diakses dari jaringan internal.
+app.MapGrpcService<GoodsReceiptGrpcService>().AllowAnonymous();
 
 // Serving file dari signed URL lokal. Untuk endpoint ini, signature HMAC di URL menjadi izin aksesnya.
 app.MapGet("/files/{**path}", async (HttpContext httpContext, FileSystemObjectStore objectStore) =>

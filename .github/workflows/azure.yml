@@ -1,0 +1,158 @@
+# CI/CD Azure: PR menjalankan validasi, sedangkan push ke main build dan mendeploy ke Azure menggunakan OIDC.
+# push main = OIDC federated, ACR build, deployment stack, Functions zip, wire Event Grid.
+name: azure
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: azure-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  RG_NAME: rg-wms
+  LOCATION: southeastasia
+  STACK_NAME: wms
+  # Bootstrap sekali via deploy/azure/scripts/bootstrap-state.ps1, lalu isi variable repo
+  STATE_RG: ${{ vars.AZURE_STATE_RG }}
+  STATE_ACCOUNT: ${{ vars.AZURE_STATE_ACCOUNT }}
+  STATE_CONTAINER: deploy-state
+
+jobs:
+  # Validasi build untuk setiap environment dan jalankan seluruh test sebelum merge.
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Build (filter per-env — bukti deploy-neutral ADR-0006)
+        run: |
+          dotnet build Wms.Local.slnf --configuration Release
+          dotnet build Wms.Azure.slnf --configuration Release
+
+      - name: Fitness functions (fail-build gate, ADR-0005)
+        run: dotnet test tests/Wms.Architecture.Tests --configuration Release --no-build --logger "console;verbosity=minimal"
+
+      - name: Test suite (unit + integration Testcontainers)
+        run: dotnet test Wms.Local.slnf --configuration Release --no-build --logger "console;verbosity=minimal"
+
+  deploy:
+    needs: build-test
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment: azure
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Azure login (OIDC federated credential)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      # Cegah beberapa workflow mengubah state secara bersamaan.
+      - name: Acquire state lock (blob lease)
+        id: lock
+        run: |
+          az storage blob upload --auth-mode login \
+            --account-name "$STATE_ACCOUNT" --container-name "$STATE_CONTAINER" \
+            --name "$STACK_NAME.lock" --file /dev/null --overwrite false 2>/dev/null || true
+          LEASE_ID=$(az storage blob lease acquire --auth-mode login \
+            --account-name "$STATE_ACCOUNT" --container-name "$STATE_CONTAINER" \
+            --blob-name "$STACK_NAME.lock" --lease-duration 60 -o tsv)
+          echo "lease-id=$LEASE_ID" >> "$GITHUB_OUTPUT"
+          # Perpanjang lease di background selama job jalan.
+          ( while true; do sleep 30; az storage blob lease renew --auth-mode login \
+              --account-name "$STATE_ACCOUNT" --container-name "$STATE_CONTAINER" \
+              --blob-name "$STACK_NAME.lock" --lease-id "$LEASE_ID" >/dev/null 2>&1 || exit; done ) &
+
+      - name: Deploy stack — fase 1 (infra)
+        run: |
+          az stack sub create --name "$STACK_NAME" --location "$LOCATION" \
+            --template-file deploy/azure/main.bicep \
+            --parameters deploy/azure/main.parameters.json \
+            --parameters rgName="$RG_NAME" location="$LOCATION" imageTag="${{ github.sha }}" \
+            --deny-settings-mode none --action-on-unmanage deleteResources --yes
+
+      - name: Push images (az acr build — build di cloud, tanpa daemon lokal)
+        shell: bash
+        run: |
+          ACR=$(az stack sub show --name "$STACK_NAME" --query 'outputs.acrName.value' -o tsv)
+          declare -A HOSTS=( [inbound]=Inbound [inventory]=Inventory [outbound]=Outbound [masterdata]=MasterData [auth]=Auth )
+          for app in "${!HOSTS[@]}"; do
+            az acr build -r "$ACR" -t "wms-$app:${{ github.sha }}" \
+              -f "src/Hosts/Azure/Wms.${HOSTS[$app]}.Host.Azure/Dockerfile" .
+          done
+          az acr build -r "$ACR" -t "wms-webui:${{ github.sha }}" -f src/WebUI/Wms.WebUI/Dockerfile .
+          az acr build -r "$ACR" -t "wms-migrations:${{ github.sha }}" -f src/Tools/Wms.MigrationRunner/Dockerfile .
+
+      - name: Deploy stack — fase 2 (compute)
+        run: |
+          az stack sub create --name "$STACK_NAME" --location "$LOCATION" \
+            --template-file deploy/azure/main.bicep \
+            --parameters deploy/azure/main.parameters.json \
+            --parameters rgName="$RG_NAME" location="$LOCATION" imageTag="${{ github.sha }}" deployApps=true \
+            --deny-settings-mode none --action-on-unmanage deleteResources --yes
+
+      - name: Run migrations (ACA Job)
+        run: |
+          JOB=$(az stack sub show --name "$STACK_NAME" --query 'outputs.migrationJobName.value' -o tsv)
+          az containerapp job start -g "$RG_NAME" -n "$JOB"
+          # Poll sampai eksekusi selesai, jika gagal maka hentikan pipeline.
+          for i in $(seq 1 60); do
+            STATUS=$(az containerapp job execution list -g "$RG_NAME" -n "$JOB" --query '[0].properties.status' -o tsv)
+            [ "$STATUS" = "Succeeded" ] && exit 0
+            [ "$STATUS" = "Failed" ] && echo "Migration job gagal" && exit 1
+            sleep 10
+          done
+          echo "Migration job timeout" && exit 1
+
+      - name: Publish Functions (zip → Flex OneDeploy)
+        run: |
+          declare -A APPS=( [Reporting]=0 [Notifications]=1 [Scheduled]=2 )
+          NAMES=$(az stack sub show --name "$STACK_NAME" --query 'outputs.functionAppNames.value' -o json)
+          for app in "${!APPS[@]}"; do
+            IDX=${APPS[$app]}
+            NAME=$(echo "$NAMES" | jq -r ".[$IDX]")
+            dotnet publish "src/Hosts/Azure/Wms.$app.Functions.Azure" -c Release -o "publish/$app"
+            (cd "publish/$app" && zip -qr "../$app.zip" .)
+            az functionapp deployment source config-zip -g "$RG_NAME" -n "$NAME" --src "publish/$app.zip"
+          done
+
+      - name: Deploy stack — fase 3 (wire Event Grid → Functions)
+        run: |
+          az stack sub create --name "$STACK_NAME" --location "$LOCATION" \
+            --template-file deploy/azure/main.bicep \
+            --parameters deploy/azure/main.parameters.json \
+            --parameters rgName="$RG_NAME" location="$LOCATION" imageTag="${{ github.sha }}" deployApps=true wireEventSubscriptions=true \
+            --deny-settings-mode none --action-on-unmanage deleteResources --yes
+
+      - name: Smoke — APIM menolak tanpa JWT (401)
+        run: |
+          GATEWAY=$(az stack sub show --name "$STACK_NAME" --query 'outputs.apimGatewayUrl.value' -o tsv)
+          CODE=$(curl -s -o /dev/null -w '%{http_code}' "$GATEWAY/inbound/v1/goods-receipts")
+          [ "$CODE" = "401" ] || { echo "Diharapkan 401, dapat $CODE"; exit 1; }
+
+      - name: Release state lock
+        if: always()
+        run: |
+          [ -n "${{ steps.lock.outputs.lease-id }}" ] && az storage blob lease release --auth-mode login \
+            --account-name "$STATE_ACCOUNT" --container-name "$STATE_CONTAINER" \
+            --blob-name "$STACK_NAME.lock" --lease-id "${{ steps.lock.outputs.lease-id }}" || true
