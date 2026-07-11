@@ -45,7 +45,9 @@ app.UseAuthorization();
 
 app.MapDefaultEndpoints();
 app.MapEndpoints(typeof(CompletePutawayEndpoint).Assembly);
-app.MapGrpcService<InventoryReadGrpcService>();
+
+// Endpoint gRPC internal tidak menggunakan JWT dan hanya boleh diakses dari jaringan internal.
+app.MapGrpcService<InventoryReadGrpcService>().AllowAnonymous();
 
 await app.RunAsync();
 

@@ -3,7 +3,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Wms.BuildingBlocks.Application.Abstractions.Ports;
 using Wms.MigrationRunner;
-using Wms.Platform.Local.Security;
+using Wms.Platform.Shared.Security;
 
 // Jalankan migration dan seeding, lalu hentikan host.
 var builder = Host.CreateApplicationBuilder(args);

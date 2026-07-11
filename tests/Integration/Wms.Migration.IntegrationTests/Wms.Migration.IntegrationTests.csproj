@@ -19,6 +19,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="AwesomeAssertions" />
+    <PackageReference Include="NSubstitute" />
   </ItemGroup>
 
   <ItemGroup Label="Testcontainers Postgres, host DI">
@@ -31,6 +32,7 @@
 
   <ItemGroup Label="Subjek di bawah test">
     <ProjectReference Include="..\..\..\src\Tools\Wms.MigrationRunner\Wms.MigrationRunner.csproj" />
+    <ProjectReference Include="..\..\..\src\Platform\Wms.Platform.Azure\Wms.Platform.Azure.csproj" />
   </ItemGroup>
 
 </Project>

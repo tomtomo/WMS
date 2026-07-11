@@ -1,0 +1,54 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Host Functions modul Notifications -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AzureFunctionsVersion>v4</AzureFunctionsVersion>
+  </PropertyGroup>
+
+  <ItemGroup Label="Functions isolated worker">
+    <PackageReference Include="Microsoft.Azure.Functions.Worker" />
+    <PackageReference Include="Microsoft.Azure.Functions.Worker.Sdk" />
+    <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.EventGrid" />
+  </ItemGroup>
+
+  <ItemGroup Label="Shared framework">
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup Label="Platform">
+    <ProjectReference Include="..\..\..\Platform\Wms.Platform.Hosting\Wms.Platform.Hosting.csproj" />
+    <ProjectReference Include="..\..\..\Platform\Wms.Platform.Azure\Wms.Platform.Azure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Label="BuildingBlocks">
+    <ProjectReference Include="..\..\..\BuildingBlocks\Wms.BuildingBlocks.Application\Wms.BuildingBlocks.Application.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Wms.BuildingBlocks.Infrastructure\Wms.BuildingBlocks.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Label="Modul Notifications">
+    <ProjectReference Include="..\..\..\Modules\Notifications\Wms.Notifications\Wms.Notifications.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="host.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup Label="Flex host compatibility">
+    <PackageReference Include="Microsoft.Extensions.Hosting" VersionOverride="9.0.5" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" VersionOverride="9.0.5" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" VersionOverride="9.0.5" />
+    <PackageReference Include="Microsoft.Extensions.Logging" VersionOverride="9.0.5" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" VersionOverride="9.0.5" />
+    <PackageReference Include="Microsoft.Extensions.Options" VersionOverride="9.0.5" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" VersionOverride="9.0.5" />
+    <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" VersionOverride="9.0.5" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" VersionOverride="9.0.5" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" VersionOverride="9.0.5" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" VersionOverride="9.0.5" />
+  </ItemGroup>
+
+</Project>

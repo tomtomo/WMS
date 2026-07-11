@@ -40,7 +40,9 @@ app.UseAuthorization();
 
 app.MapDefaultEndpoints();
 app.MapEndpoints(typeof(AuthEndpoints).Assembly);
-app.MapGrpcService<AuthLookupService>();
+
+// Endpoint gRPC internal tidak menggunakan JWT dan hanya boleh diakses dari jaringan internal.
+app.MapGrpcService<AuthLookupService>().AllowAnonymous();
 
 await app.RunAsync();
 

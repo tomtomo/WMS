@@ -10,6 +10,7 @@
       "src\\BuildingBlocks\\Wms.Contracts.Abstractions\\Wms.Contracts.Abstractions.csproj",
       "src\\Platform\\Wms.Platform.Hosting\\Wms.Platform.Hosting.csproj",
       "src\\Platform\\Wms.Platform.Local\\Wms.Platform.Local.csproj",
+      "src\\Platform\\Wms.Platform.Shared\\Wms.Platform.Shared.csproj",
       "src\\Platform\\Wms.Platform.Azure\\Wms.Platform.Azure.csproj",
       "src\\Modules\\Inbound\\Wms.Inbound.Contracts\\Wms.Inbound.Contracts.csproj",
       "src\\Modules\\Inbound\\Wms.Inbound.Domain\\Wms.Inbound.Domain.csproj",

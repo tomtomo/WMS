@@ -22,6 +22,7 @@ using Wms.Platform.Local.Scheduling;
 using Wms.Platform.Local.Secrets;
 using Wms.Platform.Local.Security;
 using Wms.Platform.Local.Streaming;
+using Wms.Platform.Shared.Security;
 
 namespace Microsoft.Extensions.DependencyInjection;
 

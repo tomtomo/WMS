@@ -5,9 +5,9 @@ using System.Text;
 using Konscious.Security.Cryptography;
 using Wms.BuildingBlocks.Application.Abstractions.Ports;
 
-namespace Wms.Platform.Local.Security;
+namespace Wms.Platform.Shared.Security;
 
-// Argon2id parameter OWASP, format PHC self-describing sehingga parameter lama tetap bisa diverifikasi.
+// Gunakan format PHC agar hash lama tetap dapat diverifikasi saat parameter Argon2id berubah.
 [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Argon2id = nama varian algoritma di RFC 9106, bukan pelanggaran casing.")]
 public sealed class Argon2idPasswordHasher : IPasswordHasher
 {
@@ -23,7 +23,7 @@ public sealed class Argon2idPasswordHasher : IPasswordHasher
     {
     }
 
-    // Terbuka untuk test membangun hash berparameter lama
+    // Dibuka untuk test agar bisa membuat hash dengan parameter lama.
     internal Argon2idPasswordHasher(int memoryKibibytes, int iterations, int parallelism)
     {
         _memoryKibibytes = memoryKibibytes;
@@ -53,12 +53,12 @@ public sealed class Argon2idPasswordHasher : IPasswordHasher
             return false;
         }
 
-        // Recompute pakai parameter dari hash tersimpan
+        // Hitung ulang memakai parameter dari hash yang tersimpan.
         var computed = Compute(password, parsed.Salt, parsed.MemoryKibibytes, parsed.Iterations, parsed.Parallelism);
         return CryptographicOperations.FixedTimeEquals(computed, parsed.Hash);
     }
 
-    // hash valid tapi parameternya bukan baseline saat ini
+    // Perlu rehash jika hash valid
     public bool NeedsRehash(string hash)
     {
         ArgumentException.ThrowIfNullOrEmpty(hash);

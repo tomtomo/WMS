@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "Wms.Auth.Host.Azure": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:57489;http://localhost:57490"
+    }
+  }
+}

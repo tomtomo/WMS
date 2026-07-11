@@ -1,5 +1,5 @@
 using AwesomeAssertions;
-using Wms.Platform.Local.Security;
+using Wms.Platform.Shared.Security;
 using Xunit;
 
 namespace Wms.Platform.Local.IntegrationTests;

@@ -32,6 +32,7 @@
     <ProjectReference Include="..\..\src\BuildingBlocks\Wms.BuildingBlocks.Web\Wms.BuildingBlocks.Web.csproj" />
     <ProjectReference Include="..\..\src\Platform\Wms.Platform.Hosting\Wms.Platform.Hosting.csproj" />
     <ProjectReference Include="..\..\src\Platform\Wms.Platform.Local\Wms.Platform.Local.csproj" />
+    <ProjectReference Include="..\..\src\Platform\Wms.Platform.Shared\Wms.Platform.Shared.csproj" />
     <ProjectReference Include="..\..\src\Platform\Wms.Platform.Azure\Wms.Platform.Azure.csproj" />
     <ProjectReference Include="..\..\src\Modules\Inbound\Wms.Inbound.Contracts\Wms.Inbound.Contracts.csproj" />
     <ProjectReference Include="..\..\src\Modules\Inbound\Wms.Inbound.Domain\Wms.Inbound.Domain.csproj" />

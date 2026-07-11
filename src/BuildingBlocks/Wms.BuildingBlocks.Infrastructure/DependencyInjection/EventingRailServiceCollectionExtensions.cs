@@ -13,6 +13,7 @@ public static class EventingRailServiceCollectionExtensions
 
         services.TryAddSingleton(TimeProvider.System);
         services.AddSingleton(new EventingRailOptions { ModuleQueueName = moduleQueueName });
+        services.TryAddSingleton<RailConsumerDispatcher>();
 
         // Daftarkan worker producer sebagai hosted service.
         services.TryAddSingleton<OutboxDispatcherWorker>();
@@ -34,9 +35,22 @@ public static class EventingRailServiceCollectionExtensions
 
         services.TryAddSingleton(TimeProvider.System);
         services.AddSingleton(new EventingRailOptions { ModuleQueueName = moduleQueueName });
+        services.TryAddSingleton<RailConsumerDispatcher>();
 
         services.TryAddSingleton<RailSubscriberWorker>();
         services.AddHostedService(provider => provider.GetRequiredService<RailSubscriberWorker>());
+
+        return services;
+    }
+
+    // Untuk host serverless yang menerima message dari trigger platform seperti Functions atau Cloud Run:
+    // hanya dispatcher yang dipasang, karena proses subscribe dan siklus hidup message ditangani oleh trigger, bukan worker.
+    public static IServiceCollection AddEventingRailDispatchOnly(this IServiceCollection services)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+
+        services.TryAddSingleton(TimeProvider.System);
+        services.TryAddSingleton<RailConsumerDispatcher>();
 
         return services;
     }
