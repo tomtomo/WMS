@@ -63,6 +63,9 @@ public sealed class EnvSecretProviderTests
     private static EnvSecretProvider CreateProvider(params KeyValuePair<string, string?>[] values)
     {
         var configuration = new ConfigurationBuilder().AddInMemoryCollection(values).Build();
-        return new EnvSecretProvider(configuration, Options.Create(new EnvSecretOptions()));
+        return new EnvSecretProvider(
+            configuration,
+            Options.Create(new EnvSecretOptions()),
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<EnvSecretProvider>.Instance);
     }
 }

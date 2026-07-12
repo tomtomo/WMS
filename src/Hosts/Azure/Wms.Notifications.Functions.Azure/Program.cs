@@ -46,6 +46,9 @@ var host = new HostBuilder()
 
         services.AddAzurePlatform(context.Configuration);
 
+        // Notifier Azure dipasang eksplisit hanya di host pengirim notifikasi.
+        services.AddAzureNotifications(context.Configuration);
+
         // User directory memakai gRPC ke Auth untuk membaca user dan anggota role, dengan endpoint yang diinjeksi dari IaC.
         var authAddress = new Uri(
             context.Configuration["Services:Auth:Grpc"]

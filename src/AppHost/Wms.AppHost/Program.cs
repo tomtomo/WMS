@@ -43,12 +43,12 @@ var auth = WithJwtValidation(builder.AddProject<Projects.Wms_Auth_Host_Local>("w
     .WithEnvironment("Secrets__jwt-signing-key", jwtPrivatePem);
 
 // MasterData host: expose gRPC MasterDataLookup untuk dipakai modul core.
-var masterData = WithJwtValidation(builder.AddProject<Projects.Wms_MasterData_Host_Local>("wms-masterdata"))
+var masterData = WithActiveUserChecker(WithJwtValidation(builder.AddProject<Projects.Wms_MasterData_Host_Local>("wms-masterdata")))
     .WithReference(masterDataDb, "wms").WaitFor(masterDataDb)
     .WithReference(rabbitmq);
 
 // Core host memakai MasterData via gRPC. Endpoint diinjek langsung dari AppHost.
-var inbound = WithJwtValidation(builder.AddProject<Projects.Wms_Inbound_Host_Local>("wms-inbound"))
+var inbound = WithActiveUserChecker(WithJwtValidation(builder.AddProject<Projects.Wms_Inbound_Host_Local>("wms-inbound")))
     .WithReference(inboundDb, "wms").WaitFor(inboundDb)
     .WithReference(rabbitmq)
     .WithReference(masterData)
@@ -60,18 +60,24 @@ inbound.WithEnvironment(
     "LocalPlatform__ObjectStore__BaseUrl",
     ReferenceExpression.Create($"{inbound.GetEndpoint("https")}/files"));
 
-var inventory = WithJwtValidation(builder.AddProject<Projects.Wms_Inventory_Host_Local>("wms-inventory"))
+// Lokasi receiving/picking memakai GUID seed
+var inventory = WithActiveUserChecker(WithJwtValidation(builder.AddProject<Projects.Wms_Inventory_Host_Local>("wms-inventory")))
     .WithReference(inventoryDb, "wms").WaitFor(inventoryDb)
-    .WithReference(rabbitmq);
+    .WithReference(rabbitmq)
+    .WithEnvironment("Inventory__Receiving__ReceivingLocationId", "b0000000-0000-0000-0000-000000000001")
+    .WithEnvironment("Inventory__Receiving__QuarantineLocationId", "b0000000-0000-0000-0000-000000000003")
+    .WithEnvironment("Inventory__Receiving__PutawayDestinationId", "b0000000-0000-0000-0000-000000000002")
+    .WithEnvironment("Inventory__Receiving__PutawayAssignee", "c0000000-0000-0000-0000-000000000001");
 
-var outbound = WithJwtValidation(builder.AddProject<Projects.Wms_Outbound_Host_Local>("wms-outbound"))
+var outbound = WithActiveUserChecker(WithJwtValidation(builder.AddProject<Projects.Wms_Outbound_Host_Local>("wms-outbound")))
     .WithReference(outboundDb, "wms").WaitFor(outboundDb)
     .WithReference(rabbitmq)
     .WithReference(masterData)
-    .WithEnvironment("Services__MasterData__Grpc", masterData.GetEndpoint("https"));
+    .WithEnvironment("Services__MasterData__Grpc", masterData.GetEndpoint("https"))
+    .WithEnvironment("Outbound__Picking__DefaultPickerId", "c0000000-0000-0000-0000-000000000001");
 
 // Consumer hosts.
-var reporting = WithJwtValidation(builder.AddProject<Projects.Wms_Reporting_Host_Local>("wms-reporting"))
+var reporting = WithActiveUserChecker(WithJwtValidation(builder.AddProject<Projects.Wms_Reporting_Host_Local>("wms-reporting")))
     .WithReference(reportingDb, "wms").WaitFor(reportingDb)
     .WithReference(rabbitmq);
 
@@ -105,3 +111,9 @@ IResourceBuilder<ProjectResource> WithJwtValidation(IResourceBuilder<ProjectReso
         .WithEnvironment("Jwt__Issuer", JwtIssuer)
         .WithEnvironment("Jwt__Audience", JwtAudience)
         .WithEnvironment("Jwt__PublicKeyPem", jwtPublicPem);
+
+// Endpoint AuthLookup untuk checker user aktif lintas host
+IResourceBuilder<ProjectResource> WithActiveUserChecker(IResourceBuilder<ProjectResource> project) =>
+    project
+        .WithReference(auth)
+        .WithEnvironment("Services__Auth__Grpc", auth.GetEndpoint("https"));

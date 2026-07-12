@@ -4,6 +4,12 @@
 
   <ItemGroup Label="Protocol - gRPC codegen">
     <PackageReference Include="Grpc.AspNetCore" />
+    <PackageReference Include="Grpc.Net.ClientFactory" />
+  </ItemGroup>
+
+  <!-- Port IActiveUserChecker untuk adapter client side. -->
+  <ItemGroup Label="Kernel port">
+    <ProjectReference Include="..\..\..\BuildingBlocks\Wms.BuildingBlocks.Application\Wms.BuildingBlocks.Application.csproj" />
   </ItemGroup>
 
   <ItemGroup Label="Kontrak proto published language">

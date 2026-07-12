@@ -1,18 +1,13 @@
 using AwesomeAssertions;
-using Microsoft.DurableTask.Client;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
-using NSubstitute;
 using Wms.BuildingBlocks.Application.Abstractions.Ports;
 using Wms.BuildingBlocks.Infrastructure.Outbox;
 using Wms.Platform.Azure.Eventing;
 using Wms.Platform.Azure.Messaging;
 using Wms.Platform.Azure.Notifications;
 using Wms.Platform.Azure.ObjectStore;
-using Wms.Platform.Azure.Persistence;
-using Wms.Platform.Azure.Saga;
 using Wms.Platform.Azure.Scheduling;
 using Wms.Platform.Azure.Secrets;
 using Wms.Platform.Azure.Security;
@@ -24,7 +19,7 @@ using Xunit;
 
 namespace Wms.Platform.Azure.ParityTests;
 
-// Composition root harus memasang adapter Azure di balik port yang sama.
+// Pastikan adapter Azure terpasang pada port yang sama dengan urutan registrasi seperti di host aslinya.
 public sealed class AzureCompositionTests
 {
     [Fact]
@@ -36,24 +31,16 @@ public sealed class AzureCompositionTests
         provider.GetRequiredService<OutboxDispatcher>().Should().BeOfType<AzureOutboxDispatcher>();
         provider.GetRequiredService<IMessageSubscriber>().Should().BeOfType<ServiceBusMessageSubscriber>();
         provider.GetRequiredService<IEventStreamPublisher>().Should().BeOfType<EventHubsEventStreamPublisher>();
-        provider.GetRequiredService<ISagaOrchestrator>().Should().BeOfType<DurableFunctionsSagaOrchestrator>();
         provider.GetRequiredService<IDelayedTaskQueue>().Should().BeOfType<ServiceBusScheduledDelayedTaskQueue>();
         provider.GetRequiredService<IRecurringJobScheduler>().Should().BeOfType<FunctionsTimerRecurringJobScheduler>();
-        provider.GetRequiredService<ServiceBusDeadLetterStore>().Should().NotBeNull();
     }
 
     [Fact]
-    public async Task Add_azure_platform_binds_every_persistence_port_to_its_azure_adapter()
+    public async Task Add_azure_platform_binds_object_store_to_blob_adapter()
     {
         await using var provider = BuildProvider();
 
-        provider.GetRequiredService<IProjectionStore>().Should().BeOfType<CosmosProjectionStore>();
         provider.GetRequiredService<IObjectStore>().Should().BeOfType<BlobObjectStore>();
-        provider.GetRequiredService<IProjectionChangeHandler>().Should().BeOfType<CacheInvalidatingProjectionChangeHandler>();
-        provider.GetRequiredService<FlexibleServerConnectionStringFactory>().Should().NotBeNull();
-
-        // Pastikan change feed dijalankan sebagai hosted service.
-        provider.GetServices<IHostedService>().Should().ContainSingle(service => service is CosmosChangeFeedProcessor);
     }
 
     [Fact]
@@ -73,24 +60,35 @@ public sealed class AzureCompositionTests
     }
 
     [Fact]
-    public async Task Add_azure_platform_binds_every_security_and_telemetry_port_to_its_azure_adapter()
+    public async Task Add_azure_platform_binds_security_ports_to_azure_adapters()
     {
         await using var provider = BuildProvider();
 
         provider.GetRequiredService<ISecretProvider>().Should().BeOfType<KeyVaultSecretProvider>();
         provider.GetRequiredService<IServiceTokenProvider>().Should().BeOfType<ManagedIdentityTokenProvider>();
+    }
+
+    [Fact]
+    public async Task Telemetry_sink_replaces_the_infrastructure_default_in_production_order()
+    {
+        // sink default Infrastructure terdaftar lebih dulu
+        await using var provider = BuildProvider();
+
         provider.GetRequiredService<ITelemetrySink>().Should().BeOfType<AppInsightsTelemetrySink>();
     }
 
     [Fact]
-    public async Task Add_azure_platform_binds_every_notification_channel_to_its_provider()
+    public async Task Add_azure_notifications_is_explicit_and_binds_every_channel()
     {
-        await using var provider = BuildProvider();
+        // Notifier dipasang oleh host pengirim notifikasi.
+        var configuration = NewConfiguration();
+        var services = NewProductionOrderServices(configuration);
+        services.AddAzureNotifications(configuration);
+        await using var provider = services.BuildServiceProvider();
+
         provider.GetRequiredService<IEmailSender>().Should().BeOfType<AcsEmailSender>();
 
         // FirebaseApp dan IHubContext dipasang host, jadi yang bisa diperiksa di sini adalah registrasinya.
-        var services = NewServices();
-        services.AddAzurePlatform(NewConfiguration());
         services.Should().Contain(descriptor =>
             descriptor.ServiceType == typeof(IPushNotifier) && descriptor.ImplementationType == typeof(FcmPushNotifier));
         services.Should().Contain(descriptor =>
@@ -98,10 +96,23 @@ public sealed class AzureCompositionTests
     }
 
     [Fact]
+    public void Add_azure_platform_does_not_register_notifiers()
+    {
+        var services = new ServiceCollection();
+        services.AddAzurePlatform(NewConfiguration());
+
+        services.Should().NotContain(descriptor => descriptor.ServiceType == typeof(IPushNotifier));
+        services.Should().NotContain(descriptor => descriptor.ServiceType == typeof(IInAppNotifier));
+        services.Should().NotContain(descriptor => descriptor.ServiceType == typeof(IEmailSender));
+    }
+
+    [Fact]
     public void Rail_invariant_services_stay_registered_for_the_module_db()
     {
-        var services = NewServices();
-        services.AddAzurePlatform(NewConfiguration());
+        // Registrasi utama berasal dari AddBuildingBlocksInfrastructure, jadi platform tidak menambahkan ulang dependency yang sama.
+        var configuration = NewConfiguration();
+        var services = NewProductionOrderServices(configuration);
+        services.AddAzurePlatform(configuration);
 
         services.Should().Contain(descriptor => descriptor.ServiceType == typeof(IIntegrationEventOutbox));
         services.Should().Contain(descriptor => descriptor.ServiceType == typeof(IInboxGuard));
@@ -112,8 +123,9 @@ public sealed class AzureCompositionTests
     [Fact]
     public async Task Missing_event_grid_configuration_fails_fast_on_options_resolve()
     {
-        var services = NewServices();
-        services.AddAzurePlatform(NewConfiguration(includeEventGrid: false));
+        var configuration = NewConfiguration(includeEventGrid: false);
+        var services = NewProductionOrderServices(configuration);
+        services.AddAzurePlatform(configuration);
         await using var provider = services.BuildServiceProvider();
 
         var resolve = () => provider.GetRequiredService<IOptions<AzureMessagingOptions>>().Value;
@@ -124,8 +136,9 @@ public sealed class AzureCompositionTests
     [Fact]
     public async Task Missing_key_vault_configuration_fails_fast_on_options_resolve()
     {
-        var services = NewServices();
-        services.AddAzurePlatform(NewConfiguration(includeKeyVault: false));
+        var configuration = NewConfiguration(includeKeyVault: false);
+        var services = NewProductionOrderServices(configuration);
+        services.AddAzurePlatform(configuration);
         await using var provider = services.BuildServiceProvider();
 
         var resolve = () => provider.GetRequiredService<IOptions<KeyVaultOptions>>().Value;
@@ -136,8 +149,9 @@ public sealed class AzureCompositionTests
     [Fact]
     public async Task Missing_object_store_configuration_fails_fast_on_options_resolve()
     {
-        var services = NewServices();
-        services.AddAzurePlatform(NewConfiguration(includeObjectStore: false));
+        var configuration = NewConfiguration(includeObjectStore: false);
+        var services = NewProductionOrderServices(configuration);
+        services.AddAzurePlatform(configuration);
         await using var provider = services.BuildServiceProvider();
 
         var resolve = () => provider.GetRequiredService<IOptions<BlobObjectStoreOptions>>().Value;
@@ -147,17 +161,19 @@ public sealed class AzureCompositionTests
 
     private static ServiceProvider BuildProvider()
     {
-        var services = NewServices();
-        services.AddAzurePlatform(NewConfiguration());
+        var configuration = NewConfiguration();
+        var services = NewProductionOrderServices(configuration);
+        services.AddAzurePlatform(configuration);
         return services.BuildServiceProvider();
     }
 
-    private static ServiceCollection NewServices()
+    // Ikuti urutan registrasi di host Azure: pasang IConfiguration lebih dulu, lalu infrastructure, dan platform setelahnya.
+    // Jika IConfiguration belum tersedia, AddOpenTelemetry dapat mendaftarkan konfigurasi kosong.
+    private static ServiceCollection NewProductionOrderServices(IConfiguration configuration)
     {
         var services = new ServiceCollection();
-
-        // DurableTaskClient milik host worker.
-        services.AddSingleton(Substitute.For<DurableTaskClient>("composition-test"));
+        services.AddSingleton(configuration);
+        services.AddBuildingBlocksInfrastructure("wms-parity");
         return services;
     }
 
@@ -172,10 +188,6 @@ public sealed class AzureCompositionTests
                 "Endpoint=sb://localhost;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;",
             ["ConnectionStrings:eventhubs"] =
                 "Endpoint=sb://localhost;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;",
-
-            // Endpoint emulator Cosmos dan Redis: komposisi tidak membuka koneksi apa pun.
-            ["ConnectionStrings:cosmos"] =
-                "AccountEndpoint=https://localhost:8081/;AccountKey=Q29tcG9zaXRpb25UZXN0S2V5Rm9yQ29zbW9zRW11bGF0b3I=;",
             ["ConnectionStrings:redis"] = "localhost:6379",
             ["ConnectionStrings:acs"] = "endpoint=https://wms.communication.azure.com/;accesskey=Y29tcG9zaXRpb24=",
             ["AzurePlatform:Notifications:Acs:SenderAddress"] = "DoNotReply@wms.example.net",

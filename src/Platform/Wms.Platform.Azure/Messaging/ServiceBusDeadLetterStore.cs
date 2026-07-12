@@ -3,7 +3,7 @@ using Microsoft.Extensions.Options;
 
 namespace Wms.Platform.Azure.Messaging;
 
-// Membaca message yang masuk ke dead letter queue milik Service Bus.
+// Membaca message yang masuk ke dead letter queue milik Service Bus — tidak diregistrasi ke container
 // Dead letter dari pipeline aplikasi tetap disimpan lewat tabel infrastructure.dead_letter.
 public sealed class ServiceBusDeadLetterStore(ServiceBusClient client, IOptions<AzureMessagingOptions> options)
 {

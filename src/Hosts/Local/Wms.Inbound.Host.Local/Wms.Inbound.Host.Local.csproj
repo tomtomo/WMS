@@ -18,4 +18,8 @@
     <ProjectReference Include="..\..\..\Modules\Inbound\Wms.Inbound.Infrastructure\Wms.Inbound.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup Label="Checker user aktif">
+    <ProjectReference Include="..\..\..\Modules\Auth\Wms.Auth.Grpc\Wms.Auth.Grpc.csproj" />
+  </ItemGroup>
+
 </Project>

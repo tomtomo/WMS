@@ -17,4 +17,8 @@
     <ProjectReference Include="..\..\..\Modules\Notifications\Wms.Notifications\Wms.Notifications.csproj" />
   </ItemGroup>
 
+  <ItemGroup Label="Checker user aktif">
+    <ProjectReference Include="..\..\..\Modules\Auth\Wms.Auth.Grpc\Wms.Auth.Grpc.csproj" />
+  </ItemGroup>
+
 </Project>

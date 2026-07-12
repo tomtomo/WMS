@@ -8,6 +8,9 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
     <IsAspireHost>true</IsAspireHost>
+
+    <!-- Parameter yang digenerate Aspire (password Postgres) disimpan di user-secrets. -->
+    <UserSecretsId>wms-apphost-local</UserSecretsId>
     <CentralPackageTransitivePinningEnabled>false</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
 

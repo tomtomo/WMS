@@ -1,13 +1,13 @@
 using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.Options;
-using Wms.BuildingBlocks.Application.Abstractions.Ports;
 using Wms.BuildingBlocks.Application.Messaging;
 using Wms.Contracts.Abstractions;
 
 namespace Wms.Platform.Azure.Messaging;
 
 // Publisher untuk rail core flow lewat topic Service Bus. Urutan event dijaga per session dari partition key envelope.
-public sealed class ServiceBusMessagePublisher : IMessagePublisher, IAsyncDisposable
+// Bukan implement IMessagePublisher
+public sealed class ServiceBusMessagePublisher : IAsyncDisposable
 {
     private readonly Lazy<ServiceBusSender> _sender;
 

@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Wms.BuildingBlocks.Application.Abstractions.Ports;
 using Wms.BuildingBlocks.Domain.Results;
 
@@ -7,6 +8,7 @@ namespace Wms.BuildingBlocks.Infrastructure.DeadLetter;
 public sealed class ConsumerDeadLetterPipeline(
     IDeadLetterStore deadLetterStore,
     TimeProvider timeProvider,
+    ILogger<ConsumerDeadLetterPipeline> logger,
     TimeSpan? retryDelay = null)
 {
     public const int MaxAttempts = 3;
@@ -35,7 +37,7 @@ public sealed class ConsumerDeadLetterPipeline(
                 // Batas retry tercapai, lalu dead letter.
                 if (attempt == MaxAttempts)
                 {
-                    await deadLetterStore.StoreAsync(logicalName, payload, ex.Message, attempt, cancellationToken);
+                    await DeadLetterAsync(logicalName, payload, ex.Message, attempt, cancellationToken);
                     return;
                 }
 
@@ -63,7 +65,7 @@ public sealed class ConsumerDeadLetterPipeline(
 
             if (attempt == MaxAttempts)
             {
-                await deadLetterStore.StoreAsync(logicalName, payload, failureReason, attempt, cancellationToken);
+                await DeadLetterAsync(logicalName, payload, failureReason, attempt, cancellationToken);
                 return;
             }
 
@@ -84,5 +86,17 @@ public sealed class ConsumerDeadLetterPipeline(
         {
             return ex.Message;
         }
+    }
+
+    // Simpan detail kegagalan di dead-letter dan tulis log agar masalahnya mudah dilacak.
+    private async Task DeadLetterAsync(
+        string logicalName, string payload, string error, int attempt, CancellationToken cancellationToken)
+    {
+        await deadLetterStore.StoreAsync(logicalName, payload, error, attempt, cancellationToken);
+        logger.LogWarning(
+            "Dead-letter: '{LogicalName}' gagal setelah {Attempt} percobaan — {Error}",
+            logicalName,
+            attempt,
+            error);
     }
 }

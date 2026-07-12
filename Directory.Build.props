@@ -1,12 +1,5 @@
 <Project>
 
-  <!--
-    Baseline build seluruh repo. Di import otomatis oleh tiap project sebelum bodynya,
-    jadi tiap .csproj bisa nyaris kosong dan (bila perlu) meng-override. Satu sumber untuk:
-    TFM, kedisiplinan bahasa, gerbang warning-as-error, dan set analyzer Roslyn.
-    Hygiene = build-gate (bukan sekadar advisory IDE).
-  -->
-
   <PropertyGroup Label="Baseline runtime / bahasa">
     <!-- net8.0 LTS untuk semua project; AppHost meng-override ke net10.0 (khusus Aspire). -->
     <TargetFramework>net8.0</TargetFramework>
@@ -16,23 +9,17 @@
     <Deterministic>true</Deterministic>
   </PropertyGroup>
 
-  <PropertyGroup Label="Gerbang kualitas (warning = build gagal)">
+  <PropertyGroup Label="Quality gate">
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <CodeAnalysisTreatWarningsAsErrors>true</CodeAnalysisTreatWarningsAsErrors>
-    <!--
-      NetAnalyzers dipin via NuGet package (di bawah), bukan kopi in-box SDK, supaya versi
-      analyzer reproducible tak peduli SDK tiap dev (drift-proof, intent sama dengan CPM).
-      EnableNETAnalyzers=false mencegah kopi in-box jalan di atas package (hindari diagnostic ganda).
-    -->
     <EnableNETAnalyzers>false</EnableNETAnalyzers>
     <AnalysisLevel>latest</AnalysisLevel>
     <AnalysisMode>Recommended</AnalysisMode>
-    <!-- Intent didokumentasikan via prosa di titik signifikan, bukan XML doc tiap member. -->
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
   </PropertyGroup>
 
-  <ItemGroup Label="Analyzer Roslyn (ruleset ter-curate di .editorconfig; versi di Directory.Packages.props)">
+  <ItemGroup Label="Analyzer Roslyn">
     <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

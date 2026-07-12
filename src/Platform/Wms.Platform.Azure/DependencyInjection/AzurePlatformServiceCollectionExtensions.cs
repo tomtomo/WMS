@@ -11,7 +11,6 @@ using Azure.Security.KeyVault.Secrets;
 using Azure.Storage.Blobs;
 using FirebaseAdmin;
 using FirebaseAdmin.Messaging;
-using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
@@ -19,9 +18,6 @@ using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 using StackExchange.Redis;
 using Wms.BuildingBlocks.Application.Abstractions.Ports;
-using Wms.BuildingBlocks.Infrastructure.AuditLog;
-using Wms.BuildingBlocks.Infrastructure.DeadLetter;
-using Wms.BuildingBlocks.Infrastructure.Inbox;
 using Wms.BuildingBlocks.Infrastructure.Outbox;
 using Wms.Platform.Azure.Cache;
 using Wms.Platform.Azure.Eventing;
@@ -29,7 +25,6 @@ using Wms.Platform.Azure.Messaging;
 using Wms.Platform.Azure.Notifications;
 using Wms.Platform.Azure.ObjectStore;
 using Wms.Platform.Azure.Persistence;
-using Wms.Platform.Azure.Saga;
 using Wms.Platform.Azure.Scheduling;
 using Wms.Platform.Azure.Secrets;
 using Wms.Platform.Azure.Security;
@@ -43,13 +38,14 @@ namespace Microsoft.Extensions.DependencyInjection;
 // Kumpulan registrasi service untuk mode Azure.
 public static class AzurePlatformServiceCollectionExtensions
 {
+    // AddAzureNotifications tidak diregistrasikan di sini karena membutuhkan dependency yang disediakan oleh host.
+    // Hanya host yang mengirim notifikasi yang perlu memanggilnya secara eksplisit.
     public static IServiceCollection AddAzurePlatform(this IServiceCollection services, IConfiguration configuration) =>
         services
             .AddAzureMessaging(configuration)
             .AddAzureSecurity(configuration)
             .AddAzurePersistence(configuration)
-            .AddAzureTelemetry(configuration)
-            .AddAzureNotifications(configuration);
+            .AddAzureTelemetry(configuration);
 
     public static IServiceCollection AddAzureMessaging(this IServiceCollection services, IConfiguration configuration)
     {
@@ -62,23 +58,14 @@ public static class AzurePlatformServiceCollectionExtensions
         services.TryAddSingleton(CreateServiceBusAdministrationClient);
         services.TryAddSingleton(CreateEventGridPublisherClient);
 
-        // Dispatcher tetap satu, tapi transport dipilih berdasarkan delivery class.
+        // Gunakan dispatcher yang sama, lalu pilih transport sesuai jenis delivery.
+        // Outbox, inbox, dead-letter, dan audit rail tetap diregistrasikan oleh AddBuildingBlocksInfrastructure.
         services.TryAddSingleton<ServiceBusMessagePublisher>();
         services.TryAddSingleton<EventGridNotificationPublisher>();
         services.TryAddSingleton<OutboxDispatcher, AzureOutboxDispatcher>();
         services.TryAddSingleton<IMessageSubscriber, ServiceBusMessageSubscriber>();
-        services.TryAddSingleton<ServiceBusDeadLetterStore>();
-
-        // Bagian rail yang tetap disimpan di database modul: outbox, inbox , dead letter dan audit.
-        services.TryAddScoped<IIntegrationEventOutbox, IntegrationEventOutbox>();
-        services.TryAddScoped<IInboxGuard, InboxGuard>();
-        services.TryAddScoped<IDeadLetterStore, DeadLetterStore>();
-        services.TryAddSingleton<IAuditLogStore, AuditLogStore>();
 
         services.TryAddSingleton<IEventStreamPublisher, EventHubsEventStreamPublisher>();
-
-        // DurableTaskClient disediakan oleh worker host dan harus tersedia saat ISagaOrchestrator dibuat.
-        services.TryAddSingleton<ISagaOrchestrator, DurableFunctionsSagaOrchestrator>();
 
         services.TryAddSingleton<IDelayedTaskQueue, ServiceBusScheduledDelayedTaskQueue>();
         services.TryAddSingleton<IRecurringJobScheduler, FunctionsTimerRecurringJobScheduler>();
@@ -109,18 +96,11 @@ public static class AzurePlatformServiceCollectionExtensions
         AddAzureCore(services, configuration);
 
         services.AddValidatedOptions<FlexibleServerOptions>(FlexibleServerOptions.SectionName);
-        services.AddValidatedOptions<CosmosOptions>(CosmosOptions.SectionName);
         services.AddValidatedOptions<BlobObjectStoreOptions>(BlobObjectStoreOptions.SectionName);
         services.AddValidatedOptions<AzureCacheOptions>(AzureCacheOptions.SectionName);
 
-        // Command side tetap memakai EF dan Npgsql, yang disediakan di sini hanya connection string untuk Flexible Server.
-        services.TryAddSingleton<FlexibleServerConnectionStringFactory>();
-
-        services.TryAddSingleton(CreateCosmosClient);
-        services.TryAddSingleton<IProjectionStore, CosmosProjectionStore>();
-        services.TryAddSingleton<IProjectionChangeHandler, CacheInvalidatingProjectionChangeHandler>();
-        services.AddHostedService<CosmosChangeFeedProcessor>();
-
+        // Read model tetap disimpan di PostgreSQL per modul, jadi adapter projection Cosmos tidak digunakan.
+        // FlexibleServerConnectionStringFactory juga belum diregistrasikan karena belum ada pemakai di runtime.
         services.TryAddSingleton(CreateBlobServiceClient);
         services.TryAddSingleton<IObjectStore, BlobObjectStore>();
 
@@ -139,7 +119,10 @@ public static class AzurePlatformServiceCollectionExtensions
         services.AddValidatedOptions<AppInsightsOptions>(AppInsightsOptions.SectionName);
         services.TryAddSingleton(provider => new ActivitySource(
             provider.GetRequiredService<IOptions<AppInsightsOptions>>().Value.ServiceName));
-        services.TryAddSingleton<ITelemetrySink, AppInsightsTelemetrySink>();
+
+        // Ganti sink telemetry bawaan agar host memakai implementasi Application Insights.
+        services.RemoveAll<ITelemetrySink>();
+        services.AddSingleton<ITelemetrySink, AppInsightsTelemetrySink>();
 
         var telemetryOptions = new AppInsightsOptions();
         configuration.GetSection(AppInsightsOptions.SectionName).Bind(telemetryOptions);
@@ -204,26 +187,6 @@ public static class AzurePlatformServiceCollectionExtensions
     {
         var options = provider.GetRequiredService<IOptions<KeyVaultOptions>>().Value;
         return new SecretClient(options.VaultUri!, provider.GetRequiredService<TokenCredential>());
-    }
-
-    // Gunakan Managed Identity di production, dan connection string untuk emulator atau test.
-    private static CosmosClient CreateCosmosClient(IServiceProvider provider)
-    {
-        var options = provider.GetRequiredService<IOptions<CosmosOptions>>().Value;
-        if (options.AccountEndpoint is not null)
-        {
-            return CosmosClientFactory.CreateWithManagedIdentity(
-                options.AccountEndpoint,
-                provider.GetRequiredService<TokenCredential>(),
-                options);
-        }
-
-        var configuration = provider.GetRequiredService<IConfiguration>();
-        var connectionString = configuration.GetConnectionString(options.ConnectionStringName);
-        return string.IsNullOrWhiteSpace(connectionString)
-            ? throw new InvalidOperationException(
-                $"Cosmos butuh 'AccountEndpoint' atau connection string '{options.ConnectionStringName}'.")
-            : CosmosClientFactory.CreateWithConnectionString(connectionString, options);
     }
 
     private static BlobServiceClient CreateBlobServiceClient(IServiceProvider provider)
