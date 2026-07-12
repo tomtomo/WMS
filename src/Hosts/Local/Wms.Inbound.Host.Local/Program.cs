@@ -11,6 +11,7 @@ using Wms.Inbound.Application.Features.CreateGoodsReceiptHeader;
 using Wms.Inbound.Infrastructure.Grpc;
 using Wms.MasterData.Grpc.V1;
 using Wms.Platform.Local.ObjectStore;
+using Wms.Platform.Local.Streaming;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -51,6 +52,9 @@ builder.Services.Configure<AuthorizationOptions>(options =>
 
 // Inbound publish event lewat outbox, tapi tidak consume event.
 builder.Services.AddEventingRail("wms.inbound");
+
+// Worker telemetry operasional
+builder.Services.AddHostedService<OperationalTelemetryStreamWorker>();
 
 var app = builder.Build();
 

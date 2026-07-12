@@ -38,6 +38,7 @@ public sealed class AddLocalPlatformCompositionTests(PostgresFixture fixture)
         typeof(IEventStreamPublisher),
         typeof(IEventStreamConsumer),
         typeof(IAnalyticsSink),
+        typeof(IOperationalTelemetryStore),
     ];
 
     [Fact]

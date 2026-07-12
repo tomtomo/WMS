@@ -21,4 +21,8 @@
     <PackageReference Include="RabbitMQ.Client" />
   </ItemGroup>
 
+  <ItemGroup Label="Test">
+    <InternalsVisibleTo Include="Wms.Platform.Local.IntegrationTests" />
+  </ItemGroup>
+
 </Project>

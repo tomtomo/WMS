@@ -83,6 +83,12 @@ public static class LocalPlatformServiceCollectionExtensions
         services.TryAddSingleton<IEventStreamConsumer, InProcStreamConsumer>();
         services.TryAddSingleton<IAnalyticsSink, LogCsvAnalyticsSink>();
 
+        // Simpan telemetry operasional di database bersama agar Reporting dapat membaca data dari semua host.
+        services.TryAddSingleton<IOperationalTelemetryStore>(provider =>
+            new PostgresOperationalTelemetryStore(
+                ResolveTelemetryConnectionString(provider),
+                provider.GetRequiredService<TimeProvider>()));
+
         return services;
     }
 
@@ -116,5 +122,12 @@ public static class LocalPlatformServiceCollectionExtensions
             ? throw new InvalidOperationException(
                 $"Connection string '{options.ConnectionStringName}' untuk Postgres Local tidak ditemukan di konfigurasi.")
             : connectionString;
+    }
+
+    private static string ResolveTelemetryConnectionString(IServiceProvider provider)
+    {
+        // Gunakan database telemetry bersama, jika tidak tersedia, pakai database modul untuk host atau test tunggal.
+        var configuration = provider.GetRequiredService<IConfiguration>();
+        return configuration.GetConnectionString("telemetry") ?? ResolveDatabaseConnectionString(provider);
     }
 }

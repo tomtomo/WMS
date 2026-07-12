@@ -1,3 +1,4 @@
+using Wms.BuildingBlocks.Application.Abstractions;
 using Wms.BuildingBlocks.Application.Messaging;
 using Wms.BuildingBlocks.Domain.Results;
 using Wms.Outbound.Application.Abstractions;
@@ -11,7 +12,9 @@ namespace Wms.Outbound.Application.Features.CompletePickingTask;
 internal sealed class CompletePickingTaskHandler(
     IPickingTaskRepository pickingTaskRepository,
     IWaveRepository waveRepository,
-    OutboundEventTranslator translator) : ICommandHandler<CompletePickingTaskCommand>
+    OutboundEventTranslator translator,
+    IOperationalTelemetryEmitter telemetry,
+    TimeProvider timeProvider) : ICommandHandler<CompletePickingTaskCommand>
 {
     public async Task<Result> Handle(CompletePickingTaskCommand command, CancellationToken cancellationToken)
     {
@@ -52,6 +55,17 @@ internal sealed class CompletePickingTaskHandler(
 
         // Emit WaveReady jika transisi ke Ready terjadi (WaveReadyRaised), lalu clear.
         await translator.TranslateWaveEventsAsync(wave, cancellationToken);
+
+        await telemetry.EmitAsync(
+            new OperationalTelemetryRecord(
+                timeProvider.GetUtcNow(),
+                wave.WarehouseId,
+                command.OperatorId,
+                OperationalTelemetryEventType.PickCompleted,
+                task.Id.Value,
+                task.Qty),
+            cancellationToken);
+
         return Result.Success();
     }
 }

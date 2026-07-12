@@ -2,6 +2,7 @@ using System.Text.Json;
 using AwesomeAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Wms.BuildingBlocks.Application.Abstractions;
+using Wms.BuildingBlocks.Application.Abstractions.Ports;
 using Wms.BuildingBlocks.Application.Messaging;
 using Wms.BuildingBlocks.Domain.Results;
 using Wms.Contracts.Abstractions;
@@ -64,6 +65,26 @@ public sealed class CompletePutawayFlowTests(PostgresFixture postgres) : IAsyncL
         payload.Sku.Should().Be("SKU-MILK");
         payload.WarehouseId.Should().Be(GrConfirmedFactory.WarehouseId);
         payload.OperatorId.Should().Be(operatorId);
+    }
+
+    [Fact]
+    public async Task Complete_emits_putaway_completed_telemetry_with_operator_and_warehouse()
+    {
+        var task = await ReceiveSingleGoodAsync();
+        var operatorId = Guid.NewGuid();
+
+        await PipelineRunner.SendAsync(
+            _provider,
+            new CompletePutawayCommand(task.Id.Value, Guid.NewGuid(), operatorId));
+
+        var stream = (CapturingEventStreamPublisher)_provider.GetRequiredService<IEventStreamPublisher>();
+        var records = stream.On<OperationalTelemetryRecord>(OperationalTelemetryStream.Name);
+        records.Should().ContainSingle();
+        records[0].EventType.Should().Be(OperationalTelemetryEventType.PutawayCompleted);
+        records[0].WarehouseId.Should().Be(GrConfirmedFactory.WarehouseId);
+        records[0].OperatorId.Should().Be(operatorId);
+        records[0].EntityId.Should().Be(task.Id.Value);
+        records[0].Quantity.Should().Be(100m);
     }
 
     [Fact]

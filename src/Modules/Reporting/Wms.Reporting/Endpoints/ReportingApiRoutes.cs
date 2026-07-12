@@ -19,4 +19,17 @@ internal static class ReportingApiRoutes
             .WithApiVersionSet(versionSet)
             .WithTags("Reports");
     }
+
+    // Route group ber versi telemetry operasional — /v{n}/telemetry
+    public static RouteGroupBuilder Telemetry(IEndpointRouteBuilder app)
+    {
+        var versionSet = app.NewApiVersionSet("telemetry")
+            .HasApiVersion(new ApiVersion(1, 0))
+            .ReportApiVersions()
+            .Build();
+
+        return app.MapGroup("/v{version:apiVersion}/telemetry")
+            .WithApiVersionSet(versionSet)
+            .WithTags("Telemetry");
+    }
 }

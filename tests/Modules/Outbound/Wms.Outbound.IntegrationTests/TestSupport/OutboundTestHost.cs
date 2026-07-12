@@ -38,6 +38,9 @@ internal static class OutboundTestHost
 
         // Assignment picker — fake
         services.AddSingleton<IPickAssignmentPolicy>(new FakePickAssignmentPolicy());
+
+        // Gunakan publisher test untuk merekam telemetry operasional tanpa melibatkan adapter platform.
+        services.AddSingleton<IEventStreamPublisher, CapturingEventStreamPublisher>();
     }
 
     public static async Task MigrateAsync(IServiceProvider provider)

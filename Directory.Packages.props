@@ -86,6 +86,7 @@
     <PackageVersion Include="Azure.Monitor.OpenTelemetry.Exporter" Version="1.4.0" />
     <PackageVersion Include="Azure.Communication.Email" Version="1.0.1" />
     <PackageVersion Include="Azure.Core" Version="1.46.2" />
+    <PackageVersion Include="Microsoft.Azure.Cosmos" Version="3.61.0" />
   </ItemGroup>
 
   <ItemGroup Label="Hosts — Azure Functions isolated worker">
@@ -94,6 +95,7 @@
     <PackageVersion Include="Microsoft.Azure.Functions.Worker.Extensions.ServiceBus" Version="5.22.0" />
     <PackageVersion Include="Microsoft.Azure.Functions.Worker.Extensions.EventGrid" Version="3.4.2" />
     <PackageVersion Include="Microsoft.Azure.Functions.Worker.Extensions.Timer" Version="4.3.1" />
+    <PackageVersion Include="Microsoft.Azure.Functions.Worker.Extensions.EventHubs" Version="6.5.0" />
   </ItemGroup>
 
   <ItemGroup Label="Web — hosting surface (REST/gRPC/auth/versioning/OpenAPI)">

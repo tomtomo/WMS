@@ -8,6 +8,7 @@ using Wms.BuildingBlocks.Web;
 using Wms.Inventory.Api.Endpoints;
 using Wms.Inventory.Api.GrpcServices;
 using Wms.Inventory.Application.Features.DetectNearExpiry;
+using Wms.Platform.Local.Streaming;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,6 +46,9 @@ builder.Services.Configure<AuthorizationOptions>(options =>
 // Inventory publish event dan juga consume event dari modul lain.
 builder.Services.AddEventingRail("wms.inventory");
 builder.Services.AddInventoryRailConsumers();
+
+// Worker telemetry operasional
+builder.Services.AddHostedService<OperationalTelemetryStreamWorker>();
 
 var app = builder.Build();
 

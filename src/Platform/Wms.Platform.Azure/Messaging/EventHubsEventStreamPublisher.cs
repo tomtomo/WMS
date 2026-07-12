@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Text.Json;
+using Azure.Core;
 using Azure.Messaging.EventHubs;
 using Azure.Messaging.EventHubs.Producer;
 using Microsoft.Extensions.Configuration;
@@ -16,14 +17,17 @@ public sealed class EventHubsEventStreamPublisher : IEventStreamPublisher, IAsyn
     private readonly ConcurrentDictionary<string, Lazy<EventHubProducerClient>> _producers = new(StringComparer.Ordinal);
     private readonly Func<string, EventHubProducerClient> _producerFactory;
 
-    public EventHubsEventStreamPublisher(IOptions<AzureMessagingOptions> options, IConfiguration configuration)
+    public EventHubsEventStreamPublisher(
+        IOptions<AzureMessagingOptions> options,
+        IConfiguration configuration,
+        TokenCredential credential)
     {
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(configuration);
+        ArgumentNullException.ThrowIfNull(credential);
 
-        // Lazy per hub: Producer dibuat per hub saat publish pertama, supaya constructor tidak langsung membuka koneksi jaringan.
-        _producerFactory = streamName =>
-            new EventHubProducerClient(ResolveConnectionString(options.Value, configuration), streamName);
+        // Buat producer saat stream pertama kali digunakan: pakai connection string untuk emulator atau test, dan Managed Identity di cloud.
+        _producerFactory = streamName => CreateProducer(streamName, options.Value, configuration, credential);
     }
 
     // Constructor khusus test agar producer bisa diganti tanpa akses jaringan.
@@ -57,12 +61,21 @@ public sealed class EventHubsEventStreamPublisher : IEventStreamPublisher, IAsyn
         }
     }
 
-    private static string ResolveConnectionString(AzureMessagingOptions options, IConfiguration configuration)
+    private static EventHubProducerClient CreateProducer(
+        string streamName,
+        AzureMessagingOptions options,
+        IConfiguration configuration,
+        TokenCredential credential)
     {
         var connectionString = configuration.GetConnectionString(options.EventHubsConnectionStringName);
-        return string.IsNullOrWhiteSpace(connectionString)
+        if (!string.IsNullOrWhiteSpace(connectionString))
+        {
+            return new EventHubProducerClient(connectionString, streamName);
+        }
+
+        return string.IsNullOrWhiteSpace(options.EventHubsFullyQualifiedNamespace)
             ? throw new InvalidOperationException(
-                $"Connection string '{options.EventHubsConnectionStringName}' untuk Event Hubs tidak ditemukan di konfigurasi.")
-            : connectionString;
+                $"Event Hubs butuh connection string '{options.EventHubsConnectionStringName}' atau EventHubsFullyQualifiedNamespace.")
+            : new EventHubProducerClient(options.EventHubsFullyQualifiedNamespace, streamName, credential);
     }
 }

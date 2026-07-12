@@ -35,6 +35,9 @@ internal static class InventoryTestHost
         services.AddSingleton<ICurrentUser>(new FixedCurrentUser());
 
         services.AddSingleton<IReceivingPolicy, FakeReceivingPolicy>();
+
+        // Gunakan publisher test untuk merekam telemetry operasional tanpa melibatkan adapter platform.
+        services.AddSingleton<IEventStreamPublisher, CapturingEventStreamPublisher>();
     }
 
     public static async Task MigrateAsync(IServiceProvider provider)

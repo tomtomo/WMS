@@ -252,6 +252,7 @@ internal sealed class ChoreographyWorld : IAsyncDisposable
         services.AddInboundModule(configuration);
         services.AddSingleton<Wms.Inbound.Application.Abstractions.IProductReader, FakeProductReader>();
         services.AddSingleton<Wms.Inbound.Application.Abstractions.IWarehouseReader, FakeInboundWarehouseReader>();
+        services.AddSingleton<IEventStreamPublisher, NoOpEventStreamPublisher>();
         AddRailTransport(services, configuration, exchange);
         services.AddEventingRail(queue);
         return services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
@@ -267,6 +268,7 @@ internal sealed class ChoreographyWorld : IAsyncDisposable
         services.AddBuildingBlocksInfrastructure("wms-inventory");
         services.AddInventoryModule(configuration);
         services.AddSingleton<Wms.Inventory.Application.Abstractions.IReceivingPolicy, FakeReceivingPolicy>();
+        services.AddSingleton<IEventStreamPublisher, NoOpEventStreamPublisher>();
         AddRailTransport(services, configuration, exchange);
         services.AddInventoryRailConsumers();
         services.AddEventingRail(queue);
@@ -285,6 +287,7 @@ internal sealed class ChoreographyWorld : IAsyncDisposable
         services.AddOutboundModule(configuration);
         services.AddSingleton<Wms.Outbound.Application.Abstractions.IWarehouseReader, FakeOutboundWarehouseReader>();
         services.AddSingleton<Wms.Outbound.Application.Abstractions.IPickAssignmentPolicy, FakePickAssignmentPolicy>();
+        services.AddSingleton<IEventStreamPublisher, NoOpEventStreamPublisher>();
         AddRailTransport(services, configuration, exchange);
         services.AddOutboundRailConsumers();
         services.AddEventingRail(queue);
