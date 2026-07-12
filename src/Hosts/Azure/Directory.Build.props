@@ -1,0 +1,22 @@
+<Project>
+
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)..'))" />
+
+  <!-- Semua deployable Azure butuh assembly Microsoft.Extensions 9.x saat RUNTIME cloud:
+       Flex FunctionsNetHost dan OTel 1.16 sama-sama terlink 9.x.
+       Baseline repo tetap 8.x; override hanya berlaku untuk project di folder ini. -->
+  <ItemGroup Label="Kompatibilitas host cloud — M.E. 9.x">
+    <PackageReference Include="Microsoft.Extensions.Hosting" VersionOverride="9.0.5" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" VersionOverride="9.0.5" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" VersionOverride="9.0.5" />
+    <PackageReference Include="Microsoft.Extensions.Logging" VersionOverride="9.0.5" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" VersionOverride="9.0.5" />
+    <PackageReference Include="Microsoft.Extensions.Options" VersionOverride="9.0.5" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" VersionOverride="9.0.5" />
+    <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" VersionOverride="9.0.5" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" VersionOverride="9.0.5" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" VersionOverride="9.0.5" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" VersionOverride="9.0.5" />
+  </ItemGroup>
+
+</Project>

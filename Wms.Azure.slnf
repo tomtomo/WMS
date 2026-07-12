@@ -44,6 +44,8 @@
       "src\\Hosts\\Azure\\Wms.MasterData.Host.Azure\\Wms.MasterData.Host.Azure.csproj",
       "src\\Hosts\\Azure\\Wms.Auth.Host.Azure\\Wms.Auth.Host.Azure.csproj",
       "src\\Hosts\\Azure\\Wms.Reporting.Functions.Azure\\Wms.Reporting.Functions.Azure.csproj",
+      "src\\Hosts\\Azure\\Wms.Reporting.Host.Azure\\Wms.Reporting.Host.Azure.csproj",
+      "src\\Hosts\\Azure\\Wms.Notifications.Host.Azure\\Wms.Notifications.Host.Azure.csproj",
       "src\\Hosts\\Azure\\Wms.Notifications.Functions.Azure\\Wms.Notifications.Functions.Azure.csproj",
       "src\\Hosts\\Azure\\Wms.Scheduled.Functions.Azure\\Wms.Scheduled.Functions.Azure.csproj",
       "src\\WebUI\\Wms.WebUI\\Wms.WebUI.csproj",

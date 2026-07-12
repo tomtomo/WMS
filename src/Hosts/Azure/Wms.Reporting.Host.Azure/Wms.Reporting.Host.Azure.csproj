@@ -1,35 +1,25 @@
-<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk.Web">
 
-  <!-- Host Functions modul Reporting -->
-
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <AzureFunctionsVersion>v4</AzureFunctionsVersion>
-  </PropertyGroup>
-
-  <ItemGroup Label="Functions isolated worker">
-    <PackageReference Include="Microsoft.Azure.Functions.Worker" />
-    <PackageReference Include="Microsoft.Azure.Functions.Worker.Sdk" />
-    <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.ServiceBus" />
-  </ItemGroup>
+  <!-- Thin REST host Reporting di Azure: read API untuk WebUI. Consumer event tetap di
+       Wms.Reporting.Functions.Azure -->
 
   <ItemGroup Label="Platform">
+    <ProjectReference Include="..\..\..\Platform\Wms.Platform.Hosting\Wms.Platform.Hosting.csproj" />
     <ProjectReference Include="..\..\..\Platform\Wms.Platform.Azure\Wms.Platform.Azure.csproj" />
   </ItemGroup>
 
   <ItemGroup Label="BuildingBlocks">
     <ProjectReference Include="..\..\..\BuildingBlocks\Wms.BuildingBlocks.Application\Wms.BuildingBlocks.Application.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\Wms.BuildingBlocks.Infrastructure\Wms.BuildingBlocks.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Wms.BuildingBlocks.Web\Wms.BuildingBlocks.Web.csproj" />
   </ItemGroup>
 
   <ItemGroup Label="Modul Reporting">
     <ProjectReference Include="..\..\..\Modules\Reporting\Wms.Reporting\Wms.Reporting.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Update="host.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+  <ItemGroup Label="Checker user aktif">
+    <ProjectReference Include="..\..\..\Modules\Auth\Wms.Auth.Grpc\Wms.Auth.Grpc.csproj" />
   </ItemGroup>
 
 </Project>

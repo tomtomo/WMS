@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
+using Wms.Auth.Grpc.Client;
+using Wms.Auth.Grpc.V1;
+using Wms.BuildingBlocks.Application.Abstractions.Ports;
 using Wms.BuildingBlocks.Web;
 using Wms.MasterData.Api.Endpoints;
 using Wms.MasterData.Api.GrpcServices;
@@ -20,6 +23,12 @@ builder.Services.AddMasterDataModule(builder.Configuration);
 builder.Services.AddLocalPlatform(builder.Configuration);
 
 // Endpoint web MasterData: REST, gRPC lookup, autentikasi JWT, user dari HttpContext, permission policy, dan fallback deny by default.
+// Checker user aktif lintas host ke Auth.
+var authLookupAddress = new Uri(
+    builder.Configuration["Services:Auth:Grpc"]
+    ?? throw new InvalidOperationException("Konfigurasi 'Services:Auth:Grpc' wajib ada (diinject AppHost/IaC)."));
+builder.Services.AddInternalGrpcClient<AuthLookup.AuthLookupClient>(authLookupAddress);
+builder.Services.AddSingleton<IActiveUserChecker, AuthGrpcActiveUserChecker>();
 builder.Services.AddWebBuildingBlocks();
 builder.Services.AddGrpcWebBuildingBlocks();
 builder.Services.AddJwtBearerRs256(builder.Configuration);

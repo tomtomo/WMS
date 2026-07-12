@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
+using Wms.Auth.Grpc.Client;
+using Wms.Auth.Grpc.V1;
+using Wms.BuildingBlocks.Application.Abstractions.Ports;
 using Wms.BuildingBlocks.Web;
 using Wms.MasterData.Grpc.V1;
 using Wms.Outbound.Api.Endpoints;
@@ -25,11 +28,17 @@ builder.Services.AddLocalPlatform(builder.Configuration);
 // Reader warehouse memakai gRPC ke MasterData, dengan endpoint yang diinjek dari AppHost.
 var masterDataAddress = new Uri(
     builder.Configuration["Services:MasterData:Grpc"]
-    ?? throw new InvalidOperationException("Konfigurasi 'Services:MasterData:Grpc' wajib ada (di-inject AppHost)."));
+    ?? throw new InvalidOperationException("Konfigurasi 'Services:MasterData:Grpc' wajib ada (diinject AppHost)."));
 builder.Services.AddInternalGrpcClient<MasterDataLookup.MasterDataLookupClient>(masterDataAddress);
 builder.Services.AddScoped<IWarehouseReader, WarehouseGrpcReader>();
 
 // Endpoint web Outbound: REST, gRPC, autentikasi JWT, user dari HttpContext, permission policy, dan fallback deny-by-default.
+// Checker user aktif lintas host ke Auth.
+var authLookupAddress = new Uri(
+    builder.Configuration["Services:Auth:Grpc"]
+    ?? throw new InvalidOperationException("Konfigurasi 'Services:Auth:Grpc' wajib ada (diinject AppHost/IaC)."));
+builder.Services.AddInternalGrpcClient<AuthLookup.AuthLookupClient>(authLookupAddress);
+builder.Services.AddSingleton<IActiveUserChecker, AuthGrpcActiveUserChecker>();
 builder.Services.AddWebBuildingBlocks();
 builder.Services.AddGrpcWebBuildingBlocks();
 builder.Services.AddJwtBearerRs256(builder.Configuration);

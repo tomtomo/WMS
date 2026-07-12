@@ -95,7 +95,7 @@ jobs:
         shell: bash
         run: |
           ACR=$(az stack sub show --name "$STACK_NAME" --query 'outputs.acrName.value' -o tsv)
-          declare -A HOSTS=( [inbound]=Inbound [inventory]=Inventory [outbound]=Outbound [masterdata]=MasterData [auth]=Auth )
+          declare -A HOSTS=( [inbound]=Inbound [inventory]=Inventory [outbound]=Outbound [masterdata]=MasterData [auth]=Auth [reporting]=Reporting [notifications]=Notifications )
           for app in "${!HOSTS[@]}"; do
             az acr build -r "$ACR" -t "wms-$app:${{ github.sha }}" \
               -f "src/Hosts/Azure/Wms.${HOSTS[$app]}.Host.Azure/Dockerfile" .

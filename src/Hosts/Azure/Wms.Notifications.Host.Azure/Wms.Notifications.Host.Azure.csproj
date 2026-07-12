@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
-  <!-- Host Azure modul Inventory  -->
+  <!-- Thin REST host Notifications di Azure: inbox API untuk WebUI. Consumer event tetap di
+       Wms.Notifications.Functions.Azure -->
 
   <ItemGroup Label="Platform">
     <ProjectReference Include="..\..\..\Platform\Wms.Platform.Hosting\Wms.Platform.Hosting.csproj" />
@@ -13,9 +14,8 @@
     <ProjectReference Include="..\..\..\BuildingBlocks\Wms.BuildingBlocks.Web\Wms.BuildingBlocks.Web.csproj" />
   </ItemGroup>
 
-  <ItemGroup Label="Modul Inventory">
-    <ProjectReference Include="..\..\..\Modules\Inventory\Wms.Inventory.Api\Wms.Inventory.Api.csproj" />
-    <ProjectReference Include="..\..\..\Modules\Inventory\Wms.Inventory.Infrastructure\Wms.Inventory.Infrastructure.csproj" />
+  <ItemGroup Label="Modul Notifications">
+    <ProjectReference Include="..\..\..\Modules\Notifications\Wms.Notifications\Wms.Notifications.csproj" />
   </ItemGroup>
 
   <ItemGroup Label="Checker user aktif">

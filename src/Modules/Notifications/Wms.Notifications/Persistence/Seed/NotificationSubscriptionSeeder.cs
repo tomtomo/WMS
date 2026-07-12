@@ -35,12 +35,12 @@ public static class NotificationSubscriptionSeeder
         await context.SaveChangesAsync(cancellationToken);
     }
 
-    // Default policy
+    // Default policy.
     private static IEnumerable<(Guid SubscriberId, string Topic, IReadOnlyList<Channel> Channels)> Defaults() =>
     [
-        (NotificationRoles.Supervisor, NotificationTopics.GoodsReceiptPendingReview, new[] { Channel.InApp, Channel.Push }),
+        (NotificationRoles.Supervisor, NotificationTopics.GoodsReceiptPendingReview, new[] { Channel.InApp }),
         (NotificationRoles.Purchasing, NotificationTopics.GoodsReceiptOverDelivery, new[] { Channel.Email }),
-        (NotificationRoles.Supervisor, NotificationTopics.WaveReady, new[] { Channel.InApp, Channel.Push }),
+        (NotificationRoles.Supervisor, NotificationTopics.WaveReady, new[] { Channel.InApp }),
         (NotificationRoles.Supervisor, NotificationTopics.StockShortfall, new[] { Channel.InApp }),
         (NotificationRoles.Purchasing, NotificationTopics.StockShortfall, new[] { Channel.Email }),
         (NotificationRoles.InventoryPlanner, NotificationTopics.StockNearExpiry, new[] { Channel.Email }),

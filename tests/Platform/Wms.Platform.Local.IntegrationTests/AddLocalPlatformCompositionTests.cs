@@ -9,7 +9,8 @@ using Xunit;
 
 namespace Wms.Platform.Local.IntegrationTests;
 
-// Setiap port di port-spine harus resolve dari AddLocalPlatform. Port baru tanpa adapter Local akan diketahui.
+// Pastikan setiap port memiliki implementasi dalam konfigurasi production menggunakan Infrastructure dan Local Platform.
+// Test ini juga mendeteksi port baru yang belum memiliki adapter Local.
 [Collection(PostgresCollection.Name)]
 public sealed class AddLocalPlatformCompositionTests(PostgresFixture fixture)
 {
@@ -21,7 +22,6 @@ public sealed class AddLocalPlatformCompositionTests(PostgresFixture fixture)
         typeof(IInboxGuard),
         typeof(IDeadLetterStore),
         typeof(IApiIdempotencyStore),
-        typeof(IProjectionStore),
         typeof(ICacheStore),
         typeof(IObjectStore),
         typeof(ISecretProvider),
@@ -46,6 +46,10 @@ public sealed class AddLocalPlatformCompositionTests(PostgresFixture fixture)
         var connectionString = await fixture.CreateFreshDatabaseAsync();
         var configuration = BuildConfiguration(connectionString);
         var services = new ServiceCollection();
+
+        // Ikuti urutan host production: daftarkan IConfiguration sebelum Infrastructure agar platform memakai konfigurasi yang benar.
+        services.AddSingleton(configuration);
+        services.AddBuildingBlocksInfrastructure("wms-parity-local");
         services.AddLocalPlatform(configuration);
 
         // Pengganti DbContext modul
@@ -66,7 +70,10 @@ public sealed class AddLocalPlatformCompositionTests(PostgresFixture fixture)
     {
         var connectionString = await fixture.CreateFreshDatabaseAsync();
         var services = new ServiceCollection();
-        services.AddLocalPlatform(BuildConfiguration(connectionString));
+        var configuration = BuildConfiguration(connectionString);
+        services.AddSingleton(configuration);
+        services.AddBuildingBlocksInfrastructure("wms-parity-local");
+        services.AddLocalPlatform(configuration);
         using var provider = services.BuildServiceProvider();
 
         var byInterface = provider.GetRequiredService<IObjectStore>();

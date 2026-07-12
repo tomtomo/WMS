@@ -48,19 +48,13 @@ public static class LocalPlatformServiceCollectionExtensions
         services.TryAddSingleton<IMessagePublisher, RabbitMqMessagePublisher>();
         services.TryAddSingleton<IMessageSubscriber, RabbitMqMessageSubscriber>();
 
-        // Gunakan RabbitMQ untuk dispatch outbox.
+        // Gunakan RabbitMQ untuk dispatch outbox. Outbox/inbox/dead-letter/audit rail tidak
+        // didaftarkan di sini.
         services.TryAddSingleton<OutboxDispatcher, RabbitMqOutboxDispatcher>();
 
-        // Service pendukung untuk outbox, inbox, dead-letter, dan audit log.
-        services.TryAddScoped<IIntegrationEventOutbox, IntegrationEventOutbox>();
-        services.TryAddScoped<IInboxGuard, InboxGuard>();
-        services.TryAddScoped<IDeadLetterStore, DeadLetterStore>();
-        services.TryAddSingleton<IAuditLogStore, AuditLogStore>();
-
-        // Store Local NpgsqlDataSource (cloud: Redis / Cosmos-Firestore)
+        // Store Local NpgsqlDataSource (cloud: Redis). Read model = Postgres per modul
         services.TryAddSingleton(CreateDataSource);
         services.TryAddSingleton<IApiIdempotencyStore, PostgresApiIdempotencyStore>();
-        services.TryAddSingleton<IProjectionStore, PostgresProjectionStore>();
 
         services.TryAddSingleton<ICacheStore, InMemoryCacheStore>();
 
@@ -80,6 +74,8 @@ public static class LocalPlatformServiceCollectionExtensions
 
         services.TryAddSingleton<ITelemetrySink, TelemetrySink>();
 
+        // Gunakan singleton karena status saga disimpan di memory dan harus memakai instance yang sama.
+        // Modul tetap dapat menggantinya dengan implement sendiri sebelum registrasi ini dijalankan.
         services.TryAddSingleton<ISagaOrchestrator, InProcSagaOrchestrator>();
 
         services.TryAddSingleton<InProcStreamRing>();

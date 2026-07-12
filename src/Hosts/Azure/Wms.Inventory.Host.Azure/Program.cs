@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
+using Wms.Auth.Grpc.Client;
+using Wms.Auth.Grpc.V1;
+using Wms.BuildingBlocks.Application.Abstractions.Ports;
 using Wms.BuildingBlocks.Web;
 using Wms.Inventory.Api.Endpoints;
 using Wms.Inventory.Api.GrpcServices;
@@ -24,6 +27,12 @@ builder.Services.AddAzurePlatform(builder.Configuration);
 // di Wms.Scheduled.Functions.Azure, dan IRecurringJobScheduler versi Azure hanya berperan sebagai katalog cron.
 
 // Endpoint web Inventory: REST, gRPC, autentikasi JWT, user dari HttpContext, permission policy, dan fallback deny by default.
+// Checker user aktif lintas host ke Auth
+var authLookupAddress = new Uri(
+    builder.Configuration["Services:Auth:Grpc"]
+    ?? throw new InvalidOperationException("Konfigurasi 'Services:Auth:Grpc' wajib ada (diinject AppHost/IaC)."));
+builder.Services.AddInternalGrpcClient<AuthLookup.AuthLookupClient>(authLookupAddress);
+builder.Services.AddSingleton<IActiveUserChecker, AuthGrpcActiveUserChecker>();
 builder.Services.AddWebBuildingBlocks();
 builder.Services.AddGrpcWebBuildingBlocks();
 builder.Services.AddJwtBearerRs256(builder.Configuration);

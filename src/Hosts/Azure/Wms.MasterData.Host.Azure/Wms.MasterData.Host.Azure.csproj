@@ -18,18 +18,8 @@
     <ProjectReference Include="..\..\..\Modules\MasterData\Wms.MasterData.Infrastructure\Wms.MasterData.Infrastructure.csproj" />
   </ItemGroup>
 
-  <ItemGroup Label="OTel M.E. 9.x compatibility">
-    <PackageReference Include="Microsoft.Extensions.Hosting" VersionOverride="9.0.5" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" VersionOverride="9.0.5" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" VersionOverride="9.0.5" />
-    <PackageReference Include="Microsoft.Extensions.Logging" VersionOverride="9.0.5" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" VersionOverride="9.0.5" />
-    <PackageReference Include="Microsoft.Extensions.Options" VersionOverride="9.0.5" />
-    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" VersionOverride="9.0.5" />
-    <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" VersionOverride="9.0.5" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" VersionOverride="9.0.5" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" VersionOverride="9.0.5" />
-    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" VersionOverride="9.0.5" />
+  <ItemGroup Label="Checker user aktif">
+    <ProjectReference Include="..\..\..\Modules\Auth\Wms.Auth.Grpc\Wms.Auth.Grpc.csproj" />
   </ItemGroup>
 
 </Project>

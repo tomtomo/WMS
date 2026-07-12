@@ -114,18 +114,6 @@ module eventGrid 'modules/event-grid.bicep' = {
   }
 }
 
-module cosmos 'modules/cosmos.bicep' = {
-  name: 'cosmos'
-  scope: resourceGroup(rgName)
-  dependsOn: [rg]
-  params: {
-    baseName: baseName
-    location: location
-    uniqueSuffix: uniqueSuffix
-    appsIdentityPrincipalId: identity.outputs.appsIdentityPrincipalId
-  }
-}
-
 module redis 'modules/redis.bicep' = {
   name: 'redis'
   scope: resourceGroup(rgName)
@@ -216,7 +204,6 @@ var acaSharedEnv = [
   { name: 'AzurePlatform__Messaging__EventGridTopicKey', secretRef: 'eg-topic-key' }
   { name: 'AzurePlatform__Secrets__VaultUri', value: keyVault.outputs.vaultUri }
   { name: 'AzurePlatform__ObjectStore__AccountUrl', value: storage.outputs.blobEndpoint }
-  { name: 'AzurePlatform__Persistence__Cosmos__AccountEndpoint', value: cosmos.outputs.accountEndpoint }
   { name: 'AzurePlatform__Notifications__Acs__SenderAddress', value: acs.outputs.senderAddress }
   { name: 'Jwt__Issuer', value: jwtIssuer }
   { name: 'Jwt__Audience', value: jwtIssuer }
@@ -233,6 +220,10 @@ var coreApps = [
   { name: 'wms-outbound', module: 'outbound', sub: 'wms.outbound', min: 0, needsMasterData: true, grpcPort: 0 }
   { name: 'wms-masterdata', module: 'masterdata', sub: '', min: 1, needsMasterData: false, grpcPort: 8081 }
   { name: 'wms-auth', module: 'auth', sub: '', min: 1, needsMasterData: false, grpcPort: 8082 }
+
+  // Thin REST host: read API Reporting/inbox Notifications — consumer tetap di Functions.
+  { name: 'wms-reporting', module: 'reporting', sub: '', min: 0, needsMasterData: false, grpcPort: 0 }
+  { name: 'wms-notifications', module: 'notifications', sub: '', min: 0, needsMasterData: false, grpcPort: 0 }
 ]
 
 module containerApps 'modules/container-app.bicep' = [
@@ -253,6 +244,9 @@ module containerApps 'modules/container-app.bicep' = [
         { name: 'AzurePlatform__Telemetry__ServiceName', value: app.name }
       ], app.needsMasterData ? [
         { name: 'Services__MasterData__Grpc', value: masterDataGrpc }
+      ] : [], app.name != 'wms-auth' ? [
+        // Checker user aktif lintas host ke AuthLookup.
+        { name: 'Services__Auth__Grpc', value: authGrpc }
       ] : [], app.module == 'inventory' ? [
         // Gunakan ID hasil seed Master Data sebagai konfigurasi default proses receiving.
         { name: 'Inventory__Receiving__ReceivingLocationId', value: 'b0000000-0000-0000-0000-000000000001' }
@@ -296,14 +290,13 @@ var functionsSharedSettings = [
   { name: 'AzurePlatform__Messaging__EventGridTopicKey', value: '@Microsoft.KeyVault(SecretUri=${keyVault.outputs.vaultUri}secrets/eg-topic-key/)' }
   { name: 'AzurePlatform__Secrets__VaultUri', value: keyVault.outputs.vaultUri }
   { name: 'AzurePlatform__ObjectStore__AccountUrl', value: storage.outputs.blobEndpoint }
-  { name: 'AzurePlatform__Persistence__Cosmos__AccountEndpoint', value: cosmos.outputs.accountEndpoint }
   { name: 'AzurePlatform__Notifications__Acs__SenderAddress', value: acs.outputs.senderAddress }
 ]
 
 // Definisikan konfigurasi tiap Function App untuk deployment, database, telemetry, dan scheduled trigger.
 var functionApps = [
-  { name: 'func-${baseName}-reporting-${uniqueSuffix}', container: 'deploy-reporting', connModule: 'reporting', serviceName: 'wms-reporting', needsAuthGrpc: false, cron: '' }
-  { name: 'func-${baseName}-notifications-${uniqueSuffix}', container: 'deploy-notifications', connModule: 'notifications', serviceName: 'wms-notifications', needsAuthGrpc: true, cron: '' }
+  { name: 'func-${baseName}-reporting-${uniqueSuffix}', container: 'deploy-reporting', connModule: 'reporting', serviceName: 'func-wms-reporting', needsAuthGrpc: false, cron: '' }
+  { name: 'func-${baseName}-notifications-${uniqueSuffix}', container: 'deploy-notifications', connModule: 'notifications', serviceName: 'func-wms-notifications', needsAuthGrpc: true, cron: '' }
   { name: 'func-${baseName}-scheduled-${uniqueSuffix}', container: 'deploy-scheduled', connModule: 'inventory', serviceName: 'wms-scheduled', needsAuthGrpc: false, cron: '0 0 2 * * *' }
 ]
 
