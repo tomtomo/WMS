@@ -99,5 +99,31 @@ resource apiPolicies 'Microsoft.ApiManagement/service/apis/policies@2024-06-01-p
   }
 ]
 
+// Import OpenAPI Inbound v1 ke APIM agar operasinya tampil lengkap di portal.
+// API ini memakai path terpisah sehingga route production wms-inbound tetap tidak berubah.
+resource inboundDocApi 'Microsoft.ApiManagement/service/apis@2024-06-01-preview' = {
+  parent: apim
+  name: 'wms-inbound-doc'
+  properties: {
+    displayName: 'WMS Inbound (documented)'
+    path: 'inbound-doc'
+    protocols: ['https']
+    subscriptionRequired: false
+    format: 'openapi+json'
+    value: loadTextContent('../openapi/inbound-v1.json')
+  }
+}
+
+// Terapkan validasi JWT dan rate limit yang sama, lalu teruskan request ke backend Inbound.
+resource inboundDocPolicy 'Microsoft.ApiManagement/service/apis/policies@2024-06-01-preview' = {
+  parent: inboundDocApi
+  name: 'policy'
+  properties: {
+    format: 'xml'
+    value: '<policies><inbound><base /><rate-limit-by-key calls="120" renewal-period="60" counter-key="@(context.Request.IpAddress)" /><validate-jwt header-name="Authorization" require-scheme="Bearer" failed-validation-httpcode="401" failed-validation-error-message="Token tidak valid."><issuer-signing-keys><key n="${jwtModulus}" e="${jwtExponent}" /></issuer-signing-keys><audiences><audience>${jwtAudience}</audience></audiences><issuers><issuer>${jwtIssuer}</issuer></issuers></validate-jwt><set-backend-service backend-id="wms-inbound" /></inbound><backend><base /></backend><outbound><base /></outbound><on-error><base /></on-error></policies>'
+  }
+  dependsOn: [backends]
+}
+
 output gatewayUrl string = apim.properties.gatewayUrl
 output apimName string = apim.name

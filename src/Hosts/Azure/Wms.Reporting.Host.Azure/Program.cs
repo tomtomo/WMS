@@ -1,3 +1,4 @@
+using Azure.Identity;
 using Microsoft.AspNetCore.Authorization;
 using Wms.Auth.Grpc.Client;
 using Wms.Auth.Grpc.V1;
@@ -8,6 +9,17 @@ using Wms.Reporting.Persistence;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
+
+// Gunakan App Configuration sebagai sumber feature flag di host Azure.
+// Jika endpoint belum dikonfigurasi, host tetap berjalan tanpa App Configuration.
+var appConfigEndpoint = builder.Configuration["AppConfig:Endpoint"];
+if (!string.IsNullOrWhiteSpace(appConfigEndpoint))
+{
+    builder.Configuration.AddAzureAppConfiguration(options =>
+        options.Connect(new Uri(appConfigEndpoint), new DefaultAzureCredential())
+            .UseFeatureFlags(featureFlags => featureFlags.SetRefreshInterval(TimeSpan.FromSeconds(30))));
+    builder.Services.AddAzureAppConfiguration();
+}
 
 // Thin REST host: hanya read API report
 builder.Services.AddApplicationBuildingBlocks(typeof(ReportingDbContext).Assembly);
@@ -31,6 +43,12 @@ builder.Services.Configure<AuthorizationOptions>(options =>
     options.FallbackPolicy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build());
 
 var app = builder.Build();
+
+// Aktifkan refresh feature flag saat aplikasi berjalan agar perubahan bisa diterapkan tanpa restart.
+if (!string.IsNullOrWhiteSpace(appConfigEndpoint))
+{
+    app.UseAzureAppConfiguration();
+}
 
 app.UseWebBuildingBlocks();
 app.UseAuthentication();

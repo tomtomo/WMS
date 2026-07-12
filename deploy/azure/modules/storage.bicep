@@ -39,6 +39,49 @@ resource deployContainers 'Microsoft.Storage/storageAccounts/blobServices/contai
   }
 ]
 
+// Sediakan Storage Queue untuk memproses enrichment lampiran secara point to point.
+resource queueService 'Microsoft.Storage/storageAccounts/queueServices@2023-05-01' = {
+  parent: storage
+  name: 'default'
+}
+
+resource attachmentEnrichQueue 'Microsoft.Storage/storageAccounts/queueServices/queues@2023-05-01' = {
+  parent: queueService
+  name: 'attachment-enrich'
+}
+
+// Atur lifecycle lampiran GR untuk memindahkan blob ke Cool setelah 30 hari dan menghapusnya setelah 180 hari.
+// Nilai ini hanya untuk sandbox, bukan kebijakan retensi resmi.
+resource lifecyclePolicy 'Microsoft.Storage/storageAccounts/managementPolicies@2023-05-01' = {
+  parent: storage
+  name: 'default'
+  properties: {
+    policy: {
+      rules: [
+        {
+          enabled: true
+          name: 'gr-attachments-lifecycle'
+          type: 'Lifecycle'
+          definition: {
+            filters: {
+              blobTypes: ['blockBlob']
+              prefixMatch: ['gr-attachments/']
+            }
+            actions: {
+              baseBlob: {
+                // Cool 30 hari sejak modifikasi (akses jarang), hapus 180 hari.
+                tierToCool: { daysAfterModificationGreaterThan: 30 }
+                delete: { daysAfterModificationGreaterThan: 180 }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}
+
 output storageId string = storage.id
 output storageName string = storage.name
 output blobEndpoint string = storage.properties.primaryEndpoints.blob
+output queueEndpoint string = storage.properties.primaryEndpoints.queue

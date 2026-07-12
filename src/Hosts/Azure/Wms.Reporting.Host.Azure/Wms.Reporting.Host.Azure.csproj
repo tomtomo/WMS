@@ -22,4 +22,8 @@
     <ProjectReference Include="..\..\..\Modules\Auth\Wms.Auth.Grpc\Wms.Auth.Grpc.csproj" />
   </ItemGroup>
 
+  <ItemGroup Label="App Configuration">
+    <PackageReference Include="Microsoft.Azure.AppConfiguration.AspNetCore" />
+  </ItemGroup>
+
 </Project>

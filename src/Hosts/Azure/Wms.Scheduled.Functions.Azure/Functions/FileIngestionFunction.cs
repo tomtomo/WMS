@@ -4,8 +4,8 @@ using Microsoft.Extensions.Logging;
 
 namespace Wms.Scheduled.Functions.Azure;
 
-// Trigger ini menerima event BlobCreated dari Event Grid untuk alur file ingestion.
-// Handler untuk memproses file dan membuat GR atau Order belum tersedia, jadi saat ini event hanya dicatat.
+// Trigger ini menerima event BlobCreated dari Event Grid untuk proses file ingestion.
+// Karena handler pembuatan GR atau Order belum tersedia, event untuk sementara hanya dicatat.
 public sealed class FileIngestionFunction(ILogger<FileIngestionFunction> logger)
 {
     [Function("FileIngestionDropped")]
