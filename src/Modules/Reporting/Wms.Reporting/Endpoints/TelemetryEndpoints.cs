@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.FeatureManagement;
 using Wms.BuildingBlocks.Application.Abstractions.Ports;
 using Wms.BuildingBlocks.Web;
 using Wms.Reporting.ReadModels;
@@ -19,10 +20,16 @@ public sealed class TelemetryEndpoints : IEndpoint
 
     private static async Task<IResult> SummaryAsync(
         IOperationalTelemetryStore store,
+        IFeatureManager featureManager,
         Guid warehouseId,
         CancellationToken cancellationToken,
         int windowMinutes = 60)
     {
+        if (!await featureManager.IsEnabledAsync(ReportingFeatureFlags.TelemetrySummary))
+        {
+            return Results.NotFound();
+        }
+
         var window = TimeSpan.FromMinutes(Math.Max(1, windowMinutes));
         var records = await store.GetRecentAsync(warehouseId, window, cancellationToken);
         return Results.Ok(TelemetrySummary.Build(warehouseId, records));

@@ -1,0 +1,522 @@
+{
+  "openapi": "3.0.4",
+  "info": {
+    "title": "TomSandboxWMS API",
+    "version": "1.0"
+  },
+  "paths": {
+    "/v1/goods-receipts/{goodsReceiptId}/complete-scan": {
+      "post": {
+        "tags": [
+          "GoodsReceipts"
+        ],
+        "operationId": "CompleteScan",
+        "parameters": [
+          {
+            "name": "goodsReceiptId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/v1/goods-receipts/{goodsReceiptId}/confirm": {
+      "post": {
+        "tags": [
+          "GoodsReceipts"
+        ],
+        "operationId": "ConfirmGoodsReceipt",
+        "parameters": [
+          {
+            "name": "goodsReceiptId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/v1/goods-receipts": {
+      "post": {
+        "tags": [
+          "GoodsReceipts"
+        ],
+        "operationId": "CreateGoodsReceipt",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateGoodsReceiptRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/v1/goods-receipts/{goodsReceiptId}": {
+      "get": {
+        "tags": [
+          "GoodsReceipts"
+        ],
+        "operationId": "GetGoodsReceipt",
+        "parameters": [
+          {
+            "name": "goodsReceiptId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/v1/goods-receipts/{goodsReceiptId}/review": {
+      "get": {
+        "tags": [
+          "GoodsReceipts"
+        ],
+        "operationId": "GetGoodsReceiptReview",
+        "parameters": [
+          {
+            "name": "goodsReceiptId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/v1/goods-receipts/{goodsReceiptId}/attachments/{attachmentId}/download-url": {
+      "get": {
+        "tags": [
+          "GoodsReceipts"
+        ],
+        "operationId": "GetGRAttachmentDownloadUrl",
+        "parameters": [
+          {
+            "name": "goodsReceiptId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "attachmentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/v1/goods-receipts/{goodsReceiptId}/hold": {
+      "post": {
+        "tags": [
+          "GoodsReceipts"
+        ],
+        "operationId": "HoldGoodsReceipt",
+        "parameters": [
+          {
+            "name": "goodsReceiptId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HoldGoodsReceiptRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/v1/goods-receipts/{goodsReceiptId}/attachments": {
+      "get": {
+        "tags": [
+          "GoodsReceipts"
+        ],
+        "operationId": "ListGRAttachments",
+        "parameters": [
+          {
+            "name": "goodsReceiptId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "includeInactive",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "GoodsReceipts"
+        ],
+        "operationId": "UploadGRAttachment",
+        "parameters": [
+          {
+            "name": "goodsReceiptId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "required": [
+                  "file"
+                ],
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              },
+              "encoding": {
+                "file": {
+                  "style": "form"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/v1/goods-receipts/pending": {
+      "get": {
+        "tags": [
+          "GoodsReceipts"
+        ],
+        "operationId": "ListPendingGoodsReceipts",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/v1/goods-receipts/{goodsReceiptId}/discrepancies/{discrepancyId}/resolution": {
+      "post": {
+        "tags": [
+          "GoodsReceipts"
+        ],
+        "operationId": "ResolveDiscrepancy",
+        "parameters": [
+          {
+            "name": "goodsReceiptId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "discrepancyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveDiscrepancyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/v1/goods-receipts/{goodsReceiptId}/scans": {
+      "post": {
+        "tags": [
+          "GoodsReceipts"
+        ],
+        "operationId": "ScanReceiptLine",
+        "parameters": [
+          {
+            "name": "goodsReceiptId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScanReceiptLineRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/v1/goods-receipts/{goodsReceiptId}/attachments/{attachmentId}": {
+      "delete": {
+        "tags": [
+          "GoodsReceipts"
+        ],
+        "operationId": "SoftDeleteGRAttachment",
+        "parameters": [
+          {
+            "name": "goodsReceiptId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "attachmentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CreateGoodsReceiptRequest": {
+        "type": "object",
+        "properties": {
+          "poRef": {
+            "type": "string",
+            "nullable": true
+          },
+          "supplierId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "warehouseId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "dockDoor": {
+            "type": "string",
+            "nullable": true
+          },
+          "expectedLines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExpectedLineRequest"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ExpectedLineRequest": {
+        "type": "object",
+        "properties": {
+          "sku": {
+            "type": "string",
+            "nullable": true
+          },
+          "expectedQty": {
+            "type": "number",
+            "format": "double"
+          },
+          "uom": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "HoldGoodsReceiptRequest": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ResolveDiscrepancyRequest": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "nullable": true
+          },
+          "note": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ScanReceiptLineRequest": {
+        "type": "object",
+        "properties": {
+          "sku": {
+            "type": "string",
+            "nullable": true
+          },
+          "actualQty": {
+            "type": "number",
+            "format": "double"
+          },
+          "batch": {
+            "type": "string",
+            "nullable": true
+          },
+          "expiry": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "lineStatus": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "GoodsReceipts"
+    }
+  ]
+}

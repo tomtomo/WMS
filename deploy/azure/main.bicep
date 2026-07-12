@@ -9,6 +9,7 @@ param location string = 'southeastasia'
 param baseName string = 'wms'
 param imageTag string = 'latest'
 param publisherEmail string
+param alertEmail string = publisherEmail
 param deployApps bool = false
 param wireEventSubscriptions bool = false
 
@@ -153,6 +154,19 @@ module acs 'modules/acs.bicep' = {
   params: { baseName: baseName, uniqueSuffix: uniqueSuffix }
 }
 
+// App Configuration: sumber feature flag host Azure (identity-based, RBAC ke mi apps).
+module appConfig 'modules/app-config.bicep' = {
+  name: 'app-config'
+  scope: resourceGroup(rgName)
+  dependsOn: [rg]
+  params: {
+    baseName: baseName
+    location: location
+    uniqueSuffix: uniqueSuffix
+    appsIdentityPrincipalId: identity.outputs.appsIdentityPrincipalId
+  }
+}
+
 module kvSecrets 'modules/kv-secrets.bicep' = {
   name: 'kv-secrets'
   scope: resourceGroup(rgName)
@@ -233,6 +247,8 @@ var acaSharedEnv = [
   { name: 'AzurePlatform__Messaging__EventHubsFullyQualifiedNamespace', value: eventHubs.outputs.fullyQualifiedNamespace }
   { name: 'AzurePlatform__Persistence__Cosmos__AccountEndpoint', value: cosmos.outputs.accountEndpoint }
   { name: 'AzurePlatform__Notifications__Acs__SenderAddress', value: acs.outputs.senderAddress }
+  // Gunakan App Configuration sebagai sumber feature flag; jika tidak tersedia, host tetap berjalan.
+  { name: 'AppConfig__Endpoint', value: appConfig.outputs.endpoint }
   { name: 'Jwt__Issuer', value: jwtIssuer }
   { name: 'Jwt__Audience', value: jwtIssuer }
   { name: 'Jwt__PublicKeyPem', value: secrets.outputs.jwtPublicPem }
@@ -356,7 +372,13 @@ module functions 'modules/functions.bicep' = [
         { name: 'Services__Auth__Grpc', value: authGrpc }
       ] : [], app.cron == '' ? [] : [
         { name: 'Inventory__Expiry__Cron', value: app.cron }
-      ])
+      ], app.serviceName == 'wms-scheduled' ? [
+        // Identity-based connection "Storage" untuk QueueTrigger/QueueOutput/BlobInput pipeline enrichment lampiran.
+        { name: 'Storage__blobServiceUri', value: storage.outputs.blobEndpoint }
+        { name: 'Storage__queueServiceUri', value: storage.outputs.queueEndpoint }
+        { name: 'Storage__credential', value: 'managedidentity' }
+        { name: 'Storage__clientId', value: identity.outputs.appsIdentityClientId }
+      ] : [])
     }
   }
 ]
@@ -375,6 +397,20 @@ module webUi 'modules/app-service.bicep' = if (deployApps) {
     appsIdentityClientId: identity.outputs.appsIdentityClientId
     gatewayAddress: apim.outputs.gatewayUrl
     appInsightsConnectionString: telemetry.outputs.appInsightsConnectionString
+  }
+}
+
+// Pasang availability test dan alert setelah WebUI tersedia karena pengecekannya membutuhkan URL aplikasi.
+module availability 'modules/availability.bicep' = if (deployApps) {
+  name: 'availability'
+  scope: resourceGroup(rgName)
+  dependsOn: [webUi]
+  params: {
+    baseName: baseName
+    location: location
+    appInsightsId: telemetry.outputs.appInsightsId
+    webUiUrl: webUi!.outputs.webUiUrl
+    alertEmail: alertEmail
   }
 }
 
@@ -400,3 +436,5 @@ output migrationJobName string = deployApps ? migrationJob!.outputs.jobName : ''
 output webUiUrl string = deployApps ? webUi!.outputs.webUiUrl : ''
 output functionAppNames array = map(functionApps, app => app.name)
 output coreAppFqdns array = [for (app, index) in coreApps: deployApps ? containerApps[index]!.outputs.fqdn : '']
+output appConfigEndpoint string = appConfig.outputs.endpoint
+output appConfigName string = appConfig.outputs.storeName

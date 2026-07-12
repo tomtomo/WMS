@@ -51,3 +51,24 @@ resource blobSubscription 'Microsoft.EventGrid/systemTopics/eventSubscriptions@2
     }
   }
 }
+
+// Kirim event BlobCreated dari container gr attachments ke function AttachmentBlobCreated.
+// Container ini terpisah dari file drop agar event yang sama tidak diproses dua kali.
+resource attachmentSubscription 'Microsoft.EventGrid/systemTopics/eventSubscriptions@2024-06-01-preview' = {
+  parent: blobEventsTopic
+  name: 'wms-attachment-enrich'
+  properties: {
+    eventDeliverySchema: 'CloudEventSchemaV1_0'
+    filter: {
+      includedEventTypes: ['Microsoft.Storage.BlobCreated']
+      subjectBeginsWith: '/blobServices/default/containers/gr-attachments/'
+    }
+    destination: {
+      endpointType: 'AzureFunction'
+      properties: {
+        resourceId: '${scheduledFunctionAppId}/functions/AttachmentBlobCreated'
+        maxEventsPerBatch: 1
+      }
+    }
+  }
+}
