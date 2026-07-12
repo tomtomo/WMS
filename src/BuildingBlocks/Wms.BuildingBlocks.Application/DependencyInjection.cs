@@ -39,6 +39,9 @@ public static class DependencyInjection
         // Clock untuk AuditLog/Logging.
         services.TryAddSingleton(TimeProvider.System);
 
+        // Telemetry operasional tetap berjalan meski adapter stream gagal, di implement di platform.
+        services.TryAddSingleton<IOperationalTelemetryEmitter, OperationalTelemetryEmitter>();
+
         return services;
     }
 

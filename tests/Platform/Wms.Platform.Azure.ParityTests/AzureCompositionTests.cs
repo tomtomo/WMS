@@ -8,6 +8,7 @@ using Wms.Platform.Azure.Eventing;
 using Wms.Platform.Azure.Messaging;
 using Wms.Platform.Azure.Notifications;
 using Wms.Platform.Azure.ObjectStore;
+using Wms.Platform.Azure.Persistence;
 using Wms.Platform.Azure.Scheduling;
 using Wms.Platform.Azure.Secrets;
 using Wms.Platform.Azure.Security;
@@ -44,6 +45,14 @@ public sealed class AzureCompositionTests
     }
 
     [Fact]
+    public async Task Add_azure_platform_binds_operational_telemetry_store_to_cosmos_adapter()
+    {
+        await using var provider = BuildProvider();
+
+        provider.GetRequiredService<IOperationalTelemetryStore>().Should().BeOfType<CosmosOperationalTelemetryStore>();
+    }
+
+    [Fact]
     public async Task Add_azure_platform_reuses_the_portable_adapters_shared_with_gcp()
     {
         await using var provider = BuildProvider();
@@ -75,6 +84,7 @@ public sealed class AzureCompositionTests
         await using var provider = BuildProvider();
 
         provider.GetRequiredService<ITelemetrySink>().Should().BeOfType<AppInsightsTelemetrySink>();
+        provider.GetRequiredService<IAnalyticsSink>().Should().BeOfType<AppInsightsAnalyticsSink>();
     }
 
     [Fact]
@@ -188,6 +198,8 @@ public sealed class AzureCompositionTests
                 "Endpoint=sb://localhost;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;",
             ["ConnectionStrings:eventhubs"] =
                 "Endpoint=sb://localhost;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;",
+            ["ConnectionStrings:cosmos"] =
+                "AccountEndpoint=https://localhost:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==;",
             ["ConnectionStrings:redis"] = "localhost:6379",
             ["ConnectionStrings:acs"] = "endpoint=https://wms.communication.azure.com/;accesskey=Y29tcG9zaXRpb24=",
             ["AzurePlatform:Notifications:Acs:SenderAddress"] = "DoNotReply@wms.example.net",

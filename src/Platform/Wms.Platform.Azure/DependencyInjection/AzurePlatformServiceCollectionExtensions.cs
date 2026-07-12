@@ -11,6 +11,7 @@ using Azure.Security.KeyVault.Secrets;
 using Azure.Storage.Blobs;
 using FirebaseAdmin;
 using FirebaseAdmin.Messaging;
+using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
@@ -80,7 +81,6 @@ public static class AzurePlatformServiceCollectionExtensions
 
         services.AddValidatedOptions<KeyVaultOptions>(KeyVaultOptions.SectionName);
 
-        services.TryAddSingleton<TokenCredential>(_ => new DefaultAzureCredential());
         services.TryAddSingleton(CreateSecretClient);
         services.TryAddSingleton<ISecretProvider, KeyVaultSecretProvider>();
         services.TryAddSingleton<IServiceTokenProvider, ManagedIdentityTokenProvider>();
@@ -98,9 +98,12 @@ public static class AzurePlatformServiceCollectionExtensions
         services.AddValidatedOptions<FlexibleServerOptions>(FlexibleServerOptions.SectionName);
         services.AddValidatedOptions<BlobObjectStoreOptions>(BlobObjectStoreOptions.SectionName);
         services.AddValidatedOptions<AzureCacheOptions>(AzureCacheOptions.SectionName);
+        services.AddValidatedOptions<CosmosOptions>(CosmosOptions.SectionName);
 
-        // Read model tetap disimpan di PostgreSQL per modul, jadi adapter projection Cosmos tidak digunakan.
-        // FlexibleServerConnectionStringFactory juga belum diregistrasikan karena belum ada pemakai di runtime.
+        // Read model = Postgres per modul. Cosmos dipakai sebagai hot store telemetry operasional, bukan projection.
+        services.TryAddSingleton(CreateCosmosClient);
+        services.TryAddSingleton<IOperationalTelemetryStore, CosmosOperationalTelemetryStore>();
+
         services.TryAddSingleton(CreateBlobServiceClient);
         services.TryAddSingleton<IObjectStore, BlobObjectStore>();
 
@@ -123,6 +126,10 @@ public static class AzurePlatformServiceCollectionExtensions
         // Ganti sink telemetry bawaan agar host memakai implementasi Application Insights.
         services.RemoveAll<ITelemetrySink>();
         services.AddSingleton<ITelemetrySink, AppInsightsTelemetrySink>();
+
+        // Kirim data analitik Azure melalui OpenTelemetry ke Application Insights.
+        // Di Local, sink default tetap memakai LogCsv.
+        services.TryAddSingleton<IAnalyticsSink, AppInsightsAnalyticsSink>();
 
         var telemetryOptions = new AppInsightsOptions();
         configuration.GetSection(AppInsightsOptions.SectionName).Bind(telemetryOptions);
@@ -167,6 +174,26 @@ public static class AzurePlatformServiceCollectionExtensions
         services.TryAddSingleton(configuration);
         services.TryAddSingleton(TimeProvider.System);
         services.AddLogging();
+
+        // Kredensial Azure, dipakai Key Vault, Blob, Cosmos MI, dan Event Hubs FQNS.
+        services.TryAddSingleton<TokenCredential>(_ => new DefaultAzureCredential());
+    }
+
+    private static CosmosClient CreateCosmosClient(IServiceProvider provider)
+    {
+        var options = provider.GetRequiredService<IOptions<CosmosOptions>>().Value;
+        if (options.AccountEndpoint is not null)
+        {
+            return CosmosClientFactory.CreateWithManagedIdentity(
+                options.AccountEndpoint, provider.GetRequiredService<TokenCredential>(), options);
+        }
+
+        var configuration = provider.GetRequiredService<IConfiguration>();
+        var connectionString = configuration.GetConnectionString(options.ConnectionStringName);
+        return string.IsNullOrWhiteSpace(connectionString)
+            ? throw new InvalidOperationException(
+                $"Cosmos butuh 'AccountEndpoint' atau connection string '{options.ConnectionStringName}'.")
+            : CosmosClientFactory.CreateWithConnectionString(connectionString, options);
     }
 
     private static ServiceBusClient CreateServiceBusClient(IServiceProvider provider) =>

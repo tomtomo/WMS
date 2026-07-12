@@ -10,6 +10,7 @@ using Wms.Outbound.Api.GrpcServices;
 using Wms.Outbound.Application.Abstractions;
 using Wms.Outbound.Application.Features.CreateWave;
 using Wms.Outbound.Infrastructure.Grpc;
+using Wms.Platform.Local.Streaming;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -50,6 +51,9 @@ builder.Services.Configure<AuthorizationOptions>(options =>
 // Outbound publish event dan juga consume event alokasi stok.
 builder.Services.AddEventingRail("wms.outbound");
 builder.Services.AddOutboundRailConsumers();
+
+// Worker telemetry operasional
+builder.Services.AddHostedService<OperationalTelemetryStreamWorker>();
 
 var app = builder.Build();
 

@@ -36,6 +36,9 @@ internal static class InboundTestHost
         services.AddSingleton<IObjectStore>(new InMemoryObjectStore());
         services.AddSingleton<IProductReader>(new FakeProductReader());
         services.AddSingleton<IWarehouseReader>(new FakeWarehouseReader());
+
+        // Gunakan publisher test untuk merekam telemetry operasional tanpa melibatkan adapter platform.
+        services.AddSingleton<IEventStreamPublisher, CapturingEventStreamPublisher>();
     }
 
     public static async Task MigrateAsync(IServiceProvider provider)

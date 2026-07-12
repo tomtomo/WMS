@@ -27,4 +27,7 @@ public sealed class AzureMessagingOptions
 
     [Required]
     public string EventHubsConnectionStringName { get; set; } = "eventhubs";
+
+    // Kosongkan untuk memakai connection string di emulator atau test, isi namespace di cloud agar memakai Managed Identity tanpa access key.
+    public string EventHubsFullyQualifiedNamespace { get; set; } = string.Empty;
 }

@@ -9,16 +9,16 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 
-// Thin REST host: hanya read API report — consumer event hidup di Functions (R5 T2).
+// Thin REST host: hanya read API report
 builder.Services.AddApplicationBuildingBlocks(typeof(ReportingDbContext).Assembly);
 builder.Services.AddBuildingBlocksInfrastructure("wms-reporting-read");
 builder.Services.AddReportingModule(builder.Configuration);
 builder.Services.AddAzurePlatform(builder.Configuration);
 
-// Checker user-aktif lintas host ke Auth — memendekkan jendela revokasi (R5 T6-a).
+// Checker userbaktif lintas host ke Auth
 var authLookupAddress = new Uri(
     builder.Configuration["Services:Auth:Grpc"]
-    ?? throw new InvalidOperationException("Konfigurasi 'Services:Auth:Grpc' wajib ada (di-inject AppHost/IaC)."));
+    ?? throw new InvalidOperationException("Konfigurasi 'Services:Auth:Grpc' wajib ada (diinject AppHost/IaC)."));
 builder.Services.AddInternalGrpcClient<AuthLookup.AuthLookupClient>(authLookupAddress);
 builder.Services.AddSingleton<IActiveUserChecker, AuthGrpcActiveUserChecker>();
 

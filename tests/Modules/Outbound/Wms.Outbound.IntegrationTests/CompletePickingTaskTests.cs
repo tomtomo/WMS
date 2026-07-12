@@ -1,5 +1,7 @@
 using AwesomeAssertions;
 using Microsoft.Extensions.DependencyInjection;
+using Wms.BuildingBlocks.Application.Abstractions;
+using Wms.BuildingBlocks.Application.Abstractions.Ports;
 using Wms.Outbound.Application.Features.CompletePickingTask;
 using Wms.Outbound.Application.Features.CreateWave;
 using Wms.Outbound.Contracts;
@@ -60,6 +62,31 @@ public sealed class CompletePickingTaskTests(PostgresFixture postgres) : IAsyncL
         var ready = PipelineRunner.Payload<WaveReady>(
             (await PipelineRunner.OutboxRowsAsync(_provider, WaveReadyLogicalName)).Should().ContainSingle().Subject);
         ready.WarehouseId.Should().Be(warehouseId);
+    }
+
+    [Fact]
+    public async Task Completing_a_task_emits_pick_completed_telemetry_with_operator_and_warehouse()
+    {
+        var (waveId, warehouseId, orderId) = await ReleaseWaveAsync();
+        await PipelineRunner.ConsumeAsync(
+            _provider,
+            StockAllocationCompletedFactory.FullyAllocated(
+                waveId, StockAllocationCompletedFactory.AllocationOf(orderId, "SKU-MILK", 10m, Guid.NewGuid())),
+            Guid.NewGuid());
+        var task = (await PipelineRunner.PickingTasksAsync(_provider)).Single();
+        var operatorId = Guid.NewGuid();
+
+        await PipelineRunner.SendAsync(
+            _provider, new CompletePickingTaskCommand(task.Id.Value, task.Qty, Guid.NewGuid(), operatorId));
+
+        var stream = (CapturingEventStreamPublisher)_provider.GetRequiredService<IEventStreamPublisher>();
+        var records = stream.On<OperationalTelemetryRecord>(OperationalTelemetryStream.Name);
+        records.Should().ContainSingle();
+        records[0].EventType.Should().Be(OperationalTelemetryEventType.PickCompleted);
+        records[0].WarehouseId.Should().Be(warehouseId);
+        records[0].OperatorId.Should().Be(operatorId);
+        records[0].EntityId.Should().Be(task.Id.Value);
+        records[0].Quantity.Should().Be(task.Qty);
     }
 
     [Fact]

@@ -1,4 +1,5 @@
 using AwesomeAssertions;
+using Azure.Identity;
 using Azure.Messaging.EventHubs.Consumer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
@@ -23,7 +24,7 @@ public sealed class EventHubsStreamParityTests(EventHubsEmulatorFixture emulator
             })
             .Build();
         var publisher = new EventHubsEventStreamPublisher(
-            Options.Create(new AzureMessagingOptions()), configuration);
+            Options.Create(new AzureMessagingOptions()), configuration, new DefaultAzureCredential());
 
         await using (publisher.ConfigureAwait(false))
         {

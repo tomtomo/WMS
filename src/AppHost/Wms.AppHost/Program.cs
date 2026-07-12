@@ -50,6 +50,7 @@ var masterData = WithActiveUserChecker(WithJwtValidation(builder.AddProject<Proj
 // Core host memakai MasterData via gRPC. Endpoint diinjek langsung dari AppHost.
 var inbound = WithActiveUserChecker(WithJwtValidation(builder.AddProject<Projects.Wms_Inbound_Host_Local>("wms-inbound")))
     .WithReference(inboundDb, "wms").WaitFor(inboundDb)
+    .WithReference(reportingDb, "telemetry").WaitFor(reportingDb)
     .WithReference(rabbitmq)
     .WithReference(masterData)
     .WithEnvironment("Services__MasterData__Grpc", masterData.GetEndpoint("https"));
@@ -63,6 +64,7 @@ inbound.WithEnvironment(
 // Lokasi receiving/picking memakai GUID seed
 var inventory = WithActiveUserChecker(WithJwtValidation(builder.AddProject<Projects.Wms_Inventory_Host_Local>("wms-inventory")))
     .WithReference(inventoryDb, "wms").WaitFor(inventoryDb)
+    .WithReference(reportingDb, "telemetry").WaitFor(reportingDb)
     .WithReference(rabbitmq)
     .WithEnvironment("Inventory__Receiving__ReceivingLocationId", "b0000000-0000-0000-0000-000000000001")
     .WithEnvironment("Inventory__Receiving__QuarantineLocationId", "b0000000-0000-0000-0000-000000000003")
@@ -71,6 +73,7 @@ var inventory = WithActiveUserChecker(WithJwtValidation(builder.AddProject<Proje
 
 var outbound = WithActiveUserChecker(WithJwtValidation(builder.AddProject<Projects.Wms_Outbound_Host_Local>("wms-outbound")))
     .WithReference(outboundDb, "wms").WaitFor(outboundDb)
+    .WithReference(reportingDb, "telemetry").WaitFor(reportingDb)
     .WithReference(rabbitmq)
     .WithReference(masterData)
     .WithEnvironment("Services__MasterData__Grpc", masterData.GetEndpoint("https"))

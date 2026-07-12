@@ -1,3 +1,4 @@
+using Wms.BuildingBlocks.Application.Abstractions;
 using Wms.BuildingBlocks.Application.Abstractions.Ports;
 using Wms.BuildingBlocks.Application.Messaging;
 using Wms.BuildingBlocks.Domain.Results;
@@ -11,7 +12,9 @@ namespace Wms.Inventory.Application.Features.CompletePutaway;
 internal sealed class CompletePutawayHandler(
     IPutawayTaskRepository putawayTaskRepository,
     IStockRepository stockRepository,
-    IIntegrationEventOutbox outbox) : ICommandHandler<CompletePutawayCommand>
+    IIntegrationEventOutbox outbox,
+    IOperationalTelemetryEmitter telemetry,
+    TimeProvider timeProvider) : ICommandHandler<CompletePutawayCommand>
 {
     public async Task<Result> Handle(CompletePutawayCommand command, CancellationToken cancellationToken)
     {
@@ -62,6 +65,17 @@ internal sealed class CompletePutawayHandler(
 
         task.ClearDomainEvents();
         stock.ClearDomainEvents();
+
+        await telemetry.EmitAsync(
+            new OperationalTelemetryRecord(
+                timeProvider.GetUtcNow(),
+                stock.WarehouseId,
+                command.OperatorId,
+                OperationalTelemetryEventType.PutawayCompleted,
+                task.Id.Value,
+                stock.Qty),
+            cancellationToken);
+
         return Result.Success();
     }
 }

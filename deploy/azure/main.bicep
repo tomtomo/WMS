@@ -103,6 +103,31 @@ module serviceBus 'modules/service-bus.bicep' = {
   params: { baseName: baseName, location: location, uniqueSuffix: uniqueSuffix }
 }
 
+// Event Hubs (stream telemetry) dan Cosmos (hot store telemetry), keduanya identity-based, RBAC ke mi-apps.
+module eventHubs 'modules/event-hubs.bicep' = {
+  name: 'event-hubs'
+  scope: resourceGroup(rgName)
+  dependsOn: [rg]
+  params: {
+    baseName: baseName
+    location: location
+    uniqueSuffix: uniqueSuffix
+    appsIdentityPrincipalId: identity.outputs.appsIdentityPrincipalId
+  }
+}
+
+module cosmos 'modules/cosmos.bicep' = {
+  name: 'cosmos'
+  scope: resourceGroup(rgName)
+  dependsOn: [rg]
+  params: {
+    baseName: baseName
+    location: location
+    uniqueSuffix: uniqueSuffix
+    appsIdentityPrincipalId: identity.outputs.appsIdentityPrincipalId
+  }
+}
+
 module eventGrid 'modules/event-grid.bicep' = {
   name: 'event-grid'
   scope: resourceGroup(rgName)
@@ -204,6 +229,9 @@ var acaSharedEnv = [
   { name: 'AzurePlatform__Messaging__EventGridTopicKey', secretRef: 'eg-topic-key' }
   { name: 'AzurePlatform__Secrets__VaultUri', value: keyVault.outputs.vaultUri }
   { name: 'AzurePlatform__ObjectStore__AccountUrl', value: storage.outputs.blobEndpoint }
+  // Telemetry: emitter publish ke Event Hubs, thin Reporting host membaca Cosmos (endpoint dan MI).
+  { name: 'AzurePlatform__Messaging__EventHubsFullyQualifiedNamespace', value: eventHubs.outputs.fullyQualifiedNamespace }
+  { name: 'AzurePlatform__Persistence__Cosmos__AccountEndpoint', value: cosmos.outputs.accountEndpoint }
   { name: 'AzurePlatform__Notifications__Acs__SenderAddress', value: acs.outputs.senderAddress }
   { name: 'Jwt__Issuer', value: jwtIssuer }
   { name: 'Jwt__Audience', value: jwtIssuer }
@@ -290,6 +318,11 @@ var functionsSharedSettings = [
   { name: 'AzurePlatform__Messaging__EventGridTopicKey', value: '@Microsoft.KeyVault(SecretUri=${keyVault.outputs.vaultUri}secrets/eg-topic-key/)' }
   { name: 'AzurePlatform__Secrets__VaultUri', value: keyVault.outputs.vaultUri }
   { name: 'AzurePlatform__ObjectStore__AccountUrl', value: storage.outputs.blobEndpoint }
+  { name: 'AzurePlatform__Persistence__Cosmos__AccountEndpoint', value: cosmos.outputs.accountEndpoint }
+  // Identity-based connection "EventHubs" untuk EventHubTrigger Reporting (fullyQualifiedNamespace, managedidentity, clientId).
+  { name: 'EventHubs__fullyQualifiedNamespace', value: eventHubs.outputs.fullyQualifiedNamespace }
+  { name: 'EventHubs__credential', value: 'managedidentity' }
+  { name: 'EventHubs__clientId', value: identity.outputs.appsIdentityClientId }
   { name: 'AzurePlatform__Notifications__Acs__SenderAddress', value: acs.outputs.senderAddress }
 ]
 
