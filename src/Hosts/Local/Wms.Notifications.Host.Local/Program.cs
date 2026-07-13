@@ -7,6 +7,7 @@ using Wms.BuildingBlocks.Web;
 using Wms.Notifications.Abstractions;
 using Wms.Notifications.Persistence;
 using Wms.Notifications.UserDirectory;
+using Wms.Platform.Shared.Notifications;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,6 +21,9 @@ builder.AddServiceDefaults();
 builder.Services.AddApplicationBuildingBlocks(typeof(NotificationsDbContext).Assembly);
 builder.Services.AddBuildingBlocksInfrastructure("wms-notifications");
 builder.Services.AddNotificationsModule(builder.Configuration);
+
+// Daftarkan SignalR lebih dulu agar implementasi push ini tidak digantikan oleh fallback dari platform lokal.
+builder.Services.AddNotificationHub();
 builder.Services.AddLocalPlatform(builder.Configuration);
 
 // User directory memakai gRPC ke Auth untuk membaca user dan anggota role. Endpointnya diinjek dari AppHost.
@@ -35,6 +39,7 @@ builder.Services.AddSingleton<IActiveUserChecker, AuthGrpcActiveUserChecker>();
 // Endpoint web Notifications: REST inbox, autentikasi JWT, user dari HttpContext, permission policy, dan fallback deny by default.
 builder.Services.AddWebBuildingBlocks();
 builder.Services.AddJwtBearerRs256(builder.Configuration);
+builder.Services.AddSignalRAccessTokenFromQueryString(NotificationHubExtensions.HubPath);
 builder.Services.AddHttpContextCurrentUser();
 builder.Services.AddPermissionAuthorization();
 builder.Services.Configure<AuthorizationOptions>(options =>
@@ -53,6 +58,7 @@ app.UseAuthorization();
 
 app.MapDefaultEndpoints();
 app.MapEndpoints(typeof(NotificationsDbContext).Assembly);
+app.MapNotificationHub();
 
 await app.RunAsync();
 

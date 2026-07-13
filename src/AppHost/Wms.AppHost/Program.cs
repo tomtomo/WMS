@@ -13,6 +13,13 @@ using var jwtRsa = RSA.Create(2048);
 var jwtPrivatePem = jwtRsa.ExportPkcs8PrivateKeyPem();
 var jwtPublicPem = jwtRsa.ExportSubjectPublicKeyInfoPem();
 
+// Login melalui Microsoft Entra ID bersifat opsional. Jika tenant dan client ID tidak tersedia, aplikasi tetap memakai login lokal.
+// set env WMS_ENTRA_TENANT_ID / WMS_ENTRA_CLIENT_ID / WMS_ENTRA_CLIENT_SECRET.
+var entraTenantId = builder.Configuration["WMS_ENTRA_TENANT_ID"] ?? string.Empty;
+var entraClientId = builder.Configuration["WMS_ENTRA_CLIENT_ID"] ?? string.Empty;
+var entraClientSecret = builder.Configuration["WMS_ENTRA_CLIENT_SECRET"] ?? string.Empty;
+var entraEnabled = !string.IsNullOrWhiteSpace(entraTenantId) && !string.IsNullOrWhiteSpace(entraClientId);
+
 // Satu server Postgres, tapi database dipisah per modul.
 // Schema infrastructure.* tetap aman di masing-masing DB tanpa bentrok nama tabel.
 var postgres = builder.AddPostgres("postgres").WithDataVolume();
@@ -102,9 +109,22 @@ var gateway = WithJwtValidation(builder.AddProject<Projects.Wms_Gateway>("wms-ga
     .WithReference(notifications);
 
 // WebUI Blazor lewat BFF gateway. Endpoint gateway diinjek dari AppHost.
-builder.AddProject<Projects.Wms_WebUI>("wms-webui")
+var webUi = builder.AddProject<Projects.Wms_WebUI>("wms-webui")
     .WithReference(gateway)
     .WithEnvironment("Bff__GatewayAddress", gateway.GetEndpoint("https"));
+
+// Jika login Entra aktif, WebUI menjalankan alur OIDC dan Auth memvalidasi token untuk client ID WebUI.
+if (entraEnabled)
+{
+    webUi
+        .WithEnvironment("Entra__TenantId", entraTenantId)
+        .WithEnvironment("Entra__ClientId", entraClientId)
+        .WithEnvironment("Entra__ClientSecret", entraClientSecret);
+    auth
+        .WithEnvironment("Entra__Enabled", "true")
+        .WithEnvironment("Entra__TenantId", entraTenantId)
+        .WithEnvironment("Entra__ClientId", entraClientId);
+}
 
 await builder.Build().RunAsync();
 

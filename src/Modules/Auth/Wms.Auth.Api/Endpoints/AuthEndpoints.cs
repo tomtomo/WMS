@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+using Wms.Auth.Application.Features.EntraLogin;
 using Wms.Auth.Application.Features.Login;
 using Wms.Auth.Application.Features.Logout;
 using Wms.Auth.Application.Features.RefreshAccessToken;
@@ -21,6 +22,7 @@ public sealed class AuthEndpoints : IEndpoint
         group.AllowAnonymous();
 
         group.MapPost("/login", LoginAsync).WithName("Login").WithIdempotencyKey();
+        group.MapPost("/login/entra", EntraLoginAsync).WithName("LoginEntra").WithIdempotencyKey();
         group.MapPost("/refresh", RefreshAsync).WithName("RefreshAccessToken").WithIdempotencyKey();
         group.MapPost("/logout", LogoutAsync).WithName("Logout").WithIdempotencyKey();
     }
@@ -32,6 +34,18 @@ public sealed class AuthEndpoints : IEndpoint
         CancellationToken cancellationToken)
     {
         var result = await sender.Send(new LoginCommand(request.Username, request.Password), cancellationToken);
+        return result.IsSuccess
+            ? Results.Ok(new TokenResponse(result.Value.AccessToken, result.Value.ExpiresAt, result.Value.RefreshToken))
+            : result.ToProblem(httpContext);
+    }
+
+    private static async Task<IResult> EntraLoginAsync(
+        EntraLoginRequest request,
+        ISender sender,
+        HttpContext httpContext,
+        CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(new EntraLoginCommand(request.IdToken), cancellationToken);
         return result.IsSuccess
             ? Results.Ok(new TokenResponse(result.Value.AccessToken, result.Value.ExpiresAt, result.Value.RefreshToken))
             : result.ToProblem(httpContext);
@@ -61,6 +75,8 @@ public sealed class AuthEndpoints : IEndpoint
 }
 
 public sealed record LoginRequest(string Username, string Password);
+
+public sealed record EntraLoginRequest(string IdToken);
 
 public sealed record RefreshRequest(string RefreshToken);
 

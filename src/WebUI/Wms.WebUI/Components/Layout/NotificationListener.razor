@@ -1,0 +1,64 @@
+@using Microsoft.AspNetCore.SignalR.Client
+@using Microsoft.Extensions.Configuration
+@implements IAsyncDisposable
+@inject AuthenticationStateProvider AuthProvider
+@inject ITokenStore TokenStore
+@inject IConfiguration Config
+@inject ISnackbar Snackbar
+@inject NotificationState State
+@inject ILogger<NotificationListener> Logger
+
+@* HubConnection berjalan di server dalam circuit, sehingga token internal tidak dikirim ke browser. *@
+
+@code {
+    private HubConnection? _connection;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _connection is not null)
+        {
+            return;
+        }
+
+        var authState = await AuthProvider.GetAuthenticationStateAsync();
+        var sessionId = authState.User.FindFirst(BffClaims.SessionId)?.Value;
+        var gateway = Config["Bff:GatewayAddress"];
+        var token = sessionId is null ? null : TokenStore.Get(sessionId);
+        if (token is null || string.IsNullOrEmpty(gateway))
+        {
+            return;
+        }
+
+        // Hub diakses melalui gateway menggunakan token internal yang hanya dikirim dari server.
+        var hubUrl = $"{gateway.TrimEnd('/')}/hubs/notifications?access_token={Uri.EscapeDataString(token)}";
+        _connection = new HubConnectionBuilder()
+            .WithUrl(hubUrl)
+            .WithAutomaticReconnect()
+            .Build();
+
+        _connection.On<string>("ReceiveNotification", message =>
+            InvokeAsync(() =>
+            {
+                Snackbar.Add(message, Severity.Info);
+                State.Increment();
+            }));
+
+        try
+        {
+            await _connection.StartAsync();
+        }
+        catch (Exception ex)
+        {
+            // Biarkan UI tetap berjalan jika koneksi hub gagal karena notifikasi masih tersimpan di inbox.
+            Logger.LogWarning(ex, "Gagal konek hub notifikasi");
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_connection is not null)
+        {
+            await _connection.DisposeAsync();
+        }
+    }
+}

@@ -1,0 +1,255 @@
+@page "/inbound/goods-receipts"
+@using System.Security.Claims
+@inject IHttpClientFactory HttpClientFactory
+@inject ISnackbar Snackbar
+
+<PageTitle>WMS — Goods Receipts</PageTitle>
+
+<MudText Typo="Typo.h4" GutterBottom="true">Goods Receipts</MudText>
+
+<MudGrid>
+    <MudItem xs="12" md="6">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h6" GutterBottom="true">Buat GR</MudText>
+            <MudTextField @bind-Value="_poRef" Label="PO Ref" Margin="Margin.Dense" />
+            <MudTextField @bind-Value="_supplierId" Label="Supplier Id (GUID)" Margin="Margin.Dense" />
+            <MudTextField @bind-Value="_warehouseId" Label="Warehouse Id (GUID)" Margin="Margin.Dense" />
+            <MudTextField @bind-Value="_dockDoor" Label="Dock Door" Margin="Margin.Dense" />
+            <MudText Typo="Typo.subtitle2" Class="mt-3">Expected Lines</MudText>
+            @foreach (var line in _lines)
+            {
+                <div class="d-flex gap-2 align-center">
+                    <MudTextField @bind-Value="line.Sku" Label="SKU" Margin="Margin.Dense" />
+                    <MudNumericField @bind-Value="line.Qty" Label="Qty" Margin="Margin.Dense" />
+                    <MudTextField @bind-Value="line.Uom" Label="Uom" Margin="Margin.Dense" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" OnClick="() => _lines.Remove(line)" />
+                </div>
+            }
+            <MudButton StartIcon="@Icons.Material.Filled.Add" OnClick="() => _lines.Add(new())">Line</MudButton>
+            <div class="mt-3">
+                @if (_user.HasPermission(UiPermissions.CreateGR))
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="CreateAsync" Disabled="_busy">Buat</MudButton>
+                }
+            </div>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" md="6">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h6" GutterBottom="true">Pending Review</MudText>
+            @if (_loading)
+            {
+                <MudProgressCircular Indeterminate="true" Size="Size.Small" />
+            }
+            else if (_pending.Count == 0)
+            {
+                <MudText>Tidak ada GR pending.</MudText>
+            }
+            else
+            {
+                <MudTable Items="_pending" Dense="true" Hover="true">
+                    <HeaderContent>
+                        <MudTh>PO Ref</MudTh>
+                        <MudTh>Status</MudTh>
+                        <MudTh>Discrepancy</MudTh>
+                        <MudTh></MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="PO Ref">@context.PoRef</MudTd>
+                        <MudTd DataLabel="Status">@context.Status</MudTd>
+                        <MudTd DataLabel="Discrepancy">@context.DiscrepancyCount</MudTd>
+                        <MudTd><MudButton Size="Size.Small" OnClick="() => Select(context.GoodsReceiptId)">Pilih</MudButton></MudTd>
+                    </RowTemplate>
+                </MudTable>
+            }
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@if (_selectedGr is not null)
+{
+    <MudPaper Class="pa-4 mt-4">
+        <MudText Typo="Typo.h6" GutterBottom="true">GR terpilih: @_selectedGr</MudText>
+        <div class="d-flex gap-2 align-center flex-wrap">
+            <MudTextField @bind-Value="_scanSku" Label="SKU" Margin="Margin.Dense" />
+            <MudNumericField @bind-Value="_scanQty" Label="Actual Qty" Margin="Margin.Dense" />
+            <MudTextField @bind-Value="_scanBatch" Label="Batch" Margin="Margin.Dense" />
+            <MudSelect @bind-Value="_scanStatus" Label="Status" Margin="Margin.Dense" Style="min-width:140px">
+                <MudSelectItem Value="@("Good")">Good</MudSelectItem>
+                <MudSelectItem Value="@("WrongItem")">WrongItem</MudSelectItem>
+                <MudSelectItem Value="@("QcHold")">QcHold</MudSelectItem>
+            </MudSelect>
+            @if (_user.HasPermission(UiPermissions.ScanGR))
+            {
+                <MudButton Color="Color.Primary" OnClick="ScanAsync" Disabled="_busy">Scan</MudButton>
+            }
+            @if (_user.HasPermission(UiPermissions.CompleteScanGR))
+            {
+                <MudButton OnClick="CompleteScanAsync" Disabled="_busy">Complete Scan</MudButton>
+            }
+            @if (_user.HasPermission(UiPermissions.PostGR))
+            {
+                <MudButton Color="Color.Success" OnClick="ConfirmAsync" Disabled="_busy">Confirm</MudButton>
+            }
+        </div>
+    </MudPaper>
+}
+
+@code {
+    private string _poRef = string.Empty;
+    private string _supplierId = string.Empty;
+    private string _warehouseId = string.Empty;
+    private string _dockDoor = string.Empty;
+    private readonly List<LineInput> _lines = [new()];
+    private List<GrListItem> _pending = [];
+    private bool _loading;
+    private bool _busy;
+
+    private Guid? _selectedGr;
+    private string _scanSku = string.Empty;
+    private decimal _scanQty = 1;
+    private string? _scanBatch;
+    private string _scanStatus = "Good";
+
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthStateTask { get; set; }
+
+    private ClaimsPrincipal _user = new(new ClaimsIdentity());
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthStateTask is not null)
+        {
+            _user = (await AuthStateTask).User;
+        }
+
+        await LoadPendingAsync();
+    }
+
+    private HttpClient Client => HttpClientFactory.CreateClient(BffExtensions.GatewayClientName);
+
+    private async Task LoadPendingAsync()
+    {
+        _loading = true;
+        try
+        {
+            var page = await Client.GetFromJsonAsync<PagedResponse<GrListItem>>(
+                "/inbound/v1/goods-receipts/pending?page=1&pageSize=20");
+            _pending = page?.Items ?? [];
+        }
+        catch (HttpRequestException)
+        {
+            Snackbar.Add("Gagal memuat GR pending.", Severity.Warning);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task CreateAsync()
+    {
+        if (!Guid.TryParse(_supplierId, out var supplier) || !Guid.TryParse(_warehouseId, out var warehouse))
+        {
+            Snackbar.Add("Supplier/Warehouse Id harus GUID valid.", Severity.Error);
+            return;
+        }
+
+        _busy = true;
+        try
+        {
+            var body = new
+            {
+                poRef = _poRef,
+                supplierId = supplier,
+                warehouseId = warehouse,
+                dockDoor = _dockDoor,
+                expectedLines = _lines.Select(l => new { sku = l.Sku, expectedQty = l.Qty, uom = l.Uom }),
+            };
+            var response = await Client.PostAsJsonAsync("/inbound/v1/goods-receipts", body);
+            await ReportAsync(response, "GR dibuat.");
+            await LoadPendingAsync();
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private void Select(Guid id) => _selectedGr = id;
+
+    private async Task ScanAsync()
+    {
+        if (_selectedGr is null)
+        {
+            return;
+        }
+
+        _busy = true;
+        try
+        {
+            var body = new { sku = _scanSku, actualQty = _scanQty, batch = _scanBatch, expiry = (DateOnly?)null, lineStatus = _scanStatus };
+            var response = await Client.PostAsJsonAsync($"/inbound/v1/goods-receipts/{_selectedGr}/scans", body);
+            await ReportAsync(response, "Line di-scan.");
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task CompleteScanAsync() => await ActAsync($"/inbound/v1/goods-receipts/{_selectedGr}/complete-scan", "Scan selesai.");
+
+    private async Task ConfirmAsync() => await ActAsync($"/inbound/v1/goods-receipts/{_selectedGr}/confirm", "GR dikonfirmasi.");
+
+    private async Task ActAsync(string path, string ok)
+    {
+        if (_selectedGr is null)
+        {
+            return;
+        }
+
+        _busy = true;
+        try
+        {
+            var response = await Client.PostAsync(path, content: null);
+            await ReportAsync(response, ok);
+            await LoadPendingAsync();
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task ReportAsync(HttpResponseMessage response, string ok)
+    {
+        if (response.IsSuccessStatusCode)
+        {
+            Snackbar.Add(ok, Severity.Success);
+            return;
+        }
+
+        var detail = await response.Content.ReadAsStringAsync();
+        Snackbar.Add($"Gagal ({(int)response.StatusCode}): {detail}", Severity.Error);
+    }
+
+    private sealed class LineInput
+    {
+        public string Sku { get; set; } = string.Empty;
+
+        public decimal Qty { get; set; } = 1;
+
+        public string Uom { get; set; } = "EA";
+    }
+
+    private sealed record GrListItem(
+        Guid GoodsReceiptId,
+        string PoRef,
+        Guid SupplierId,
+        Guid WarehouseId,
+        string DockDoor,
+        string Status,
+        int DiscrepancyCount,
+        DateTimeOffset CreatedAt);
+}

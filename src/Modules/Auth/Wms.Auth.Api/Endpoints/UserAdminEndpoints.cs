@@ -7,6 +7,7 @@ using Wms.Auth.Application.Features.AssignRole;
 using Wms.Auth.Application.Features.AssignWarehouse;
 using Wms.Auth.Application.Features.CreateUser;
 using Wms.Auth.Application.Features.DisableUser;
+using Wms.Auth.Application.Features.LinkExternalLogin;
 using Wms.Auth.Application.Features.UnlockUser;
 using Wms.BuildingBlocks.Web;
 
@@ -25,6 +26,8 @@ public sealed class UserAdminEndpoints : IEndpoint
         group.MapPost("/{userId:guid}/warehouses", AssignWarehouseAsync).WithName("AssignUserWarehouse").WithIdempotencyKey();
         group.MapPost("/{userId:guid}/disable", DisableAsync).WithName("DisableUser").WithIdempotencyKey();
         group.MapPost("/{userId:guid}/unlock", UnlockAsync).WithName("UnlockUser").WithIdempotencyKey();
+        group.MapPost("/{userId:guid}/external-logins", LinkExternalLoginAsync)
+            .WithName("LinkUserExternalLogin").WithIdempotencyKey();
     }
 
     private static async Task<IResult> ListAsync(
@@ -103,6 +106,20 @@ public sealed class UserAdminEndpoints : IEndpoint
         var result = await sender.Send(new UnlockUserCommand(userId), cancellationToken);
         return result.IsSuccess ? Results.NoContent() : result.ToProblem(httpContext);
     }
+
+    private static async Task<IResult> LinkExternalLoginAsync(
+        Guid userId,
+        LinkExternalLoginRequest request,
+        ISender sender,
+        HttpContext httpContext,
+        CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(
+            new LinkExternalLoginCommand(userId, request.Provider, request.Subject), cancellationToken);
+        return result.IsSuccess
+            ? Results.Created($"/v1/users/{userId}/external-logins/{result.Value}", new { externalLoginId = result.Value })
+            : result.ToProblem(httpContext);
+    }
 }
 
 public sealed record CreateUserRequest(
@@ -115,3 +132,5 @@ public sealed record CreateUserRequest(
 public sealed record AssignRoleRequest(Guid RoleId);
 
 public sealed record AssignWarehouseRequest(Guid WarehouseId);
+
+public sealed record LinkExternalLoginRequest(string Provider, string Subject);

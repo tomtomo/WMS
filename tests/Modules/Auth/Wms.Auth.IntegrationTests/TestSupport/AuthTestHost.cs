@@ -1,6 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.IdentityModel.Protocols;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Wms.Auth.Application;
 using Wms.Auth.Infrastructure;
 using Wms.Auth.Infrastructure.Seed;
@@ -42,6 +45,27 @@ internal static class AuthTestHost
         var configuration = new ConfigurationBuilder().AddInMemoryCollection(ConfigValues(connectionString)).Build();
         AddAuthComposition(services, configuration, timeProvider);
         services.AddSingleton<ICurrentUser>(new FixedCurrentUser());
+        return services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
+    }
+
+    // Aktifkan login Entra dengan JWKS khusus test agar alurnya bisa diuji tanpa akses jaringan.
+    public static ServiceProvider BuildWithEntra(
+        string connectionString,
+        IConfigurationManager<OpenIdConnectConfiguration> entraConfigurationManager,
+        TimeProvider? timeProvider = null)
+    {
+        var services = new ServiceCollection();
+        var values = ConfigValues(connectionString);
+        values["Entra:Enabled"] = "true";
+        values["Entra:TenantId"] = "test-tenant";
+        values["Entra:ClientId"] = TestEntraTokens.Audience;
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(values).Build();
+
+        AddAuthComposition(services, configuration, timeProvider);
+        services.AddSingleton<ICurrentUser>(new FixedCurrentUser());
+        services.RemoveAll<IConfigurationManager<OpenIdConnectConfiguration>>();
+        services.AddSingleton(entraConfigurationManager);
+
         return services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
     }
 

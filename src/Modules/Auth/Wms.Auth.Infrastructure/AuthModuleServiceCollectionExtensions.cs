@@ -1,5 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Protocols;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Wms.Auth.Application.Abstractions;
 using Wms.Auth.Infrastructure;
 using Wms.Auth.Infrastructure.Persistence;
@@ -47,6 +50,7 @@ public static class AuthModuleServiceCollectionExtensions
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IRoleRepository, RoleRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+        services.AddScoped<IUserExternalLoginRepository, UserExternalLoginRepository>();
 
         // Read side — reader EF langsung (bukan Cached).
         services.AddScoped<IEffectivePermissionResolver, EffectivePermissionResolver>();
@@ -57,6 +61,18 @@ public static class AuthModuleServiceCollectionExtensions
         // Security
         services.AddScoped<IJwtTokenIssuer, JwtTokenIssuer>();
         services.AddSingleton<IRefreshTokenFactory, RefreshTokenFactory>();
+
+        // Siapkan login Entra dan cache metadata serta signing key agar bisa digunakan ulang dan update otomatis.
+        services.AddValidatedOptions<EntraAuthOptions>(configuration, EntraAuthOptions.SectionName);
+        services.AddSingleton<IConfigurationManager<OpenIdConnectConfiguration>>(provider =>
+        {
+            var entra = provider.GetRequiredService<IOptions<EntraAuthOptions>>().Value;
+            return new ConfigurationManager<OpenIdConnectConfiguration>(
+                entra.ResolveMetadataAddress(),
+                new OpenIdConnectConfigurationRetriever(),
+                new HttpDocumentRetriever());
+        });
+        services.AddSingleton<IEntraTokenValidator, EntraTokenValidator>();
 
         // Adapter status aktif untuk IsActive filter (BuildingBlocks.Web) via IUserReader (null = Disabled).
         services.AddScoped<IActiveUserChecker, ActiveUserChecker>();

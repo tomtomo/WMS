@@ -1,9 +1,14 @@
 @page "/login"
+@inject EntraBffOptions Entra
 
 <PageTitle>WMS — Login</PageTitle>
 
 <MudText Typo="Typo.h4" GutterBottom="true">Login</MudText>
-<MudText Class="mb-4"></MudText>
+
+@if (Error is not null)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">@ErrorMessage</MudAlert>
+}
 
 <form method="post" action="/bff/login">
     <div class="mt-2">
@@ -16,3 +21,25 @@
     </div>
     <button type="submit" class="mt-4">Masuk</button>
 </form>
+
+@if (Entra.Enabled)
+{
+    <MudDivider Class="my-4" />
+    <MudButton Href="/bff/login/entra" data-enhance-nav="false"
+               Variant="Variant.Outlined" Color="Color.Primary">
+        Sign in with Microsoft
+    </MudButton>
+}
+
+@code {
+    [SupplyParameterFromQuery]
+    public string? Error { get; set; }
+
+    // Tampilkan pesan yang sesuai untuk kegagalan login lokal maupun login melalui Microsoft.
+    private string ErrorMessage => Error switch
+    {
+        "entra" => "Login Microsoft gagal atau identitas Entra belum ditautkan ke user WMS.",
+        "entra_disabled" => "Entra tidak dikonfigurasi.",
+        _ => "Login gagal. Periksa kembali username/password.",
+    };
+}

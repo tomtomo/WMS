@@ -25,6 +25,10 @@
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
   </ItemGroup>
 
+  <ItemGroup Label="bUnit">
+    <PackageReference Include="bunit" />
+  </ItemGroup>
+
   <ItemGroup Label="Subjek: WebUI">
     <ProjectReference Include="..\..\..\src\WebUI\Wms.WebUI\Wms.WebUI.csproj" />
   </ItemGroup>
