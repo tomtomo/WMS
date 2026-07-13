@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.HttpOverrides;
 using MudBlazor.Services;
 using Wms.WebUI.Bff;
 using Wms.WebUI.Components;
@@ -10,11 +11,20 @@ builder.AddServiceDefaults();
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 builder.Services.AddMudServices();
 
+// Gunakan header dari proxy App Service agar redirect OIDC tetap memakai skema HTTPS.
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
 // BFF memakai cookie HttpOnly, token server side, dan HTTP client gateway yang otomatis membawa bearer token serta correlation id.
 builder.Services.AddWebUiBff(builder.Configuration);
 
 var app = builder.Build();
 
+app.UseForwardedHeaders();
 app.UseCorrelationId();
 app.UseAuthentication();
 app.UseAuthorization();

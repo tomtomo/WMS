@@ -13,6 +13,10 @@ param alertEmail string = publisherEmail
 param deployApps bool = false
 param wireEventSubscriptions bool = false
 
+// WebUI menggunakan SKU B1 secara default, atau S1 untuk kebutuhan slot staging dan autoscale.
+param webUiSku string = 'B1'
+param entraClientId string = ''
+
 var uniqueSuffix = uniqueString(subscription().subscriptionId, rgName)
 var jwtIssuer = 'wms-azure'
 
@@ -397,6 +401,11 @@ module webUi 'modules/app-service.bicep' = if (deployApps) {
     appsIdentityClientId: identity.outputs.appsIdentityClientId
     gatewayAddress: apim.outputs.gatewayUrl
     appInsightsConnectionString: telemetry.outputs.appInsightsConnectionString
+    logAnalyticsId: telemetry.outputs.logAnalyticsId
+    vaultUri: keyVault.outputs.vaultUri
+    webUiSku: webUiSku
+    entraTenantId: subscription().tenantId
+    entraClientId: entraClientId
   }
 }
 
@@ -434,6 +443,8 @@ output acaDefaultDomain string = acaEnv.outputs.defaultDomain
 output apimGatewayUrl string = apim.outputs.gatewayUrl
 output migrationJobName string = deployApps ? migrationJob!.outputs.jobName : ''
 output webUiUrl string = deployApps ? webUi!.outputs.webUiUrl : ''
+output webUiSiteName string = deployApps ? webUi!.outputs.siteName : ''
+output webUiStagingSlotUrl string = deployApps ? webUi!.outputs.stagingSlotUrl : ''
 output functionAppNames array = map(functionApps, app => app.name)
 output coreAppFqdns array = [for (app, index) in coreApps: deployApps ? containerApps[index]!.outputs.fqdn : '']
 output appConfigEndpoint string = appConfig.outputs.endpoint

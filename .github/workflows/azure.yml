@@ -124,7 +124,7 @@ jobs:
           done
           echo "Migration job timeout" && exit 1
 
-      - name: Publish Functions (zip → Flex OneDeploy)
+      - name: Publish Functions (zip, Flex OneDeploy)
         run: |
           declare -A APPS=( [Reporting]=0 [Notifications]=1 [Scheduled]=2 )
           NAMES=$(az stack sub show --name "$STACK_NAME" --query 'outputs.functionAppNames.value' -o json)
@@ -136,7 +136,7 @@ jobs:
             az functionapp deployment source config-zip -g "$RG_NAME" -n "$NAME" --src "publish/$app.zip"
           done
 
-      - name: Deploy stack — fase 3 (wire Event Grid → Functions)
+      - name: Deploy stack — fase 3 (wire Event Grid, Functions)
         run: |
           az stack sub create --name "$STACK_NAME" --location "$LOCATION" \
             --template-file deploy/azure/main.bicep \
@@ -149,6 +149,24 @@ jobs:
           GATEWAY=$(az stack sub show --name "$STACK_NAME" --query 'outputs.apimGatewayUrl.value' -o tsv)
           CODE=$(curl -s -o /dev/null -w '%{http_code}' "$GATEWAY/inbound/v1/goods-receipts")
           [ "$CODE" = "401" ] || { echo "Diharapkan 401, dapat $CODE"; exit 1; }
+
+      # Deploy WebUI tanpa downtime lewat slot staging, cek health endpoint, lalu swap ke production.
+      - name: WebUI slot swap (staging, production)
+        run: |
+          STAGING=$(az stack sub show --name "$STACK_NAME" --query 'outputs.webUiStagingSlotUrl.value' -o tsv)
+          if [ -z "$STAGING" ]; then echo "SKU B1: tanpa slot staging, lewati swap."; exit 0; fi
+          APP=$(az stack sub show --name "$STACK_NAME" --query 'outputs.webUiSiteName.value' -o tsv)
+          SITE=$(az stack sub show --name "$STACK_NAME" --query 'outputs.webUiUrl.value' -o tsv)
+          CODE=''
+          for i in $(seq 1 30); do
+            CODE=$(curl -s -o /dev/null -w '%{http_code}' "$STAGING/health") || true
+            [ "$CODE" = "200" ] && break
+            sleep 10
+          done
+          [ "$CODE" = "200" ] || { echo "Staging /health tak 200 (dapat $CODE)"; exit 1; }
+          az webapp deployment slot swap -g "$RG_NAME" -n "$APP" --slot staging --target-slot production
+          CODE=$(curl -s -o /dev/null -w '%{http_code}' "$SITE/health")
+          [ "$CODE" = "200" ] || { echo "Production /health pasca-swap tak 200 (dapat $CODE)"; exit 1; }
 
       - name: Release state lock
         if: always()

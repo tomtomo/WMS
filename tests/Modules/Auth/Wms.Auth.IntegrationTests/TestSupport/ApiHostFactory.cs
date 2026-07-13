@@ -4,6 +4,9 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.IdentityModel.Protocols;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Wms.Auth.Api.Endpoints;
 using Wms.Auth.Api.GrpcServices;
 using Wms.BuildingBlocks.Application.Abstractions.Ports;
@@ -15,13 +18,30 @@ namespace Wms.Auth.IntegrationTests.TestSupport;
 internal static class ApiHostFactory
 {
     public static async Task<WebApplication> StartAsync(
-        string connectionString, TimeProvider? timeProvider = null, bool enableAuthorization = false)
+        string connectionString,
+        TimeProvider? timeProvider = null,
+        bool enableAuthorization = false,
+        IConfigurationManager<OpenIdConnectConfiguration>? entraConfigurationManager = null)
     {
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseTestServer();
-        builder.Configuration.AddInMemoryCollection(AuthTestHost.ConfigValues(connectionString));
+        var configValues = AuthTestHost.ConfigValues(connectionString);
+        if (entraConfigurationManager is not null)
+        {
+            configValues["Entra:Enabled"] = "true";
+            configValues["Entra:TenantId"] = "test-tenant";
+            configValues["Entra:ClientId"] = TestEntraTokens.Audience;
+        }
+
+        builder.Configuration.AddInMemoryCollection(configValues);
 
         AuthTestHost.AddAuthComposition(builder.Services, builder.Configuration, timeProvider);
+        if (entraConfigurationManager is not null)
+        {
+            builder.Services.RemoveAll<IConfigurationManager<OpenIdConnectConfiguration>>();
+            builder.Services.AddSingleton(entraConfigurationManager);
+        }
+
         builder.Services.AddWebBuildingBlocks();
         builder.Services.AddGrpcWebBuildingBlocks();
 

@@ -1,0 +1,27 @@
+@inject AuthenticationStateProvider AuthProvider
+@inject IUserProfileStore ProfileStore
+
+@if (_photoUri is not null)
+{
+    <img src="@_photoUri" alt="avatar" style="width:32px;height:32px;border-radius:50%;margin-right:8px" />
+}
+<MudText Class="mr-2">@_name</MudText>
+
+@code {
+    private string? _name;
+    private string? _photoUri;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthProvider.GetAuthenticationStateAsync();
+        var user = state.User;
+        _name = user.Identity?.Name;
+
+        // Ambil foto user dari profil sesi yang tersimpan di server.
+        var sessionId = user.FindFirst(BffClaims.SessionId)?.Value;
+        if (sessionId is not null)
+        {
+            _photoUri = ProfileStore.Get(sessionId)?.PhotoDataUri;
+        }
+    }
+}

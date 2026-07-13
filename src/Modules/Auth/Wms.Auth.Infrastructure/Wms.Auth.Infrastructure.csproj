@@ -15,8 +15,9 @@
     </PackageReference>
   </ItemGroup>
 
-  <ItemGroup Label="Security - JWT RS256 issuance">
+  <ItemGroup Label="Security">
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
+    <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" />
   </ItemGroup>
 
   <ItemGroup Label="Composition - DI">
