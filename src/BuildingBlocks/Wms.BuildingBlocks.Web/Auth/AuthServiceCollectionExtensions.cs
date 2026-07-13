@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
@@ -46,6 +47,32 @@ public static class AuthServiceCollectionExtensions
 
                 // false = pertahankan nama klaim JWT asli.
                 bearer.MapInboundClaims = false;
+            });
+
+        return services;
+    }
+
+    // Ambil access token dari query string khusus untuk koneksi SignalR pada path hub.
+    public static IServiceCollection AddSignalRAccessTokenFromQueryString(this IServiceCollection services, string hubPath)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        ArgumentException.ThrowIfNullOrWhiteSpace(hubPath);
+
+        services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
+            .Configure(options =>
+            {
+                options.Events ??= new JwtBearerEvents();
+                options.Events.OnMessageReceived = context =>
+                {
+                    string? accessToken = context.Request.Query["access_token"];
+                    if (!string.IsNullOrEmpty(accessToken)
+                        && context.HttpContext.Request.Path.StartsWithSegments(hubPath))
+                    {
+                        context.Token = accessToken;
+                    }
+
+                    return Task.CompletedTask;
+                };
             });
 
         return services;

@@ -307,6 +307,8 @@ module containerApps 'modules/container-app.bicep' = [
       secretNames: concat(['conn-wms-${app.module}'], sharedSecretNames)
       grpcExposedPort: app.grpcPort
       minReplicas: app.min
+      // Batasi modul notifications ke satu replika sampai Azure SignalR Service digunakan.
+      maxReplicas: app.name == 'wms-notifications' ? 1 : 5
       serviceBusSubscription: app.sub
     }
   }

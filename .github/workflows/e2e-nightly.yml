@@ -1,0 +1,38 @@
+# Jalankan smoke test Playwright secara terpisah dari PR karena membutuhkan browser dan WebUI yang aktif.
+# Isi URL WebUI saat menjalankan manual. Jika kosong, pengujian akan dilewati.
+name: e2e-nightly
+
+on:
+  workflow_dispatch:
+    inputs:
+      webui_base_url:
+        description: "WebUI base URL untuk smoke E2E (mis. https://localhost:7443). Kosong = skip."
+        required: false
+        default: ""
+  schedule:
+    - cron: "0 3 * * *"
+
+permissions:
+  contents: read
+
+jobs:
+  playwright-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Build E2E project
+        run: dotnet build tests/E2E/Wms.WebUI.E2ETests/Wms.WebUI.E2ETests.csproj --configuration Release
+
+      - name: Install Playwright browsers
+        shell: pwsh
+        run: tests/E2E/Wms.WebUI.E2ETests/bin/Release/net8.0/playwright.ps1 install --with-deps chromium
+
+      - name: Smoke (skip jika WMS_E2E_BASEURL kosong)
+        env:
+          WMS_E2E_BASEURL: ${{ github.event.inputs.webui_base_url }}
+        run: dotnet test tests/E2E/Wms.WebUI.E2ETests/Wms.WebUI.E2ETests.csproj --configuration Release --no-build --logger "console;verbosity=minimal"

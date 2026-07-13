@@ -1,3 +1,4 @@
+@inject IConfiguration Configuration
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,10 +6,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />
     <link rel="stylesheet" href="_content/MudBlazor/MudBlazor.min.css" />
-    <HeadOutlet />
+    @{
+        var appInsightsConnection = Configuration["ConnectionStrings:appinsights"];
+    }
+    @if (!string.IsNullOrEmpty(appInsightsConnection))
+    {
+        @* Sediakan connection string untuk App Insights JS SDK agar page view dan error browser ikut tercatat. *@
+        <script>window.wmsTelemetry = { appInsightsConnectionString: "@appInsightsConnection" };</script>
+    }
+    <HeadOutlet @rendermode="InteractiveServer" />
 </head>
 <body>
-    <Routes />
+    <Routes @rendermode="InteractiveServer" />
     <script src="_framework/blazor.web.js"></script>
     <script src="_content/MudBlazor/MudBlazor.min.js"></script>
 </body>

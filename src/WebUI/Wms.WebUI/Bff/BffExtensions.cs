@@ -7,9 +7,11 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Components.Server.Circuits;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Wms.BuildingBlocks.Infrastructure.Resilience;
 
@@ -47,6 +49,13 @@ public static class BffExtensions
         // Auth state Blazor (AuthorizeView) dari cookie.
         services.AddScoped<AuthenticationStateProvider, BffAuthenticationStateProvider>();
         services.AddCascadingAuthenticationState();
+
+        // Sediakan akses ke service dalam circuit Blazor saat HttpContext tidak tersedia.
+        services.AddScoped<CircuitServicesAccessor>();
+        services.AddScoped<CircuitHandler, ServicesAccessorCircuitHandler>();
+
+        // State badge notifikasi in-app per circuit.
+        services.AddScoped<NotificationState>();
 
         var authentication = services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme);
         authentication.AddCookie(options =>
@@ -162,9 +171,25 @@ public static class BffExtensions
         profileStore.Set(sessionId, profile);
 
         var displayName = profile.DisplayName ?? context.Principal?.Identity?.Name ?? "Entra user";
-        context.Principal = new ClaimsPrincipal(new ClaimsIdentity(
-            [new Claim(BffClaims.SessionId, sessionId), new Claim(ClaimTypes.Name, displayName)],
-            CookieAuthenticationDefaults.AuthenticationScheme));
+        var claims = new List<Claim> { new(BffClaims.SessionId, sessionId), new(ClaimTypes.Name, displayName) };
+        claims.AddRange(ExtractPermissionClaims(token.AccessToken));
+        context.Principal = new ClaimsPrincipal(
+            new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme));
+    }
+
+    // Ambil permission dari JWT internal untuk kebutuhan otorisasi UI. Token yang bukan JWT dianggap tidak memiliki permission.
+    private static List<Claim> ExtractPermissionClaims(string accessToken)
+    {
+        if (string.IsNullOrEmpty(accessToken) || accessToken.Count(character => character == '.') != 2)
+        {
+            return [];
+        }
+
+        var jwt = new JsonWebTokenHandler().ReadJsonWebToken(accessToken);
+        return jwt.Claims
+            .Where(claim => claim.Type == BffClaims.Permission)
+            .Select(claim => new Claim(BffClaims.Permission, claim.Value))
+            .ToList();
     }
 
     // Ambil profil dan foto pengguna dari Microsoft Graph tanpa menggagalkan login jika permintaan gagal.
@@ -235,9 +260,9 @@ public static class BffExtensions
         var sessionId = Guid.NewGuid().ToString("N");
         tokenStore.Set(sessionId, token.AccessToken);
 
-        var identity = new ClaimsIdentity(
-            [new Claim(BffClaims.SessionId, sessionId), new Claim(ClaimTypes.Name, credentials.Username)],
-            CookieAuthenticationDefaults.AuthenticationScheme);
+        var claims = new List<Claim> { new(BffClaims.SessionId, sessionId), new(ClaimTypes.Name, credentials.Username) };
+        claims.AddRange(ExtractPermissionClaims(token.AccessToken));
+        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
         await httpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));
 
         return Results.Redirect("/");
@@ -282,4 +307,7 @@ internal sealed record GraphMe(string? DisplayName, string? UserPrincipalName);
 internal static class BffClaims
 {
     public const string SessionId = "wms.bff.session";
+
+    // Permission dari JWT internal disimpan di cookie hanya untuk mengatur tampilan UI. Otorisasi tetap diperiksa di server.
+    public const string Permission = "permission";
 }

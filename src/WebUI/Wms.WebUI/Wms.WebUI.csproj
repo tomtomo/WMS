@@ -10,6 +10,10 @@
     <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" />
   </ItemGroup>
 
+  <ItemGroup Label="SignalR client">
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" />
+  </ItemGroup>
+
   <ItemGroup Label="Platform, Web kernel">
     <ProjectReference Include="..\..\Platform\Wms.Platform.Hosting\Wms.Platform.Hosting.csproj" />
     <ProjectReference Include="..\..\BuildingBlocks\Wms.BuildingBlocks.Web\Wms.BuildingBlocks.Web.csproj" />

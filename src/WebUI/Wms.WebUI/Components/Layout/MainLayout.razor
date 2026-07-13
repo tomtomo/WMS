@@ -1,22 +1,42 @@
 @inherits LayoutComponentBase
+@implements IDisposable
+@inject NotificationState State
 
 <MudThemeProvider />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
 
 <MudLayout>
     <MudAppBar Elevation="1">
         <MudText Typo="Typo.h6" Class="mr-4">TomSandbox WMS</MudText>
         <MudButton Href="/" Color="Color.Inherit">Home</MudButton>
-        <MudButton Href="/inbox" Color="Color.Inherit">Inbox</MudButton>
-        <MudButton Href="/reports/stock" Color="Color.Inherit">Stock</MudButton>
-        <MudSpacer />
         <AuthorizeView>
-            <Authorized>
+            <Authorized Context="auth">
+                @if (auth.User.HasPermission(UiPermissions.ReadGR))
+                {
+                    <MudButton Href="/inbound/goods-receipts" Color="Color.Inherit">Goods Receipts</MudButton>
+                }
+                @if (auth.User.HasPermission(UiPermissions.CompletePutaway))
+                {
+                    <MudButton Href="/inventory/putaway" Color="Color.Inherit">Putaway</MudButton>
+                }
+                <MudBadge Content="State.UnreadCount" Visible="State.UnreadCount > 0" Color="Color.Error" Overlap="true" Class="mx-2">
+                    <MudButton Href="/inbox" Color="Color.Inherit">Inbox</MudButton>
+                </MudBadge>
+                @if (auth.User.HasPermission(UiPermissions.ReadStock))
+                {
+                    <MudButton Href="/reports/stock" Color="Color.Inherit">Stock</MudButton>
+                }
+                <MudSpacer />
+                <NotificationListener />
                 <UserBadge />
                 <form method="post" action="/bff/logout" data-enhance-nav="false" style="display:inline">
                     <MudButton ButtonType="ButtonType.Submit" Color="Color.Inherit">Logout</MudButton>
                 </form>
             </Authorized>
             <NotAuthorized>
+                <MudSpacer />
                 <MudButton Href="/login" Color="Color.Inherit">Login</MudButton>
             </NotAuthorized>
         </AuthorizeView>
@@ -27,3 +47,11 @@
         </MudContainer>
     </MudMainContent>
 </MudLayout>
+
+@code {
+    protected override void OnInitialized() => State.Changed += OnChanged;
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => State.Changed -= OnChanged;
+}

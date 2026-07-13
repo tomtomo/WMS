@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!--  WebUI BFF -->
+  <!-- Smoke E2E Playwright. Sengaja di luar Wms.Local.slnf. -->
 
   <PropertyGroup>
     <IsPackable>false</IsPackable>
@@ -14,23 +14,12 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="coverlet.collector">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
     <PackageReference Include="AwesomeAssertions" />
+    <PackageReference Include="Xunit.SkippableFact" />
   </ItemGroup>
 
-  <ItemGroup Label="Host in memory">
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
-  </ItemGroup>
-
-  <ItemGroup Label="bUnit">
-    <PackageReference Include="bunit" />
-  </ItemGroup>
-
-  <ItemGroup Label="Subjek: WebUI">
-    <ProjectReference Include="..\..\..\src\WebUI\Wms.WebUI\Wms.WebUI.csproj" />
+  <ItemGroup Label="Playwright">
+    <PackageReference Include="Microsoft.Playwright" />
   </ItemGroup>
 
 </Project>

@@ -1,15 +1,16 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Components.Server;
+using Microsoft.Extensions.Logging;
 
 namespace Wms.WebUI.Bff;
 
-// Ambil status login Blazor dari cookie BFF melalui user pada request saat ini.
-internal sealed class BffAuthenticationStateProvider(IHttpContextAccessor httpContextAccessor) : AuthenticationStateProvider
+// Simpan status login dari cookie BFF selama circuit Blazor aktif dan lakukan pengecekan ulang secara berkala.
+internal sealed class BffAuthenticationStateProvider(ILoggerFactory loggerFactory)
+    : RevalidatingServerAuthenticationStateProvider(loggerFactory)
 {
-    public override Task<AuthenticationState> GetAuthenticationStateAsync()
-    {
-        var user = httpContextAccessor.HttpContext?.User ?? new ClaimsPrincipal(new ClaimsIdentity());
-        return Task.FromResult(new AuthenticationState(user));
-    }
+    protected override TimeSpan RevalidationInterval => TimeSpan.FromMinutes(30);
+
+    protected override Task<bool> ValidateAuthenticationStateAsync(
+        AuthenticationState authenticationState,
+        CancellationToken cancellationToken) => Task.FromResult(true);
 }

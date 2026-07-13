@@ -4,6 +4,7 @@ using Wms.Auth.Grpc.V1;
 using Wms.BuildingBlocks.Application.Abstractions.Ports;
 using Wms.BuildingBlocks.Web;
 using Wms.Notifications.Persistence;
+using Wms.Platform.Shared.Notifications;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +15,9 @@ builder.AddServiceDefaults();
 builder.Services.AddApplicationBuildingBlocks(typeof(NotificationsDbContext).Assembly);
 builder.Services.AddBuildingBlocksInfrastructure("wms-notifications-read");
 builder.Services.AddNotificationsModule(builder.Configuration);
+
+// Daftarkan endpoint SignalR saja, sedangkan pengiriman notifikasi tetap ditangani oleh Functions worker.
+builder.Services.AddNotificationHub(coLocateDelivery: false);
 builder.Services.AddAzurePlatform(builder.Configuration);
 
 // Checker user aktif lintas host ke Auth
@@ -26,6 +30,7 @@ builder.Services.AddSingleton<IActiveUserChecker, AuthGrpcActiveUserChecker>();
 // Endpoint web Notifications: REST inbox, autentikasi JWT, user dari HttpContext, permission policy, dan fallback deny by default.
 builder.Services.AddWebBuildingBlocks();
 builder.Services.AddJwtBearerRs256(builder.Configuration);
+builder.Services.AddSignalRAccessTokenFromQueryString(NotificationHubExtensions.HubPath);
 builder.Services.AddHttpContextCurrentUser();
 builder.Services.AddPermissionAuthorization();
 builder.Services.Configure<AuthorizationOptions>(options =>
@@ -40,6 +45,7 @@ app.UseAuthorization();
 
 app.MapDefaultEndpoints();
 app.MapEndpoints(typeof(NotificationsDbContext).Assembly);
+app.MapNotificationHub();
 
 await app.RunAsync();
 

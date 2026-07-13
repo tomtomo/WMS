@@ -13,6 +13,9 @@ param secretNames array
 param grpcExposedPort int = 0
 param minReplicas int = 0
 
+// Batasi ke satu replika karena SignalR belum memiliki penghubung antar-replika.
+param maxReplicas int = 5
+
 // Nama subscription Service Bus milik modul (kosong = tanpa scale rule Service Bus).
 param serviceBusSubscription string = ''
 
@@ -91,7 +94,7 @@ resource app 'Microsoft.App/containerApps@2024-10-02-preview' = {
       ]
       scale: {
         minReplicas: minReplicas
-        maxReplicas: 5
+        maxReplicas: maxReplicas
         rules: concat(serviceBusRules, [
           {
             name: 'http-concurrency'
