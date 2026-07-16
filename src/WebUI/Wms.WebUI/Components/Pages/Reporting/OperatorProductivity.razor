@@ -1,0 +1,36 @@
+@page "/reports/operator-productivity"
+@inject WmsApiClient Api
+@inject ISnackbar Snackbar
+
+<PageTitle>WMS — Operator Productivity</PageTitle>
+
+<PageHeader Title="Operator Productivity" />
+
+<MudTable T="OperatorProductivityRow" ServerData="LoadAsync" Dense="true" Hover="true">
+    <HeaderContent>
+        <MudTh>Operator</MudTh>
+        <MudTh>Period</MudTh>
+        <MudTh>Putaway Count</MudTh>
+        <MudTh>Pick Count</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Operator">@context.OperatorId</MudTd>
+        <MudTd DataLabel="Period">@context.Period.ToString("yyyy-MM-dd")</MudTd>
+        <MudTd DataLabel="Putaway Count">@context.PutawayCount</MudTd>
+        <MudTd DataLabel="Pick Count">@context.PickCount</MudTd>
+    </RowTemplate>
+    <NoRecordsContent>
+        <MudText Class="pa-4">Belum ada data produktivitas operator.</MudText>
+    </NoRecordsContent>
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
+</MudTable>
+
+@code {
+    private async Task<TableData<OperatorProductivityRow>> LoadAsync(TableState state, CancellationToken cancellationToken)
+    {
+        var result = await Api.Reporting.OperatorProductivityAsync(state.Page + 1, state.PageSize, cancellationToken: cancellationToken);
+        return result.ToTableData(Snackbar);
+    }
+}

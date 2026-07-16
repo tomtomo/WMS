@@ -4,9 +4,13 @@ using System.Text;
 using AwesomeAssertions;
 using Bunit;
 using Bunit.TestDoubles;
+using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
+using MudBlazor;
 using MudBlazor.Services;
 using Wms.WebUI.Components.Pages;
+using Wms.WebUI.Components.Pages.Inbound;
+using Wms.WebUI.Services;
 using Xunit;
 
 namespace Wms.WebUI.IntegrationTests;
@@ -19,6 +23,7 @@ public sealed class ComponentRenderTests : TestContext
         Services.AddMudServices();
         JSInterop.Mode = JSRuntimeMode.Loose;
         Services.AddSingleton<IHttpClientFactory>(new StubHttpClientFactory());
+        Services.AddWmsApiClients();
     }
 
     [Fact]
@@ -36,7 +41,7 @@ public sealed class ComponentRenderTests : TestContext
         auth.SetAuthorized("op");
         auth.SetClaims(new Claim("permission", "Inbound.CreateGR"));
 
-        var cut = RenderComponent<GoodsReceipts>();
+        var cut = RenderGr();
 
         HasButton(cut, "Buat").Should().BeTrue();
     }
@@ -47,13 +52,23 @@ public sealed class ComponentRenderTests : TestContext
         var auth = this.AddTestAuthorization();
         auth.SetAuthorized("op");
 
-        var cut = RenderComponent<GoodsReceipts>();
+        var cut = RenderGr();
 
         HasButton(cut, "Buat").Should().BeFalse();
     }
 
-    private static bool HasButton(IRenderedComponent<GoodsReceipts> cut, string text) =>
+    private static bool HasButton(IRenderedFragment cut, string text) =>
         cut.FindAll("button").Any(button => button.TextContent.Contains(text, StringComparison.Ordinal));
+
+    // MudSelect membutuhkan MudPopoverProvider; di aplikasi provider ini disediakan MainLayout.
+    private IRenderedFragment RenderGr() =>
+        Render(builder =>
+        {
+            builder.OpenComponent<MudPopoverProvider>(0);
+            builder.CloseComponent();
+            builder.OpenComponent<GoodsReceipts>(1);
+            builder.CloseComponent();
+        });
 
     private sealed class StubHttpClientFactory : IHttpClientFactory
     {

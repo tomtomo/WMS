@@ -22,4 +22,8 @@
     <PackageReference Include="Microsoft.Playwright" />
   </ItemGroup>
 
+  <ItemGroup Label="Evidence channel (db)">
+    <PackageReference Include="Npgsql" />
+  </ItemGroup>
+
 </Project>

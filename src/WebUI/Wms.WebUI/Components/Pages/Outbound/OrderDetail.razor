@@ -1,0 +1,65 @@
+@page "/outbound/orders/{OrderId:guid}"
+@inject WmsApiClient Api
+
+<PageTitle>WMS — Order Detail</PageTitle>
+
+<PageHeader Title="Order Detail">
+    <Actions>
+        <MudButton Href="/outbound/orders" StartIcon="@Icons.Material.Filled.ArrowBack" Variant="Variant.Outlined">Kembali ke Orders</MudButton>
+    </Actions>
+</PageHeader>
+
+@if (_loading)
+{
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" />
+}
+else if (_order is null)
+{
+    <MudAlert Severity="Severity.Warning">Order tidak ditemukan.</MudAlert>
+}
+else
+{
+    <MudPaper Class="pa-4 mb-4" Outlined="true" Style="max-width:640px">
+        <MudSimpleTable Dense="true" Hover="false" Elevation="0">
+            <tbody>
+                <tr><td><b>Order Id</b></td><td>@_order.OrderId</td></tr>
+                <tr><td><b>Customer</b></td><td>@_order.CustomerId</td></tr>
+                <tr><td><b>Status</b></td><td><MudChip T="string" Size="Size.Small" Color="@OrderDisplay.StatusColor(_order.Status)">@_order.Status</MudChip></td></tr>
+                <tr><td><b>Wave</b></td><td>@(_order.WaveId?.ToString() ?? "Belum di-wave")</td></tr>
+            </tbody>
+        </MudSimpleTable>
+    </MudPaper>
+
+    <MudText Typo="Typo.h6" GutterBottom="true">Order Lines</MudText>
+    <MudSimpleTable Dense="true" Hover="true" Style="max-width:640px">
+        <thead>
+            <tr><th>SKU</th><th>Qty</th><th>Allocated</th><th>Allocation Status</th></tr>
+        </thead>
+        <tbody>
+            @foreach (var line in _order.Lines)
+            {
+                <tr>
+                    <td>@line.Sku</td>
+                    <td>@line.Qty</td>
+                    <td>@line.AllocatedQty</td>
+                    <td>@line.AllocationStatus</td>
+                </tr>
+            }
+        </tbody>
+    </MudSimpleTable>
+}
+
+@code {
+    [Parameter]
+    public Guid OrderId { get; set; }
+
+    private OutboundOrderDetailDto? _order;
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await Api.Outbound.GetOrderAsync(OrderId);
+        _order = result.Success ? result.Value : null;
+        _loading = false;
+    }
+}

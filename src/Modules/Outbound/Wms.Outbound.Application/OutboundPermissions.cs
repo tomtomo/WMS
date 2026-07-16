@@ -3,6 +3,8 @@ namespace Wms.Outbound.Application;
 // Katalog permission Outbound
 public static class OutboundPermissions
 {
+    public const string CreateOrder = "Outbound.CreateOrder";
+
     public const string CreateWave = "Outbound.CreateWave";
 
     public const string CompletePickingTask = "Outbound.CompletePickingTask";

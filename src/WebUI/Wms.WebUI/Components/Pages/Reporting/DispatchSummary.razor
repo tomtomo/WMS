@@ -1,0 +1,39 @@
+@page "/reports/dispatch-summary"
+@inject WmsApiClient Api
+@inject WarehouseNameResolver Warehouses
+@inject ISnackbar Snackbar
+
+<PageTitle>WMS — Dispatch Summary</PageTitle>
+
+<PageHeader Title="Dispatch Summary" />
+
+<MudTable T="DispatchSummaryRow" ServerData="LoadAsync" Dense="true" Hover="true">
+    <HeaderContent>
+        <MudTh>Warehouse</MudTh>
+        <MudTh>Period</MudTh>
+        <MudTh>Dispatched Volume</MudTh>
+        <MudTh>Wave Throughput</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Warehouse">@Warehouses.Resolve(context.WarehouseId)</MudTd>
+        <MudTd DataLabel="Period">@context.Period.ToString("yyyy-MM-dd")</MudTd>
+        <MudTd DataLabel="Dispatched Volume">@context.DispatchedVolume</MudTd>
+        <MudTd DataLabel="Wave Throughput">@context.WaveThroughput</MudTd>
+    </RowTemplate>
+    <NoRecordsContent>
+        <MudText Class="pa-4">Belum ada data dispatch.</MudText>
+    </NoRecordsContent>
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
+</MudTable>
+
+@code {
+    protected override Task OnInitializedAsync() => Warehouses.EnsureLoadedAsync();
+
+    private async Task<TableData<DispatchSummaryRow>> LoadAsync(TableState state, CancellationToken cancellationToken)
+    {
+        var result = await Api.Reporting.DispatchSummaryAsync(state.Page + 1, state.PageSize, cancellationToken: cancellationToken);
+        return result.ToTableData(Snackbar);
+    }
+}

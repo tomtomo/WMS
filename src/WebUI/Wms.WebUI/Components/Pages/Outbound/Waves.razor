@@ -1,0 +1,199 @@
+@page "/outbound/waves"
+@inherits AuthAwareComponentBase
+@inject WmsApiClient Api
+@inject ISnackbar Snackbar
+
+<PageTitle>WMS — Waves</PageTitle>
+
+<MudText Typo="Typo.h4" GutterBottom="true">Waves</MudText>
+
+<MudSelect T="Guid" @bind-Value="_warehouse" Label="Warehouse" Margin="Margin.Dense" Class="mb-3" Style="max-width:420px" @bind-Value:after="LoadWavesAsync">
+    @foreach (var warehouse in _warehouses)
+    {
+        <MudSelectItem T="Guid" Value="@warehouse.WarehouseId">@warehouse.Name</MudSelectItem>
+    }
+</MudSelect>
+
+<MudGrid>
+    <MudItem xs="12" md="6">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h6" GutterBottom="true">Backlog</MudText>
+            @if (_loadingBacklog)
+            {
+                <MudProgressCircular Indeterminate="true" Size="Size.Small" />
+            }
+            else if (_backlog.Count == 0)
+            {
+                <MudText>Tidak ada order backlog.</MudText>
+            }
+            else
+            {
+                <MudTable Items="_backlog" Dense="true" Hover="true">
+                    <HeaderContent>
+                        <MudTh>Order</MudTh>
+                        <MudTh>Items</MudTh>
+                        <MudTh></MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Order">@OrderDisplay.Short(context.OrderId)</MudTd>
+                        <MudTd DataLabel="Items">@OrderDisplay.LinesSummary(context.Lines)</MudTd>
+                        <MudTd>
+                            @if (User.HasPermission(UiPermissions.CreateWave))
+                            {
+                                <MudButton Size="Size.Small" Color="Color.Primary" OnClick="() => CreateWaveAsync(context.OrderId)" Disabled="_busy">Buat Wave</MudButton>
+                            }
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            }
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" md="6">
+        <MudPaper Class="pa-4">
+            <div class="d-flex align-center">
+                <MudText Typo="Typo.h6">Wave Aktif</MudText>
+                <MudSpacer />
+                <MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="LoadWavesAsync" />
+            </div>
+            @if (_waves.Count == 0)
+            {
+                <MudText>Tidak ada wave aktif.</MudText>
+            }
+            else
+            {
+                <MudTable Items="_waves" Dense="true" Hover="true">
+                    <HeaderContent>
+                        <MudTh>Wave</MudTh>
+                        <MudTh>Orders</MudTh>
+                        <MudTh>Status</MudTh>
+                        <MudTh></MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Wave"><MudLink Href="@($"/outbound/waves/{context.WaveId}")">@OrderDisplay.Short(context.WaveId)</MudLink></MudTd>
+                        <MudTd DataLabel="Orders">@context.OrderCount</MudTd>
+                        <MudTd DataLabel="Status"><MudChip T="string" Size="Size.Small" Color="@OrderDisplay.StatusColor(context.Status)">@context.Status</MudChip></MudTd>
+                        <MudTd>
+                            @if (context.Status == "Ready" && User.HasPermission(UiPermissions.DispatchWave))
+                            {
+                                <MudButton Size="Size.Small" Color="Color.Success" OnClick="() => DispatchAsync(context.WaveId)" Disabled="_busy">Dispatch</MudButton>
+                            }
+                            else if (context.Status == "Active")
+                            {
+                                <MudText Typo="Typo.caption" Class="mud-text-secondary">Menunggu picking</MudText>
+                            }
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            }
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private Guid _warehouse;
+    private IReadOnlyList<WarehouseDto> _warehouses = [];
+    private IReadOnlyList<OrderBacklogDto> _backlog = [];
+    private IReadOnlyList<WaveListItemDto> _waves = [];
+    private bool _loadingBacklog;
+    private bool _busy;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        await LoadWarehousesAsync();
+        await LoadBacklogAsync();
+        await LoadWavesAsync();
+    }
+
+    private async Task LoadWarehousesAsync()
+    {
+        var result = await Api.MasterData.ListWarehousesAsync(1, 200, includeInactive: false);
+        if (result.Success)
+        {
+            _warehouses = result.Value!.Items;
+            // Pilih warehouse pertama sebagai default. Sandbox hanya punya satu, tetapi pengguna tetap bisa menggantinya.
+            if (_warehouse == Guid.Empty && _warehouses.Count > 0)
+            {
+                _warehouse = _warehouses[0].WarehouseId;
+            }
+        }
+    }
+
+    private async Task LoadBacklogAsync()
+    {
+        _loadingBacklog = true;
+        var result = await Api.Outbound.GetBacklogAsync();
+        if (result.Success)
+        {
+            _backlog = result.Value!;
+        }
+        else
+        {
+            Snackbar.Add($"Gagal memuat backlog: {result.ErrorMessage}", Severity.Warning);
+        }
+
+        _loadingBacklog = false;
+    }
+
+    private async Task LoadWavesAsync()
+    {
+        if (_warehouse == Guid.Empty)
+        {
+            return;
+        }
+
+        // Tampilkan wave Active dan Ready; hanya wave Ready yang bisa didispatch.
+        var active = await Api.Outbound.ListWavesAsync(_warehouse, "Active");
+        var ready = await Api.Outbound.ListWavesAsync(_warehouse, "Ready");
+        if (active.Success && ready.Success)
+        {
+            _waves = [.. active.Value!, .. ready.Value!];
+        }
+        else
+        {
+            Snackbar.Add("Gagal memuat wave.", Severity.Warning);
+        }
+    }
+
+    private async Task CreateWaveAsync(Guid orderId)
+    {
+        if (_warehouse == Guid.Empty)
+        {
+            Snackbar.Add("Pilih warehouse dulu.", Severity.Warning);
+            return;
+        }
+
+        _busy = true;
+        var result = await Api.Outbound.CreateWaveAsync(new CreateWaveRequest([orderId], _warehouse));
+        _busy = false;
+
+        if (result.Success)
+        {
+            Snackbar.Add("Wave dibuat.", Severity.Success);
+            await LoadBacklogAsync();
+            await LoadWavesAsync();
+        }
+        else
+        {
+            Snackbar.Add($"Gagal: {result.ErrorMessage}", Severity.Error);
+        }
+    }
+
+    private async Task DispatchAsync(Guid waveId)
+    {
+        _busy = true;
+        var result = await Api.Outbound.DispatchWaveAsync(waveId);
+        _busy = false;
+
+        if (result.Success)
+        {
+            Snackbar.Add("Wave di-dispatch.", Severity.Success);
+            await LoadWavesAsync();
+        }
+        else
+        {
+            Snackbar.Add($"Gagal: {result.ErrorMessage}", Severity.Error);
+        }
+    }
+}

@@ -18,10 +18,25 @@ public static class AuthSeeder
         Justification = "Default dev-seed sandbox; didokumentasikan wajib diganti saat produksi.")]
     public const string DefaultAdminPassword = "ChangeMe#2026";
 
+    // User Viewer untuk test E2E dengan akses read only. Khusus seed development.
+    public const string DefaultViewerUsername = "viewer";
+
+    [SuppressMessage(
+        "Security Hotspot",
+        "S2068:Hard-coded credentials are security-sensitive",
+        Justification = "Default dev-seed sandbox; didokumentasikan wajib diganti saat produksi.")]
+    public const string DefaultViewerPassword = "ChangeMe#2026";
+
     private const string AdminRoleCode = "Admin";
 
-    // Warehouse default untuk data dev lokal. Admin ikut di-scope ke warehouse ini
-    // supaya akses ke data lokal tidak selalu gagal karena belum ada claim multi warehouse.
+    private const string ViewerRoleCode = "Viewer";
+
+    private const string SupervisorRoleCode = "Supervisor";
+
+    // GUID tetap untuk role Supervisor. Nilainya harus sama dengan NotificationRoles.Supervisor agar pencarian anggota role lewat gRPC tetap bekerja.
+    private static readonly Guid _supervisorRoleId = Guid.Parse("a1a1a1a1-0000-0000-0000-000000000001");
+
+    // Warehouse default untuk data lokal. Admin dimasukkan ke warehouse ini agar akses data dev tidak gagal karena belum memiliki claim multi warehouse.
     private static readonly Guid _defaultDevWarehouseId = Guid.Parse("a0000000-0000-0000-0000-000000000001");
 
     // Daftar permission yang dikenali aplikasi.
@@ -39,6 +54,7 @@ public static class AuthSeeder
         ("Inventory.CompletePutaway", "Selesaikan putaway"),
         ("Inventory.ReadStock", "Lihat stok"),
         ("Inventory.AdjustStock", "Penyesuaian stok"),
+        ("Outbound.CreateOrder", "Buat outbound order"),
         ("Outbound.CreateWave", "Buat wave"),
         ("Outbound.CompletePickingTask", "Selesaikan picking task"),
         ("Outbound.DispatchWave", "Dispatch wave"),
@@ -94,6 +110,7 @@ public static class AuthSeeder
         var permissionsByCode = await SeedPermissionsAsync(context, cancellationToken);
         await SeedRolesAsync(context, permissionsByCode, cancellationToken);
         await SeedAdminAsync(context, passwordHasher, cancellationToken);
+        await SeedLowPermUserAsync(context, passwordHasher, cancellationToken);
     }
 
     // Kode katalog ter seed
@@ -132,8 +149,17 @@ public static class AuthSeeder
 
         foreach (var (code, name, permissionCodes) in _defaultRoles)
         {
-            if (await context.Set<Role>().IgnoreQueryFilters().AnyAsync(role => role.Code == code, cancellationToken))
+            var existing = await context.Set<Role>().IgnoreQueryFilters()
+                .FirstOrDefaultAsync(role => role.Code == code, cancellationToken);
+            if (existing is not null)
             {
+                // Pastikan role Admin selalu memiliki semua permission, termasuk permission baru saat memakai database lama.
+                if (string.Equals(code, AdminRoleCode, StringComparison.Ordinal)
+                    && allPermissionIds.Except(existing.PermissionIds).Any())
+                {
+                    existing.SetPermissions(allPermissionIds);
+                }
+
                 continue;
             }
 
@@ -141,7 +167,9 @@ public static class AuthSeeder
                 ? allPermissionIds
                 : permissionCodes.Select(permissionCode => permissionsByCode[permissionCode]).ToList();
 
-            context.Add(Role.Create(RoleId.Create(Guid.NewGuid()).Value, code, name, permissionIds).Value);
+            // Role Supervisor memakai GUID tetap agar notifikasi berdasarkan role bisa menemukan anggotanya, role lain tetap memakai GUID acak.
+            var roleId = string.Equals(code, SupervisorRoleCode, StringComparison.Ordinal) ? _supervisorRoleId : Guid.NewGuid();
+            context.Add(Role.Create(RoleId.Create(roleId).Value, code, name, permissionIds).Value);
         }
 
         await context.SaveChangesAsync(cancellationToken);
@@ -162,14 +190,43 @@ public static class AuthSeeder
         }
 
         var passwordHash = passwordHasher.Hash(DefaultAdminPassword);
+
+        // Admin juga diberi role Supervisor agar menerima notifikasi SPV. Di sandbox ini admin merangkap SPV, tetapi tetap memiliki seluruh permission Admin.
         var admin = User.Create(
             UserId.Create(Guid.NewGuid()).Value,
             DefaultAdminUsername,
             "admin@wms.local",
             passwordHash,
-            [adminRole.Id.Value],
+            [adminRole.Id.Value, _supervisorRoleId],
             [_defaultDevWarehouseId]);
         context.Add(admin.Value);
+        await context.SaveChangesAsync(cancellationToken);
+    }
+
+    // Seed user Viewer dengan akses read only
+    private static async Task SeedLowPermUserAsync(AuthDbContext context, IPasswordHasher passwordHasher, CancellationToken cancellationToken)
+    {
+        if (await context.Set<User>().IgnoreQueryFilters().AnyAsync(user => user.Username == DefaultViewerUsername, cancellationToken))
+        {
+            return;
+        }
+
+        var viewerRole = await context.Set<Role>().IgnoreQueryFilters()
+            .FirstOrDefaultAsync(role => role.Code == ViewerRoleCode, cancellationToken);
+        if (viewerRole is null)
+        {
+            return;
+        }
+
+        var passwordHash = passwordHasher.Hash(DefaultViewerPassword);
+        var viewer = User.Create(
+            UserId.Create(Guid.NewGuid()).Value,
+            DefaultViewerUsername,
+            "viewer@wms.local",
+            passwordHash,
+            [viewerRole.Id.Value],
+            [_defaultDevWarehouseId]);
+        context.Add(viewer.Value);
         await context.SaveChangesAsync(cancellationToken);
     }
 }

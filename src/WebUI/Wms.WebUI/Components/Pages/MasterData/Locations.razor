@@ -1,0 +1,66 @@
+@page "/master-data/locations"
+@inherits MasterDataCrudPageBase<LocationDto>
+@inject WarehouseNameResolver Warehouses
+
+<PageTitle>WMS — Locations</PageTitle>
+
+<PageHeader Title="Locations">
+    <Actions>
+        @if (User.HasPermission(UiPermissions.ManageLocation))
+        {
+            <MudButton StartIcon="@Icons.Material.Filled.Add" Color="Color.Primary" Variant="Variant.Filled" OnClick="OpenCreateAsync">Tambah Location</MudButton>
+        }
+    </Actions>
+</PageHeader>
+
+<MudPaper Class="pa-3 mb-4" Outlined="true">
+    <MudSwitch @bind-Value="ShowInactive" Label="Tampilkan inactive" Color="Color.Primary" T="bool" @bind-Value:after="Reload" />
+</MudPaper>
+
+<MudTable T="LocationDto" ServerData="LoadAsync" Dense="true" Hover="true" @ref="Table">
+    <HeaderContent>
+        <MudTh>Warehouse</MudTh>
+        <MudTh>Type</MudTh>
+        <MudTh>Code</MudTh>
+        <MudTh>Active</MudTh>
+        <MudTh Style="width:60px" />
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Warehouse">@Warehouses.Resolve(context.WarehouseId)</MudTd>
+        <MudTd DataLabel="Type">@context.Type</MudTd>
+        <MudTd DataLabel="Code">@context.Code</MudTd>
+        <MudTd DataLabel="Active">@(context.IsActive ? "✓" : "✗")</MudTd>
+        <MudTd>
+            @if (context.IsActive && User.HasPermission(UiPermissions.ManageLocation))
+            {
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error"
+                               aria-label="Deactivate location" OnClick="@(() => DeactivateAsync(context))" />
+            }
+        </MudTd>
+    </RowTemplate>
+    <NoRecordsContent>
+        <MudText Class="pa-4">Belum ada location untuk filter ini.</MudText>
+    </NoRecordsContent>
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
+</MudTable>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        await Warehouses.EnsureLoadedAsync();
+    }
+
+    protected override Task<ApiResult<PagedResult<LocationDto>>> ListAsync(int page, int pageSize, bool includeInactive, CancellationToken cancellationToken)
+        => Api.MasterData.ListLocationsAsync(page, pageSize, includeInactive, cancellationToken);
+
+    protected override Type FormDialogType => typeof(LocationFormDialog);
+
+    protected override string EntityLabel => "Location";
+
+    protected override string Describe(LocationDto row) => row.Code;
+
+    protected override Task<ApiResult> DeactivateCoreAsync(LocationDto row) => Api.MasterData.DeactivateLocationAsync(row.LocationId);
+}

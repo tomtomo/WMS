@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using MudBlazor.Services;
 using Wms.WebUI.Bff;
 using Wms.WebUI.Components;
+using Wms.WebUI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,9 +23,16 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 // BFF memakai cookie HttpOnly, token server side, dan HTTP client gateway yang otomatis membawa bearer token serta correlation id.
 builder.Services.AddWebUiBff(builder.Configuration);
 
+// Daftarkan typed client untuk API Master Data beserta resolver ID ke nama melalui gateway BFF.
+builder.Services.AddWmsApiClients();
+
 var app = builder.Build();
 
 app.UseForwardedHeaders();
+
+// Sajikan aset RCL agar JavaScript dan CSS MudBlazor tersedia saat circuit interaktif dirender.
+app.UseStaticFiles();
+
 app.UseCorrelationId();
 app.UseAuthentication();
 app.UseAuthorization();

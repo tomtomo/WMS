@@ -1,6 +1,77 @@
 @page "/"
+@inherits AuthAwareComponentBase
 
-<PageTitle>WMS — Home</PageTitle>
+<PageTitle>WMS — Dashboard</PageTitle>
 
-<MudText Typo="Typo.h4" GutterBottom="true">TomSandbox WMS</MudText>
-<MudText> </MudText>
+<style>
+    .tile-card { transition: box-shadow .18s ease, transform .18s ease; }
+    .tile-card:hover { box-shadow: var(--mud-elevation-8); transform: translateY(-2px); }
+</style>
+
+<MudText Typo="Typo.h4" GutterBottom="true">Operations Dashboard</MudText>
+<MudText Typo="Typo.body1" Class="mud-text-secondary mb-6">Selamat datang di TomSandbox WMS</MudText>
+
+@if (User.HasPermission(UiPermissions.ReadGR) || User.HasPermission(UiPermissions.CompletePutaway))
+{
+    <MudText Typo="Typo.overline" Color="Color.Primary">Receiving &amp; Storage</MudText>
+    <MudGrid Class="mb-4 mt-1">
+        @if (User.HasPermission(UiPermissions.ReadGR))
+        {
+            @Tile("/inbound/goods-receipts", Icons.Material.Filled.Receipt, "Goods Receipts", "Terima, scan, & konfirmasi kiriman supplier", Color.Primary)
+        }
+        @if (User.HasPermission(UiPermissions.CompletePutaway))
+        {
+            @Tile("/inventory/putaway", Icons.Material.Filled.MoveToInbox, "Putaway", "Simpan stok yang diterima ke rak", Color.Primary)
+        }
+    </MudGrid>
+}
+
+@if (User.HasPermission(UiPermissions.CreateOutboundOrder) || User.HasPermission(UiPermissions.CreateWave) || User.HasPermission(UiPermissions.CompletePickingTask))
+{
+    <MudText Typo="Typo.overline" Color="Color.Secondary">Fulfillment</MudText>
+    <MudGrid Class="mb-4 mt-1">
+        @if (User.HasPermission(UiPermissions.CreateOutboundOrder))
+        {
+            @Tile("/outbound/orders", Icons.Material.Filled.ReceiptLong, "Orders", "Buat & pantau outbound order customer", Color.Secondary)
+        }
+        @if (User.HasPermission(UiPermissions.CreateWave))
+        {
+            @Tile("/outbound/waves", Icons.Material.Filled.Layers, "Waves", "Rilis wave & dispatch pengiriman", Color.Secondary)
+        }
+        @if (User.HasPermission(UiPermissions.CompletePickingTask))
+        {
+            @Tile("/outbound/picking", Icons.Material.Filled.Checklist, "Picking", "Ambil stok dari rak ke staging", Color.Secondary)
+        }
+    </MudGrid>
+}
+
+<MudText Typo="Typo.overline" Color="Color.Tertiary">Data &amp; Insight</MudText>
+<MudGrid Class="mt-1">
+    @if (User.HasPermission(UiPermissions.ManageProduct) || User.HasPermission(UiPermissions.ManageLocation) || User.HasPermission(UiPermissions.ManageWarehouse))
+    {
+        @Tile("/master-data/products", Icons.Material.Filled.Storage, "Master Data", "Kelola product, location, & warehouse", Color.Tertiary)
+    }
+    @if (User.HasPermission(UiPermissions.ReadStock))
+    {
+        @Tile("/reports/stock-on-hand", Icons.Material.Filled.Assessment, "Reports", "Stock-on-hand, dispatch, & produktivitas", Color.Tertiary)
+    }
+    @Tile("/inbox", Icons.Material.Filled.Notifications, "Inbox", "Notifikasi tugas & alert operasional", Color.Tertiary)
+</MudGrid>
+
+@code {
+    private static RenderFragment Tile(string href, string icon, string title, string description, Color accent) =>
+        @<MudItem xs="12" sm="6" md="4">
+            <MudCard Elevation="1" Class="tile-card" Style="height:100%">
+                <MudCardContent>
+                    <div class="d-flex align-center mb-2">
+                        <MudIcon Icon="@icon" Color="@accent" Size="Size.Large" Class="mr-3" />
+                        <MudText Typo="Typo.h6">@title</MudText>
+                    </div>
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary">@description</MudText>
+                </MudCardContent>
+                <MudCardActions>
+                    <MudButton Href="@href" Variant="Variant.Text" Color="@accent" EndIcon="@Icons.Material.Filled.ArrowForward">Buka</MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudItem>;
+}

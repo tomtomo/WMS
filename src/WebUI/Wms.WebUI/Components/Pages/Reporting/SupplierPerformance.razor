@@ -1,0 +1,40 @@
+@page "/reports/supplier-performance"
+@inject WmsApiClient Api
+@inject ISnackbar Snackbar
+
+<PageTitle>WMS — Supplier Performance</PageTitle>
+
+<PageHeader Title="Supplier Performance" />
+
+<MudTable T="SupplierPerformanceRow" ServerData="LoadAsync" Dense="true" Hover="true">
+    <HeaderContent>
+        <MudTh>Supplier</MudTh>
+        <MudTh>Period</MudTh>
+        <MudTh>Received Qty</MudTh>
+        <MudTh>Receipts</MudTh>
+        <MudTh>Discrepancies</MudTh>
+        <MudTh>Discrepancy Rate</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Supplier">@context.SupplierId</MudTd>
+        <MudTd DataLabel="Period">@context.Period.ToString("yyyy-MM-dd")</MudTd>
+        <MudTd DataLabel="Received Qty">@context.ReceivedQty</MudTd>
+        <MudTd DataLabel="Receipts">@context.ReceiptCount</MudTd>
+        <MudTd DataLabel="Discrepancies">@context.DiscrepancyCount</MudTd>
+        <MudTd DataLabel="Discrepancy Rate">@context.DiscrepancyRate.ToString("P1")</MudTd>
+    </RowTemplate>
+    <NoRecordsContent>
+        <MudText Class="pa-4">Belum ada data supplier.</MudText>
+    </NoRecordsContent>
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
+</MudTable>
+
+@code {
+    private async Task<TableData<SupplierPerformanceRow>> LoadAsync(TableState state, CancellationToken cancellationToken)
+    {
+        var result = await Api.Reporting.SupplierPerformanceAsync(state.Page + 1, state.PageSize, cancellationToken: cancellationToken);
+        return result.ToTableData(Snackbar);
+    }
+}

@@ -1,0 +1,61 @@
+@page "/outbound/waves/{WaveId:guid}"
+@inject WmsApiClient Api
+@inject WarehouseNameResolver Warehouses
+
+<PageTitle>WMS — Wave Detail</PageTitle>
+
+<PageHeader Title="Wave Detail">
+    <Actions>
+        <MudButton Href="/outbound/waves" StartIcon="@Icons.Material.Filled.ArrowBack" Variant="Variant.Outlined">Kembali ke Waves</MudButton>
+    </Actions>
+</PageHeader>
+
+@if (_loading)
+{
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" />
+}
+else if (_wave is null)
+{
+    <MudAlert Severity="Severity.Warning">Wave tidak ditemukan.</MudAlert>
+}
+else
+{
+    <MudPaper Class="pa-4" Outlined="true" Style="max-width:640px">
+        <MudSimpleTable Dense="true" Hover="false" Elevation="0">
+            <tbody>
+                <tr><td><b>Wave Id</b></td><td>@_wave.WaveId</td></tr>
+                <tr><td><b>Warehouse</b></td><td>@Warehouses.Resolve(_wave.WarehouseId)</td></tr>
+                <tr><td><b>Status</b></td><td><MudChip T="string" Size="Size.Small" Color="@OrderDisplay.StatusColor(_wave.Status)">@_wave.Status</MudChip></td></tr>
+                @if (!string.IsNullOrWhiteSpace(_wave.CancelReason))
+                {
+                    <tr><td><b>Cancel Reason</b></td><td>@_wave.CancelReason</td></tr>
+                }
+                <tr><td><b>Orders</b></td><td>@_wave.OrderIds.Count</td></tr>
+                <tr><td><b>Picking</b></td><td>@_wave.CompletedPickingTaskCount / @_wave.PickingTaskCount selesai</td></tr>
+            </tbody>
+        </MudSimpleTable>
+        @if (_wave.PickingTaskCount > 0)
+        {
+            <MudProgressLinear Color="Color.Primary" Value="@PickingProgress" Class="mt-3" Size="Size.Large" />
+        }
+    </MudPaper>
+}
+
+@code {
+    [Parameter]
+    public Guid WaveId { get; set; }
+
+    private WaveDetailDto? _wave;
+    private bool _loading = true;
+
+    private double PickingProgress =>
+        _wave is { PickingTaskCount: > 0 } ? 100.0 * _wave.CompletedPickingTaskCount / _wave.PickingTaskCount : 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Warehouses.EnsureLoadedAsync();
+        var result = await Api.Outbound.GetWaveAsync(WaveId);
+        _wave = result.Success ? result.Value : null;
+        _loading = false;
+    }
+}

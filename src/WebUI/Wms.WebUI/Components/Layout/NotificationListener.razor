@@ -2,7 +2,7 @@
 @using Microsoft.Extensions.Configuration
 @implements IAsyncDisposable
 @inject AuthenticationStateProvider AuthProvider
-@inject ITokenStore TokenStore
+@inject BffTokenRefresher TokenRefresher
 @inject IConfiguration Config
 @inject ISnackbar Snackbar
 @inject NotificationState State
@@ -23,7 +23,7 @@
         var authState = await AuthProvider.GetAuthenticationStateAsync();
         var sessionId = authState.User.FindFirst(BffClaims.SessionId)?.Value;
         var gateway = Config["Bff:GatewayAddress"];
-        var token = sessionId is null ? null : TokenStore.Get(sessionId);
+        var token = sessionId is null ? null : await TokenRefresher.GetValidAccessTokenAsync(sessionId, CancellationToken.None);
         if (token is null || string.IsNullOrEmpty(gateway))
         {
             return;

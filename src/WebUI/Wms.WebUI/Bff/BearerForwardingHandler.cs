@@ -8,11 +8,11 @@ using Wms.BuildingBlocks.Web;
 namespace Wms.WebUI.Bff;
 
 // Tambahkan bearer token dan correlation id ke setiap request menuju gateway.
-// Token dari token store server side by session id. Static SSR: HttpContext. circuit interaktif: auth state circuit.
+// Token diambil dari store berdasarkan session ID: lewat HttpContext saat SSR atau authentication state saat circuit aktif.
 internal sealed class BearerForwardingHandler(
     IHttpContextAccessor httpContextAccessor,
     CircuitServicesAccessor circuitServicesAccessor,
-    ITokenStore tokenStore) : DelegatingHandler
+    BffTokenRefresher tokenRefresher) : DelegatingHandler
 {
     protected override async Task<HttpResponseMessage> SendAsync(
         HttpRequestMessage request,
@@ -31,7 +31,8 @@ internal sealed class BearerForwardingHandler(
         }
 
         var sessionId = user?.FindFirst(BffClaims.SessionId)?.Value;
-        if (sessionId is not null && tokenStore.Get(sessionId) is { } accessToken)
+        if (sessionId is not null
+            && await tokenRefresher.GetValidAccessTokenAsync(sessionId, cancellationToken) is { } accessToken)
         {
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
         }

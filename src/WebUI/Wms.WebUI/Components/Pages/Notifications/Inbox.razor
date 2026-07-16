@@ -1,5 +1,5 @@
 @page "/inbox"
-@inject IHttpClientFactory HttpClientFactory
+@inject WmsApiClient Api
 @inject NotificationState State
 
 <PageTitle>WMS — Inbox</PageTitle>
@@ -35,29 +35,23 @@ else
 }
 
 @code {
-    private List<InboxItem> _items = [];
+    private IReadOnlyList<InboxItemDto> _items = [];
     private bool _error;
     private bool _loading = true;
 
     protected override async Task OnInitializedAsync()
     {
-        // Membuka inbox = notifikasi terlihat → reset badge.
         State.Reset();
-        try
+        var result = await Api.Notifications.GetInboxAsync(1, 20);
+        if (result.Success)
         {
-            var client = HttpClientFactory.CreateClient(BffExtensions.GatewayClientName);
-            var page = await client.GetFromJsonAsync<PagedResponse<InboxItem>>("/notifications/v1/inbox?page=1&pageSize=20");
-            _items = page?.Items ?? [];
+            _items = result.Value!.Items;
         }
-        catch (HttpRequestException)
+        else
         {
             _error = true;
         }
-        finally
-        {
-            _loading = false;
-        }
-    }
 
-    private sealed record InboxItem(Guid DeliveryId, string Title, string Body, string EventType, bool IsRead, DateTimeOffset CreatedAt);
+        _loading = false;
+    }
 }

@@ -1,0 +1,290 @@
+@page "/inbound/goods-receipts"
+@inherits AuthAwareComponentBase
+@inject WmsApiClient Api
+@inject ISnackbar Snackbar
+
+<PageTitle>WMS — Goods Receipts</PageTitle>
+
+<MudText Typo="Typo.h4" GutterBottom="true">Goods Receipts</MudText>
+
+<MudGrid>
+    <MudItem xs="12" md="6">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h6" GutterBottom="true">Buat GR</MudText>
+            <MudTextField @bind-Value="_poRef" Label="PO Ref" Margin="Margin.Dense" />
+            <MudTextField @bind-Value="_supplierId" Label="Supplier Id (GUID)" Margin="Margin.Dense" />
+            <MudSelect T="Guid" @bind-Value="_warehouse" Label="Warehouse" Margin="Margin.Dense">
+                @foreach (var warehouse in _warehouses)
+                {
+                    <MudSelectItem T="Guid" Value="@warehouse.WarehouseId">@warehouse.Name</MudSelectItem>
+                }
+            </MudSelect>
+            <MudTextField @bind-Value="_dockDoor" Label="Dock Door" Margin="Margin.Dense" />
+            <MudText Typo="Typo.subtitle2" Class="mt-3">Expected Lines</MudText>
+            @if (_products.Count == 0)
+            {
+                <MudAlert Severity="Severity.Warning" Dense="true" Class="my-2">
+                    Belum ada product aktif. Buat dulu di Master Data → Products.
+                </MudAlert>
+            }
+            @foreach (var line in _lines)
+            {
+                <div class="d-flex gap-2 align-center" @key="line">
+                    <MudSelect T="string" @bind-Value="line.Sku" Label="SKU" Margin="Margin.Dense" Style="min-width:220px">
+                        @foreach (var product in _products)
+                        {
+                            <MudSelectItem T="string" Value="@product.Sku">@product.Sku — @product.Name</MudSelectItem>
+                        }
+                    </MudSelect>
+                    <MudNumericField @bind-Value="line.Qty" Label="Qty" Min="1" Margin="Margin.Dense" />
+                    <MudTextField Value="@UomFor(line.Sku)" Label="Uom" Margin="Margin.Dense" ReadOnly="true" Disabled="true" Style="max-width:90px" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" OnClick="() => _lines.Remove(line)" />
+                </div>
+            }
+            <MudButton StartIcon="@Icons.Material.Filled.Add" OnClick="() => _lines.Add(new())">Line</MudButton>
+            <div class="mt-3">
+                @if (User.HasPermission(UiPermissions.CreateGR))
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="CreateAsync" Disabled="_busy">Buat</MudButton>
+                }
+            </div>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" md="6">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h6" GutterBottom="true">Pending Review</MudText>
+            @if (_loading)
+            {
+                <MudProgressCircular Indeterminate="true" Size="Size.Small" />
+            }
+            else if (_pending.Count == 0)
+            {
+                <MudText>Tidak ada GR pending.</MudText>
+            }
+            else
+            {
+                <MudTable Items="_pending" Dense="true" Hover="true">
+                    <HeaderContent>
+                        <MudTh>PO Ref</MudTh>
+                        <MudTh>Status</MudTh>
+                        <MudTh>Discrepancy</MudTh>
+                        <MudTh></MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="PO Ref">@context.PoRef</MudTd>
+                        <MudTd DataLabel="Status">@context.Status</MudTd>
+                        <MudTd DataLabel="Discrepancy">@context.DiscrepancyCount</MudTd>
+                        <MudTd>
+                            <MudButton Size="Size.Small" OnClick="() => Select(context.GoodsReceiptId)">Pilih</MudButton>
+                            <MudButton Size="Size.Small" Href="@($"/inbound/goods-receipts/{context.GoodsReceiptId}")">Detail</MudButton>
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            }
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@if (_selectedGr is not null)
+{
+    <MudPaper Class="pa-4 mt-4">
+        <MudText Typo="Typo.h6" GutterBottom="true">GR terpilih: @_selectedGr</MudText>
+        <div class="d-flex gap-2 align-center flex-wrap">
+            <MudSelect T="string" @bind-Value="_scanSku" Label="SKU" Margin="Margin.Dense" Style="min-width:220px">
+                @foreach (var product in _products)
+                {
+                    <MudSelectItem T="string" Value="@product.Sku">@product.Sku — @product.Name</MudSelectItem>
+                }
+            </MudSelect>
+            <MudNumericField @bind-Value="_scanQty" Label="Actual Qty" Min="1" Margin="Margin.Dense" />
+            <MudTextField @bind-Value="_scanBatch" Label="Batch" Margin="Margin.Dense"
+                          Required="@ScanRequiresBatch" HelperText="@(ScanRequiresBatch ? "Wajib (batch-tracked)" : null)" />
+            <MudDatePicker @bind-Date="_scanExpiry" Label="Expiry" Margin="Margin.Dense"
+                           Required="@ScanRequiresExpiry" HelperText="@(ScanRequiresExpiry ? "Wajib (perishable)" : null)" />
+            <MudSelect @bind-Value="_scanStatus" Label="Status" Margin="Margin.Dense" Style="min-width:140px">
+                <MudSelectItem Value="@("Good")">Good</MudSelectItem>
+                <MudSelectItem Value="@("WrongItem")">WrongItem</MudSelectItem>
+                <MudSelectItem Value="@("QcHold")">QcHold</MudSelectItem>
+            </MudSelect>
+            @if (User.HasPermission(UiPermissions.ScanGR))
+            {
+                <MudButton Color="Color.Primary" OnClick="ScanAsync" Disabled="_busy">Scan</MudButton>
+            }
+            @if (User.HasPermission(UiPermissions.CompleteScanGR))
+            {
+                <MudButton OnClick="CompleteScanAsync" Disabled="_busy">Complete Scan</MudButton>
+            }
+            @if (User.HasPermission(UiPermissions.PostGR))
+            {
+                <MudButton Color="Color.Success" OnClick="ConfirmAsync" Disabled="_busy">Confirm</MudButton>
+            }
+        </div>
+    </MudPaper>
+}
+
+@code {
+    private string _poRef = string.Empty;
+    private string _supplierId = string.Empty;
+    private Guid _warehouse;
+    private string _dockDoor = string.Empty;
+    private readonly List<LineInput> _lines = [new()];
+    private IReadOnlyList<ProductDto> _products = [];
+    private IReadOnlyList<WarehouseDto> _warehouses = [];
+    private IReadOnlyList<GoodsReceiptListItemDto> _pending = [];
+    private bool _loading;
+    private bool _busy;
+
+    private Guid? _selectedGr;
+    private string _scanSku = "SKU-MILK";
+    private decimal _scanQty = 1;
+    private string? _scanBatch;
+    private DateTime? _scanExpiry;
+    private string _scanStatus = "Good";
+
+    private ProductDto? ScanProduct => _products.FirstOrDefault(product => product.Sku == _scanSku);
+
+    private bool ScanRequiresExpiry => ScanProduct?.ExpiryTrackingRequired ?? false;
+
+    private bool ScanRequiresBatch => ScanProduct?.BatchTrackingRequired ?? false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        await LoadProductsAsync();
+        await LoadWarehousesAsync();
+        await LoadPendingAsync();
+    }
+
+    private async Task LoadProductsAsync()
+    {
+        var result = await Api.MasterData.ListProductsAsync(1, 200, includeInactive: false);
+        if (result.Success)
+        {
+            _products = result.Value!.Items;
+        }
+    }
+
+    private async Task LoadWarehousesAsync()
+    {
+        var result = await Api.MasterData.ListWarehousesAsync(1, 200, includeInactive: false);
+        if (result.Success)
+        {
+            _warehouses = result.Value!.Items;
+            if (_warehouse == Guid.Empty && _warehouses.Count > 0)
+            {
+                _warehouse = _warehouses[0].WarehouseId;
+            }
+        }
+    }
+
+    private string UomFor(string sku) => _products.FirstOrDefault(product => product.Sku == sku)?.Uom ?? string.Empty;
+
+    private async Task LoadPendingAsync()
+    {
+        _loading = true;
+        var result = await Api.Inbound.ListPendingAsync(1, 20);
+        if (result.Success)
+        {
+            _pending = result.Value!.Items;
+        }
+        else
+        {
+            Snackbar.Add($"Gagal memuat GR pending: {result.ErrorMessage}", Severity.Warning);
+        }
+
+        _loading = false;
+    }
+
+    private async Task CreateAsync()
+    {
+        if (!Guid.TryParse(_supplierId, out var supplier))
+        {
+            Snackbar.Add("Supplier Id harus GUID valid.", Severity.Error);
+            return;
+        }
+
+        if (_warehouse == Guid.Empty)
+        {
+            Snackbar.Add("Pilih warehouse dulu.", Severity.Warning);
+            return;
+        }
+
+        _busy = true;
+        var request = new CreateGoodsReceiptRequest(
+            _poRef, supplier, _warehouse, _dockDoor,
+            [.. _lines.Select(line => new GrExpectedLineRequest(line.Sku, line.Qty, UomFor(line.Sku)))]);
+        var result = await Api.Inbound.CreateGoodsReceiptAsync(request);
+        _busy = false;
+
+        if (result.Success)
+        {
+            _selectedGr = result.Value!.GoodsReceiptId;
+            Snackbar.Add("GR dibuat.", Severity.Success);
+            await LoadPendingAsync();
+        }
+        else
+        {
+            Snackbar.Add($"Gagal: {result.ErrorMessage}", Severity.Error);
+        }
+    }
+
+    private void Select(Guid id) => _selectedGr = id;
+
+    private async Task ScanAsync()
+    {
+        if (_selectedGr is null)
+        {
+            return;
+        }
+
+        if (ScanRequiresExpiry && _scanExpiry is null)
+        {
+            Snackbar.Add("Expiry wajib untuk produk perishable ini.", Severity.Error);
+            return;
+        }
+
+        if (ScanRequiresBatch && string.IsNullOrWhiteSpace(_scanBatch))
+        {
+            Snackbar.Add("Batch wajib untuk produk batch-tracked ini.", Severity.Error);
+            return;
+        }
+
+        _busy = true;
+        var expiry = _scanExpiry.HasValue ? DateOnly.FromDateTime(_scanExpiry.Value) : (DateOnly?)null;
+        var result = await Api.Inbound.ScanAsync(
+            _selectedGr.Value, new ScanLineRequest(_scanSku, _scanQty, _scanBatch, expiry, _scanStatus));
+        _busy = false;
+        Snackbar.Add(
+            result.Success ? "Line di-scan." : $"Gagal: {result.ErrorMessage}",
+            result.Success ? Severity.Success : Severity.Error);
+    }
+
+    private Task CompleteScanAsync() => ActAsync(Api.Inbound.CompleteScanAsync, "Scan selesai.");
+
+    private Task ConfirmAsync() => ActAsync(Api.Inbound.ConfirmAsync, "GR dikonfirmasi.");
+
+    private async Task ActAsync(Func<Guid, CancellationToken, Task<ApiResult>> action, string ok)
+    {
+        if (_selectedGr is null)
+        {
+            return;
+        }
+
+        _busy = true;
+        var result = await action(_selectedGr.Value, CancellationToken.None);
+        _busy = false;
+        Snackbar.Add(result.Success ? ok : $"Gagal: {result.ErrorMessage}", result.Success ? Severity.Success : Severity.Error);
+        if (result.Success)
+        {
+            await LoadPendingAsync();
+        }
+    }
+
+    private sealed class LineInput
+    {
+        public string Sku { get; set; } = "SKU-MILK";
+
+        public decimal Qty { get; set; } = 1;
+    }
+}

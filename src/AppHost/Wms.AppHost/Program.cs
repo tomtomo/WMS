@@ -46,19 +46,19 @@ builder.AddProject<Projects.Wms_MigrationRunner>("migrations")
 // Auth host: issue JWT dengan private key dan expose gRPC AuthLookup untuk Notifications
 var auth = WithJwtValidation(builder.AddProject<Projects.Wms_Auth_Host_Local>("wms-auth"))
     .WithReference(authDb, "wms").WaitFor(authDb)
-    .WithReference(rabbitmq)
+    .WithReference(rabbitmq).WaitFor(rabbitmq)
     .WithEnvironment("Secrets__jwt-signing-key", jwtPrivatePem);
 
 // MasterData host: expose gRPC MasterDataLookup untuk dipakai modul core.
 var masterData = WithActiveUserChecker(WithJwtValidation(builder.AddProject<Projects.Wms_MasterData_Host_Local>("wms-masterdata")))
     .WithReference(masterDataDb, "wms").WaitFor(masterDataDb)
-    .WithReference(rabbitmq);
+    .WithReference(rabbitmq).WaitFor(rabbitmq);
 
 // Core host memakai MasterData via gRPC. Endpoint diinjek langsung dari AppHost.
 var inbound = WithActiveUserChecker(WithJwtValidation(builder.AddProject<Projects.Wms_Inbound_Host_Local>("wms-inbound")))
     .WithReference(inboundDb, "wms").WaitFor(inboundDb)
     .WithReference(reportingDb, "telemetry").WaitFor(reportingDb)
-    .WithReference(rabbitmq)
+    .WithReference(rabbitmq).WaitFor(rabbitmq)
     .WithReference(masterData)
     .WithEnvironment("Services__MasterData__Grpc", masterData.GetEndpoint("https"));
 
@@ -72,7 +72,7 @@ inbound.WithEnvironment(
 var inventory = WithActiveUserChecker(WithJwtValidation(builder.AddProject<Projects.Wms_Inventory_Host_Local>("wms-inventory")))
     .WithReference(inventoryDb, "wms").WaitFor(inventoryDb)
     .WithReference(reportingDb, "telemetry").WaitFor(reportingDb)
-    .WithReference(rabbitmq)
+    .WithReference(rabbitmq).WaitFor(rabbitmq)
     .WithEnvironment("Inventory__Receiving__ReceivingLocationId", "b0000000-0000-0000-0000-000000000001")
     .WithEnvironment("Inventory__Receiving__QuarantineLocationId", "b0000000-0000-0000-0000-000000000003")
     .WithEnvironment("Inventory__Receiving__PutawayDestinationId", "b0000000-0000-0000-0000-000000000002")
@@ -81,7 +81,7 @@ var inventory = WithActiveUserChecker(WithJwtValidation(builder.AddProject<Proje
 var outbound = WithActiveUserChecker(WithJwtValidation(builder.AddProject<Projects.Wms_Outbound_Host_Local>("wms-outbound")))
     .WithReference(outboundDb, "wms").WaitFor(outboundDb)
     .WithReference(reportingDb, "telemetry").WaitFor(reportingDb)
-    .WithReference(rabbitmq)
+    .WithReference(rabbitmq).WaitFor(rabbitmq)
     .WithReference(masterData)
     .WithEnvironment("Services__MasterData__Grpc", masterData.GetEndpoint("https"))
     .WithEnvironment("Outbound__Picking__DefaultPickerId", "c0000000-0000-0000-0000-000000000001");
@@ -89,11 +89,11 @@ var outbound = WithActiveUserChecker(WithJwtValidation(builder.AddProject<Projec
 // Consumer hosts.
 var reporting = WithActiveUserChecker(WithJwtValidation(builder.AddProject<Projects.Wms_Reporting_Host_Local>("wms-reporting")))
     .WithReference(reportingDb, "wms").WaitFor(reportingDb)
-    .WithReference(rabbitmq);
+    .WithReference(rabbitmq).WaitFor(rabbitmq);
 
 var notifications = WithJwtValidation(builder.AddProject<Projects.Wms_Notifications_Host_Local>("wms-notifications"))
     .WithReference(notificationsDb, "wms").WaitFor(notificationsDb)
-    .WithReference(rabbitmq)
+    .WithReference(rabbitmq).WaitFor(rabbitmq)
     .WithReference(auth)
     .WithEnvironment("Services__Auth__Grpc", auth.GetEndpoint("https"));
 

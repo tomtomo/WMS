@@ -1,0 +1,105 @@
+@using System.ComponentModel.DataAnnotations
+@inject WmsApiClient Api
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <div style="min-width:480px;">
+            @if (_warehouses.Count == 0)
+            {
+                <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-2">
+                    Belum ada warehouse aktif. Buat dulu di Master Data → Warehouses.
+                </MudAlert>
+            }
+            <EditForm EditContext="_editContext" OnValidSubmit="SubmitAsync">
+                <DataAnnotationsValidator />
+                <MudSelect T="Guid" @bind-Value="_form.WarehouseId" Label="Warehouse" Variant="Variant.Outlined" Class="mb-2" Placeholder="Pilih warehouse">
+                    @foreach (var warehouse in _warehouses)
+                    {
+                        <MudSelectItem T="Guid" Value="@warehouse.WarehouseId">@warehouse.Name</MudSelectItem>
+                    }
+                </MudSelect>
+                <MudSelect T="string" @bind-Value="_form.Type" Label="Type" Variant="Variant.Outlined" Class="mb-2" Placeholder="Pilih tipe">
+                    @foreach (var type in LocationTypes)
+                    {
+                        <MudSelectItem T="string" Value="@type">@type</MudSelectItem>
+                    }
+                </MudSelect>
+                <MudTextField @bind-Value="_form.Code" Label="Code (mis. RACK-B12-03)" Required="true" Variant="Variant.Outlined" Class="mb-2" />
+                <ValidationSummary />
+            </EditForm>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Disabled="_busy">Batal</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SubmitAsync" Disabled="@(_busy || _warehouses.Count == 0)">@(_busy ? "..." : "Simpan")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private static readonly string[] LocationTypes = ["ReceivingArea", "Rack", "QuarantineArea", "StagingArea"];
+
+    [CascadingParameter]
+    private IMudDialogInstance Dialog { get; set; } = default!;
+
+    private readonly LocationForm _form = new();
+    private EditContext _editContext = default!;
+    private IReadOnlyList<WarehouseDto> _warehouses = [];
+    private bool _busy;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _editContext = new EditContext(_form);
+        var result = await Api.MasterData.ListWarehousesAsync(1, 200, includeInactive: false);
+        if (result.Success)
+        {
+            _warehouses = result.Value!.Items;
+        }
+    }
+
+    private async Task SubmitAsync()
+    {
+        if (!_editContext.Validate())
+        {
+            return;
+        }
+
+        if (_form.WarehouseId == Guid.Empty)
+        {
+            Snackbar.Add("Pilih warehouse dulu.", Severity.Warning);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_form.Type))
+        {
+            Snackbar.Add("Pilih tipe lokasi dulu.", Severity.Warning);
+            return;
+        }
+
+        _busy = true;
+        var result = await Api.MasterData.CreateLocationAsync(new CreateLocationRequest(_form.WarehouseId, _form.Type, _form.Code));
+        _busy = false;
+
+        if (result.Success)
+        {
+            Snackbar.Add($"Location {_form.Code} dibuat.", Severity.Success);
+            Dialog.Close(DialogResult.Ok(true));
+        }
+        else
+        {
+            Snackbar.Add($"Gagal: {result.ErrorMessage}", Severity.Error);
+        }
+    }
+
+    private void Cancel() => Dialog.Cancel();
+
+    private sealed class LocationForm
+    {
+        public Guid WarehouseId { get; set; }
+
+        public string Type { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Code wajib.")]
+        public string Code { get; set; } = string.Empty;
+    }
+}

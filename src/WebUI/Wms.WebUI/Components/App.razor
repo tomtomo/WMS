@@ -11,7 +11,6 @@
     }
     @if (!string.IsNullOrEmpty(appInsightsConnection))
     {
-        @* Sediakan connection string untuk App Insights JS SDK agar page view dan error browser ikut tercatat. *@
         <script>window.wmsTelemetry = { appInsightsConnectionString: "@appInsightsConnection" };</script>
     }
     <HeadOutlet @rendermode="InteractiveServer" />

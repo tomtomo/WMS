@@ -9,38 +9,102 @@
 
 <MudLayout>
     <MudAppBar Elevation="1">
-        <MudText Typo="Typo.h6" Class="mr-4">TomSandbox WMS</MudText>
-        <MudButton Href="/" Color="Color.Inherit">Home</MudButton>
         <AuthorizeView>
-            <Authorized Context="auth">
-                @if (auth.User.HasPermission(UiPermissions.ReadGR))
-                {
-                    <MudButton Href="/inbound/goods-receipts" Color="Color.Inherit">Goods Receipts</MudButton>
-                }
-                @if (auth.User.HasPermission(UiPermissions.CompletePutaway))
-                {
-                    <MudButton Href="/inventory/putaway" Color="Color.Inherit">Putaway</MudButton>
-                }
-                <MudBadge Content="State.UnreadCount" Visible="State.UnreadCount > 0" Color="Color.Error" Overlap="true" Class="mx-2">
-                    <MudButton Href="/inbox" Color="Color.Inherit">Inbox</MudButton>
+            <Authorized>
+                <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="ToggleDrawer" />
+            </Authorized>
+        </AuthorizeView>
+        <MudText Typo="Typo.h6" Class="ml-2">TomSandbox WMS</MudText>
+        <MudSpacer />
+        <AuthorizeView>
+            <Authorized>
+                <MudBadge Content="State.UnreadCount" Visible="State.UnreadCount > 0" Color="Color.Error" Overlap="true" Dot="false">
+                    <MudTooltip Text="Inbox">
+                        <MudIconButton Icon="@Icons.Material.Filled.Notifications" Color="Color.Inherit" Href="/inbox" />
+                    </MudTooltip>
                 </MudBadge>
-                @if (auth.User.HasPermission(UiPermissions.ReadStock))
-                {
-                    <MudButton Href="/reports/stock" Color="Color.Inherit">Stock</MudButton>
-                }
-                <MudSpacer />
                 <NotificationListener />
                 <UserBadge />
                 <form method="post" action="/bff/logout" data-enhance-nav="false" style="display:inline">
-                    <MudButton ButtonType="ButtonType.Submit" Color="Color.Inherit">Logout</MudButton>
+                    <MudButton ButtonType="ButtonType.Submit" Color="Color.Inherit" StartIcon="@Icons.Material.Filled.Logout">Logout</MudButton>
                 </form>
             </Authorized>
             <NotAuthorized>
-                <MudSpacer />
-                <MudButton Href="/login" Color="Color.Inherit">Login</MudButton>
+                <MudButton Href="/login" Color="Color.Inherit" StartIcon="@Icons.Material.Filled.Login">Login</MudButton>
             </NotAuthorized>
         </AuthorizeView>
     </MudAppBar>
+
+    <AuthorizeView>
+        <Authorized Context="auth">
+            <MudDrawer @bind-Open="_drawerOpen" Elevation="2" Variant="@DrawerVariant.Responsive" ClipMode="DrawerClipMode.Always">
+                <MudNavMenu Class="pa-2">
+                    <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">Dashboard</MudNavLink>
+
+                    @if (auth.User.HasPermission(UiPermissions.ReadGR))
+                    {
+                        <MudNavGroup Title="Inbound" Icon="@Icons.Material.Filled.Login" Expanded="true">
+                            <MudNavLink Href="/inbound/goods-receipts" Icon="@Icons.Material.Filled.Receipt">Goods Receipts</MudNavLink>
+                        </MudNavGroup>
+                    }
+                    @if (auth.User.HasPermission(UiPermissions.CompletePutaway))
+                    {
+                        <MudNavGroup Title="Inventory" Icon="@Icons.Material.Filled.Warehouse" Expanded="true">
+                            <MudNavLink Href="/inventory/putaway" Icon="@Icons.Material.Filled.MoveToInbox">Putaway</MudNavLink>
+                        </MudNavGroup>
+                    }
+                    @if (auth.User.HasPermission(UiPermissions.CreateOutboundOrder)
+                         || auth.User.HasPermission(UiPermissions.CreateWave)
+                         || auth.User.HasPermission(UiPermissions.CompletePickingTask))
+                    {
+                        <MudNavGroup Title="Outbound" Icon="@Icons.Material.Filled.LocalShipping" Expanded="true">
+                            @if (auth.User.HasPermission(UiPermissions.CreateOutboundOrder))
+                            {
+                                <MudNavLink Href="/outbound/orders" Icon="@Icons.Material.Filled.ReceiptLong">Orders</MudNavLink>
+                            }
+                            @if (auth.User.HasPermission(UiPermissions.CreateWave))
+                            {
+                                <MudNavLink Href="/outbound/waves" Icon="@Icons.Material.Filled.Layers">Waves</MudNavLink>
+                            }
+                            @if (auth.User.HasPermission(UiPermissions.CompletePickingTask))
+                            {
+                                <MudNavLink Href="/outbound/picking" Icon="@Icons.Material.Filled.Checklist">Picking</MudNavLink>
+                            }
+                        </MudNavGroup>
+                    }
+                    @if (auth.User.HasPermission(UiPermissions.ManageProduct)
+                         || auth.User.HasPermission(UiPermissions.ManageLocation)
+                         || auth.User.HasPermission(UiPermissions.ManageWarehouse))
+                    {
+                        <MudNavGroup Title="Master Data" Icon="@Icons.Material.Filled.Storage" Expanded="false">
+                            @if (auth.User.HasPermission(UiPermissions.ManageProduct))
+                            {
+                                <MudNavLink Href="/master-data/products" Icon="@Icons.Material.Filled.Inventory2">Products</MudNavLink>
+                            }
+                            @if (auth.User.HasPermission(UiPermissions.ManageLocation))
+                            {
+                                <MudNavLink Href="/master-data/locations" Icon="@Icons.Material.Filled.PinDrop">Locations</MudNavLink>
+                            }
+                            @if (auth.User.HasPermission(UiPermissions.ManageWarehouse))
+                            {
+                                <MudNavLink Href="/master-data/warehouses" Icon="@Icons.Material.Filled.Business">Warehouses</MudNavLink>
+                            }
+                        </MudNavGroup>
+                    }
+                    @if (auth.User.HasPermission(UiPermissions.ReadStock))
+                    {
+                        <MudNavGroup Title="Reports" Icon="@Icons.Material.Filled.Assessment" Expanded="false">
+                            <MudNavLink Href="/reports/stock-on-hand" Icon="@Icons.Material.Filled.Inventory">Stock on Hand</MudNavLink>
+                            <MudNavLink Href="/reports/dispatch-summary" Icon="@Icons.Material.Filled.LocalShipping">Dispatch Summary</MudNavLink>
+                            <MudNavLink Href="/reports/operator-productivity" Icon="@Icons.Material.Filled.Groups">Operator Productivity</MudNavLink>
+                            <MudNavLink Href="/reports/supplier-performance" Icon="@Icons.Material.Filled.Factory">Supplier Performance</MudNavLink>
+                        </MudNavGroup>
+                    }
+                </MudNavMenu>
+            </MudDrawer>
+        </Authorized>
+    </AuthorizeView>
+
     <MudMainContent>
         <MudContainer MaxWidth="MaxWidth.Large" Class="mt-6">
             @Body
@@ -49,6 +113,10 @@
 </MudLayout>
 
 @code {
+    private bool _drawerOpen = true;
+
+    private void ToggleDrawer() => _drawerOpen = !_drawerOpen;
+
     protected override void OnInitialized() => State.Changed += OnChanged;
 
     private void OnChanged() => InvokeAsync(StateHasChanged);
