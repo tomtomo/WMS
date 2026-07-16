@@ -2,24 +2,24 @@ using System.Collections.Concurrent;
 
 namespace Wms.WebUI.Bff;
 
-// Menyimpan access token di sisi server. Browser cukup memegang cookie sesi HttpOnly, bukan JWT.
+// Menyimpan token di sisi server. Browser cukup memegang cookie sesi HttpOnly, bukan JWT.
 public interface ITokenStore
 {
-    void Set(string sessionId, string accessToken);
+    void Set(string sessionId, TokenSet tokens);
 
-    string? Get(string sessionId);
+    TokenSet? Get(string sessionId);
 
     void Remove(string sessionId);
 }
 
-// Local single instance. Cloud (multi-instance)
+// Implementasi lokal memakai memory store; deployment multi-instance perlu store terdistribusi seperti Redis.
 internal sealed class InMemoryTokenStore : ITokenStore
 {
-    private readonly ConcurrentDictionary<string, string> _tokens = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, TokenSet> _tokens = new(StringComparer.Ordinal);
 
-    public void Set(string sessionId, string accessToken) => _tokens[sessionId] = accessToken;
+    public void Set(string sessionId, TokenSet tokens) => _tokens[sessionId] = tokens;
 
-    public string? Get(string sessionId) => _tokens.TryGetValue(sessionId, out var token) ? token : null;
+    public TokenSet? Get(string sessionId) => _tokens.TryGetValue(sessionId, out var tokens) ? tokens : null;
 
     public void Remove(string sessionId) => _tokens.TryRemove(sessionId, out _);
 }

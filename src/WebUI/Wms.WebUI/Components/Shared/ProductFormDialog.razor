@@ -1,0 +1,83 @@
+@using System.ComponentModel.DataAnnotations
+@inject WmsApiClient Api
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <div style="min-width:480px;">
+            <EditForm EditContext="_editContext" OnValidSubmit="SubmitAsync">
+                <DataAnnotationsValidator />
+                <MudTextField @bind-Value="_form.Sku" Label="SKU" Required="true" Variant="Variant.Outlined" Class="mb-2" />
+                <MudTextField @bind-Value="_form.Name" Label="Name" Required="true" Variant="Variant.Outlined" Class="mb-2" />
+                <MudTextField @bind-Value="_form.Uom" Label="UOM (mis. CARTON)" Required="true" Variant="Variant.Outlined" Class="mb-2" />
+                <MudSwitch @bind-Value="_form.BatchTrackingRequired" Label="Batch tracking" Color="Color.Primary" T="bool" />
+                <MudSwitch @bind-Value="_form.ExpiryTrackingRequired" Label="Expiry tracking" Color="Color.Primary" T="bool" />
+                <MudSwitch @bind-Value="_form.QcRequiredOnReceipt" Label="QC on receipt" Color="Color.Primary" T="bool" />
+                <MudNumericField @bind-Value="_form.ShelfLifeDays" Label="Shelf life (hari, opsional)" Min="0" Variant="Variant.Outlined" Class="mt-2" />
+                <ValidationSummary />
+            </EditForm>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Disabled="_busy">Batal</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SubmitAsync" Disabled="_busy">@(_busy ? "..." : "Simpan")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance Dialog { get; set; } = default!;
+
+    private readonly ProductForm _form = new();
+    private EditContext _editContext = default!;
+    private bool _busy;
+
+    protected override void OnInitialized() => _editContext = new EditContext(_form);
+
+    private async Task SubmitAsync()
+    {
+        if (!_editContext.Validate())
+        {
+            return;
+        }
+
+        _busy = true;
+        var request = new CreateProductRequest(
+            _form.Sku, _form.Name, _form.Uom,
+            _form.BatchTrackingRequired, _form.ExpiryTrackingRequired, _form.QcRequiredOnReceipt, _form.ShelfLifeDays);
+        var result = await Api.MasterData.CreateProductAsync(request);
+        _busy = false;
+
+        if (result.Success)
+        {
+            Snackbar.Add($"Product {_form.Sku} dibuat.", Severity.Success);
+            Dialog.Close(DialogResult.Ok(true));
+        }
+        else
+        {
+            Snackbar.Add($"Gagal: {result.ErrorMessage}", Severity.Error);
+        }
+    }
+
+    private void Cancel() => Dialog.Cancel();
+
+    private sealed class ProductForm
+    {
+        [Required(ErrorMessage = "SKU wajib.")]
+        public string Sku { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Name wajib.")]
+        public string Name { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "UOM wajib.")]
+        public string Uom { get; set; } = string.Empty;
+
+        public bool BatchTrackingRequired { get; set; }
+
+        public bool ExpiryTrackingRequired { get; set; }
+
+        public bool QcRequiredOnReceipt { get; set; }
+
+        public int? ShelfLifeDays { get; set; }
+    }
+}

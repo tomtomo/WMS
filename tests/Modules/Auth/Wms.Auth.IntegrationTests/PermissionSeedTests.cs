@@ -13,7 +13,8 @@ namespace Wms.Auth.IntegrationTests;
 [Collection(PostgresCollection.Name)]
 public sealed class PermissionSeedTests(PostgresFixture postgres) : IAsyncLifetime
 {
-    private const int CatalogSize = 23;
+    // Katalog berisi 23 permission lama dan Outbound.CreateOrder.
+    private const int CatalogSize = 24;
 
     private ServiceProvider _provider = null!;
 
@@ -98,5 +99,51 @@ public sealed class PermissionSeedTests(PostgresFixture postgres) : IAsyncLifeti
         dto.Should().NotBeNull();
         dto!.PermissionCodes.Should().HaveCount(3).And.OnlyHaveUniqueItems("union tanpa duplikat meski dua role overlap");
         dto.PermissionCodes.Should().Contain("Inbound.PostGR").And.Contain("Inbound.ScanGR").And.Contain("Inbound.HoldGR");
+    }
+
+    // Seed ulang harus melengkapi role Admin lama, termasuk saat database berasal dari persistent volume.
+    [Fact]
+    public async Task Seed_reconciles_existing_admin_role_to_full_catalog()
+    {
+        await AuthTestHost.SeedAsync(_provider);
+
+        // Buat kondisi role Admin lama dengan menghapus satu permission.
+        using (var scope = _provider.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
+            var admin = await context.Set<Role>().IgnoreQueryFilters().FirstAsync(role => role.Code == "Admin");
+            var catalog = await context.Set<Permission>().ToListAsync();
+            var trimmed = catalog.Skip(1).Select(permission => permission.Id.Value);
+            admin.SetPermissions(trimmed);
+            await context.SaveChangesAsync();
+        }
+
+        await AuthTestHost.SeedAsync(_provider);
+
+        using (var scope = _provider.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
+            var admin = await context.Set<Role>().IgnoreQueryFilters().FirstAsync(role => role.Code == "Admin");
+            admin.PermissionIds.Should().HaveCount(CatalogSize, "admin di-reconcile ke full catalog meski role sudah ada");
+        }
+    }
+
+    // Seed pengguna Viewer untuk test visibilitas tombol dan respons 403 pada kriteria 6.
+    [Fact]
+    public async Task Seed_creates_a_read_only_viewer_user_without_write_permissions()
+    {
+        await AuthTestHost.SeedAsync(_provider);
+
+        using var scope = _provider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
+        var viewer = await context.Set<User>().FirstOrDefaultAsync(user => user.Username == "viewer");
+        viewer.Should().NotBeNull("low-perm user untuk probe ⑥ harus ter-seed");
+
+        var dto = await scope.ServiceProvider.GetRequiredService<IUserReader>().GetByIdAsync(viewer!.Id.Value);
+        dto.Should().NotBeNull();
+        dto!.PermissionCodes.Should().Contain("Outbound.Read", "Viewer boleh baca");
+        dto.PermissionCodes.Should().NotContain("Outbound.CreateOrder", "Viewer tak boleh aksi gated");
+        dto.PermissionCodes.Should().NotContain("Outbound.CreateWave");
+        dto.PermissionCodes.Should().NotContain("Inbound.CreateGR");
     }
 }

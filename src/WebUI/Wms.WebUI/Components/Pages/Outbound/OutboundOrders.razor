@@ -1,0 +1,158 @@
+@page "/outbound/orders"
+@inherits AuthAwareComponentBase
+@inject WmsApiClient Api
+@inject ISnackbar Snackbar
+
+<PageTitle>WMS — Outbound Orders</PageTitle>
+
+<MudText Typo="Typo.h4" GutterBottom="true">Outbound Orders</MudText>
+
+<MudGrid>
+    <MudItem xs="12" md="6">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h6" GutterBottom="true">Buat Order</MudText>
+            <MudTextField @bind-Value="_customerId" Label="Customer Id (GUID)" Margin="Margin.Dense" />
+            <MudTextField @bind-Value="_recipient" Label="Recipient" Margin="Margin.Dense" />
+            <MudTextField @bind-Value="_addressLine" Label="Address" Margin="Margin.Dense" />
+            <MudTextField @bind-Value="_city" Label="City" Margin="Margin.Dense" />
+            <MudText Typo="Typo.subtitle2" Class="mt-3">Order Lines</MudText>
+            @if (_products.Count == 0)
+            {
+                <MudAlert Severity="Severity.Warning" Dense="true" Class="my-2">
+                    Belum ada product aktif. Buat dulu di Master Data → Products.
+                </MudAlert>
+            }
+            @foreach (var line in _lines)
+            {
+                <div class="d-flex gap-2 align-center" @key="line">
+                    <MudSelect T="string" @bind-Value="line.Sku" Label="SKU" Margin="Margin.Dense" Style="min-width:220px">
+                        @foreach (var product in _products)
+                        {
+                            <MudSelectItem T="string" Value="@product.Sku">@product.Sku — @product.Name</MudSelectItem>
+                        }
+                    </MudSelect>
+                    <MudNumericField @bind-Value="line.Qty" Label="Qty" Min="1" Margin="Margin.Dense" />
+                    <MudTextField Value="@UomFor(line.Sku)" Label="Uom" Margin="Margin.Dense" ReadOnly="true" Disabled="true" Style="max-width:90px" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" OnClick="() => _lines.Remove(line)" />
+                </div>
+            }
+            <MudButton StartIcon="@Icons.Material.Filled.Add" OnClick="AddLine">Line</MudButton>
+            <div class="mt-3">
+                @if (User.HasPermission(UiPermissions.CreateOutboundOrder))
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="CreateAsync" Disabled="_busy">Buat Order</MudButton>
+                }
+            </div>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" md="6">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h6" GutterBottom="true">Backlog</MudText>
+            @if (_loading)
+            {
+                <MudProgressCircular Indeterminate="true" Size="Size.Small" />
+            }
+            else if (_backlog.Count == 0)
+            {
+                <MudText>Tidak ada order backlog.</MudText>
+            }
+            else
+            {
+                <MudTable Items="_backlog" Dense="true" Hover="true">
+                    <HeaderContent>
+                        <MudTh>Order</MudTh>
+                        <MudTh>Items</MudTh>
+                        <MudTh>Status</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Order"><MudLink Href="@($"/outbound/orders/{context.OrderId}")">@OrderDisplay.Short(context.OrderId)</MudLink></MudTd>
+                        <MudTd DataLabel="Items">@OrderDisplay.LinesSummary(context.Lines)</MudTd>
+                        <MudTd DataLabel="Status"><MudChip T="string" Size="Size.Small" Color="@OrderDisplay.StatusColor(context.Status)">@context.Status</MudChip></MudTd>
+                    </RowTemplate>
+                </MudTable>
+            }
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private string _customerId = Guid.NewGuid().ToString();
+    private string _recipient = "Toko Tom";
+    private string _addressLine = "Jl. Merdeka 1";
+    private string _city = "Jakarta";
+    private readonly List<LineInput> _lines = [new()];
+    private IReadOnlyList<ProductDto> _products = [];
+    private IReadOnlyList<OrderBacklogDto> _backlog = [];
+    private bool _loading;
+    private bool _busy;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        await LoadProductsAsync();
+        await LoadBacklogAsync();
+    }
+
+    private void AddLine() => _lines.Add(new());
+
+    private string UomFor(string sku) => _products.FirstOrDefault(product => product.Sku == sku)?.Uom ?? string.Empty;
+
+    private async Task LoadProductsAsync()
+    {
+        var result = await Api.MasterData.ListProductsAsync(1, 200, includeInactive: false);
+        if (result.Success)
+        {
+            _products = result.Value!.Items;
+        }
+    }
+
+    private async Task LoadBacklogAsync()
+    {
+        _loading = true;
+        var result = await Api.Outbound.GetBacklogAsync();
+        if (result.Success)
+        {
+            _backlog = result.Value!;
+        }
+        else
+        {
+            Snackbar.Add($"Gagal memuat backlog: {result.ErrorMessage}", Severity.Warning);
+        }
+
+        _loading = false;
+    }
+
+    private async Task CreateAsync()
+    {
+        if (!Guid.TryParse(_customerId, out var customer))
+        {
+            Snackbar.Add("Customer Id harus GUID valid.", Severity.Error);
+            return;
+        }
+
+        _busy = true;
+        var request = new CreateOutboundOrderRequest(
+            customer, _recipient, _addressLine, _city,
+            [.. _lines.Select(line => new OrderLineRequest(line.Sku, line.Qty, UomFor(line.Sku)))]);
+        var result = await Api.Outbound.CreateOrderAsync(request);
+        _busy = false;
+
+        if (result.Success)
+        {
+            Snackbar.Add("Order dibuat.", Severity.Success);
+            await LoadBacklogAsync();
+        }
+        else
+        {
+            Snackbar.Add($"Gagal: {result.ErrorMessage}", Severity.Error);
+        }
+    }
+
+    private sealed class LineInput
+    {
+        public string Sku { get; set; } = "SKU-MILK";
+
+        public decimal Qty { get; set; } = 10;
+    }
+}

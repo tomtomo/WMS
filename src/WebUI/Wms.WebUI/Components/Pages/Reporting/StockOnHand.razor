@@ -1,0 +1,39 @@
+@page "/reports/stock-on-hand"
+@inject WmsApiClient Api
+@inject WarehouseNameResolver Warehouses
+@inject ISnackbar Snackbar
+
+<PageTitle>WMS — Stock on Hand</PageTitle>
+
+<PageHeader Title="Stock on Hand" />
+
+<MudTable T="StockOnHandRow" ServerData="LoadAsync" Dense="true" Hover="true">
+    <HeaderContent>
+        <MudTh>SKU</MudTh>
+        <MudTh>Warehouse</MudTh>
+        <MudTh>Batch</MudTh>
+        <MudTh>Qty on Hand</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="SKU">@context.Sku</MudTd>
+        <MudTd DataLabel="Warehouse">@Warehouses.Resolve(context.WarehouseId)</MudTd>
+        <MudTd DataLabel="Batch">@(context.Batch ?? "-")</MudTd>
+        <MudTd DataLabel="Qty on Hand">@context.QtyOnHand</MudTd>
+    </RowTemplate>
+    <NoRecordsContent>
+        <MudText Class="pa-4">Belum ada data stock.</MudText>
+    </NoRecordsContent>
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
+</MudTable>
+
+@code {
+    protected override Task OnInitializedAsync() => Warehouses.EnsureLoadedAsync();
+
+    private async Task<TableData<StockOnHandRow>> LoadAsync(TableState state, CancellationToken cancellationToken)
+    {
+        var result = await Api.Reporting.StockOnHandAsync(state.Page + 1, state.PageSize, cancellationToken: cancellationToken);
+        return result.ToTableData(Snackbar);
+    }
+}

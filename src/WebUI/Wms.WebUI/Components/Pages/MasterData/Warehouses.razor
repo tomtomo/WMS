@@ -1,0 +1,57 @@
+@page "/master-data/warehouses"
+@inherits MasterDataCrudPageBase<WarehouseDto>
+
+<PageTitle>WMS — Warehouses</PageTitle>
+
+<PageHeader Title="Warehouses">
+    <Actions>
+        @if (User.HasPermission(UiPermissions.ManageWarehouse))
+        {
+            <MudButton StartIcon="@Icons.Material.Filled.Add" Color="Color.Primary" Variant="Variant.Filled" OnClick="OpenCreateAsync">Tambah Warehouse</MudButton>
+        }
+    </Actions>
+</PageHeader>
+
+<MudPaper Class="pa-3 mb-4" Outlined="true">
+    <MudSwitch @bind-Value="ShowInactive" Label="Tampilkan inactive" Color="Color.Primary" T="bool" @bind-Value:after="Reload" />
+</MudPaper>
+
+<MudTable T="WarehouseDto" ServerData="LoadAsync" Dense="true" Hover="true" @ref="Table">
+    <HeaderContent>
+        <MudTh>Name</MudTh>
+        <MudTh>Address</MudTh>
+        <MudTh>Active</MudTh>
+        <MudTh Style="width:60px" />
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Name">@context.Name</MudTd>
+        <MudTd DataLabel="Address">@context.Address</MudTd>
+        <MudTd DataLabel="Active">@(context.IsActive ? "✓" : "✗")</MudTd>
+        <MudTd>
+            @if (context.IsActive && User.HasPermission(UiPermissions.ManageWarehouse))
+            {
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error"
+                               aria-label="Deactivate warehouse" OnClick="@(() => DeactivateAsync(context))" />
+            }
+        </MudTd>
+    </RowTemplate>
+    <NoRecordsContent>
+        <MudText Class="pa-4">Belum ada warehouse untuk filter ini.</MudText>
+    </NoRecordsContent>
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
+</MudTable>
+
+@code {
+    protected override Task<ApiResult<PagedResult<WarehouseDto>>> ListAsync(int page, int pageSize, bool includeInactive, CancellationToken cancellationToken)
+        => Api.MasterData.ListWarehousesAsync(page, pageSize, includeInactive, cancellationToken);
+
+    protected override Type FormDialogType => typeof(WarehouseFormDialog);
+
+    protected override string EntityLabel => "Warehouse";
+
+    protected override string Describe(WarehouseDto row) => row.Name;
+
+    protected override Task<ApiResult> DeactivateCoreAsync(WarehouseDto row) => Api.MasterData.DeactivateWarehouseAsync(row.WarehouseId);
+}

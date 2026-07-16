@@ -1,0 +1,264 @@
+@page "/inbound/goods-receipts/{GoodsReceiptId:guid}"
+@inherits AuthAwareComponentBase
+@using Microsoft.JSInterop
+@inject WmsApiClient Api
+@inject WarehouseNameResolver Warehouses
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@inject IJSRuntime JS
+
+<PageTitle>WMS — Goods Receipt Detail</PageTitle>
+
+<PageHeader Title="Goods Receipt Detail">
+    <Actions>
+        <MudButton Href="/inbound/goods-receipts" StartIcon="@Icons.Material.Filled.ArrowBack" Variant="Variant.Outlined">Kembali ke Goods Receipts</MudButton>
+    </Actions>
+</PageHeader>
+
+@if (_loading)
+{
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" />
+}
+else if (_gr is null)
+{
+    <MudAlert Severity="Severity.Warning">Goods Receipt tidak ditemukan.</MudAlert>
+}
+else
+{
+    <MudPaper Class="pa-4 mb-4" Outlined="true" Style="max-width:680px">
+        <MudSimpleTable Dense="true" Hover="false" Elevation="0">
+            <tbody>
+                <tr><td><b>GR Id</b></td><td>@_gr.GoodsReceiptId</td></tr>
+                <tr><td><b>PO Ref</b></td><td>@_gr.PoRef</td></tr>
+                <tr><td><b>Warehouse</b></td><td>@Warehouses.Resolve(_gr.WarehouseId)</td></tr>
+                <tr><td><b>Dock Door</b></td><td>@_gr.DockDoor</td></tr>
+                <tr><td><b>Status</b></td><td><MudChip T="string" Size="Size.Small" Color="StatusColor(_gr.Status)">@_gr.Status</MudChip></td></tr>
+                @if (!string.IsNullOrWhiteSpace(_gr.HoldReason))
+                {
+                    <tr><td><b>Hold Reason</b></td><td>@_gr.HoldReason</td></tr>
+                }
+            </tbody>
+        </MudSimpleTable>
+    </MudPaper>
+
+    <MudText Typo="Typo.h6" GutterBottom="true">Expected Lines</MudText>
+    <MudSimpleTable Dense="true" Hover="true" Class="mb-4" Style="max-width:680px">
+        <thead><tr><th>SKU</th><th>Expected Qty</th><th>UOM</th></tr></thead>
+        <tbody>
+            @foreach (var line in _gr.ExpectedLines)
+            {
+                <tr><td>@line.Sku</td><td>@line.ExpectedQty</td><td>@line.Uom</td></tr>
+            }
+        </tbody>
+    </MudSimpleTable>
+
+    <MudText Typo="Typo.h6" GutterBottom="true">Scanned Lines</MudText>
+    @if (_gr.ScannedLines.Count == 0)
+    {
+        <MudText Class="mb-4">Belum ada scan.</MudText>
+    }
+    else
+    {
+        <MudSimpleTable Dense="true" Hover="true" Class="mb-4" Style="max-width:680px">
+            <thead><tr><th>SKU</th><th>Actual Qty</th><th>Batch</th><th>Line Status</th></tr></thead>
+            <tbody>
+                @foreach (var line in _gr.ScannedLines)
+                {
+                    <tr><td>@line.Sku</td><td>@line.ActualQty</td><td>@(line.Batch ?? "-")</td><td>@line.LineStatus</td></tr>
+                }
+            </tbody>
+        </MudSimpleTable>
+    }
+
+    @if (_gr.Discrepancies.Count > 0)
+    {
+        <MudText Typo="Typo.h6" GutterBottom="true">Discrepancies</MudText>
+        <MudSimpleTable Dense="true" Hover="true" Class="mb-4" Style="max-width:680px">
+            <thead><tr><th>SKU</th><th>Type</th><th>Qty</th></tr></thead>
+            <tbody>
+                @foreach (var discrepancy in _gr.Discrepancies)
+                {
+                    <tr><td>@discrepancy.Sku</td><td>@discrepancy.Type</td><td>@discrepancy.Qty</td></tr>
+                }
+            </tbody>
+        </MudSimpleTable>
+    }
+
+    <MudPaper Class="pa-4" Outlined="true" Style="max-width:680px">
+        <div class="d-flex align-center mb-1">
+            <MudText Typo="Typo.h6">Attachments</MudText>
+            <MudSpacer />
+            @if (User.HasPermission(UiPermissions.UploadGRAttachment))
+            {
+                <MudFileUpload T="IBrowserFile" @ref="_fileUpload" FilesChanged="UploadAsync" Accept=".pdf,.jpg,.jpeg,.png,.webp">
+                    <CustomContent Context="fileUpload">
+                        <MudButton StartIcon="@Icons.Material.Filled.Upload" Variant="Variant.Filled" Color="Color.Primary"
+                                   Disabled="_uploading" OnClick="@(() => fileUpload.OpenFilePickerAsync())">
+                            @(_uploading ? "Mengunggah..." : "Upload")
+                        </MudButton>
+                    </CustomContent>
+                </MudFileUpload>
+            }
+        </div>
+        <MudText Typo="Typo.caption" Class="mud-text-secondary">PDF / JPG / PNG / WebP, maksimal @MaxUploadMb MB.</MudText>
+
+        @if (_attachments.Count == 0)
+        {
+            <MudText Class="mt-3">Belum ada attachment.</MudText>
+        }
+        else
+        {
+            <MudSimpleTable Dense="true" Hover="true" Class="mt-3">
+                <thead><tr><th>File</th><th>Tipe</th><th>Ukuran</th><th>Diunggah</th><th style="width:96px"></th></tr></thead>
+                <tbody>
+                    @foreach (var attachment in _attachments)
+                    {
+                        <tr @key="attachment.AttachmentId">
+                            <td>@attachment.FileName</td>
+                            <td>@attachment.ContentType</td>
+                            <td>@FormatSize(attachment.SizeBytes)</td>
+                            <td>@attachment.UploadedAt.LocalDateTime.ToString("g")</td>
+                            <td>
+                                <MudIconButton Icon="@Icons.Material.Filled.Download" Size="Size.Small"
+                                               aria-label="Download attachment" OnClick="@(() => DownloadAsync(attachment))" />
+                                @if (User.HasPermission(UiPermissions.DeleteGRAttachment))
+                                {
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error"
+                                                   aria-label="Delete attachment" OnClick="@(() => DeleteAsync(attachment))" />
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </MudSimpleTable>
+        }
+    </MudPaper>
+}
+
+@code {
+    private const int MaxUploadMb = 20;
+
+    private static readonly long MaxUploadBytes = MaxUploadMb * 1024L * 1024L;
+
+    [Parameter]
+    public Guid GoodsReceiptId { get; set; }
+
+    private GoodsReceiptDetailDto? _gr;
+    private IReadOnlyList<GRAttachmentDto> _attachments = [];
+    private MudFileUpload<IBrowserFile>? _fileUpload;
+    private bool _loading = true;
+    private bool _uploading;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        await Warehouses.EnsureLoadedAsync();
+        var result = await Api.Inbound.GetGoodsReceiptAsync(GoodsReceiptId);
+        _gr = result.Success ? result.Value : null;
+        _loading = false;
+        if (_gr is not null)
+        {
+            await LoadAttachmentsAsync();
+        }
+    }
+
+    private async Task LoadAttachmentsAsync()
+    {
+        var result = await Api.Inbound.ListAttachmentsAsync(GoodsReceiptId);
+        if (result.Success)
+        {
+            _attachments = result.Value!;
+        }
+        else
+        {
+            Snackbar.Add($"Gagal memuat attachment: {result.ErrorMessage}", Severity.Warning);
+        }
+    }
+
+    private async Task UploadAsync(IBrowserFile? file)
+    {
+        if (file is null)
+        {
+            return;
+        }
+
+        if (file.Size > MaxUploadBytes)
+        {
+            Snackbar.Add($"File terlalu besar (maks {MaxUploadMb} MB).", Severity.Error);
+            return;
+        }
+
+        _uploading = true;
+        try
+        {
+            await using var stream = file.OpenReadStream(MaxUploadBytes);
+            var result = await Api.Inbound.UploadAttachmentAsync(GoodsReceiptId, stream, file.Name, file.ContentType);
+            if (result.Success)
+            {
+                Snackbar.Add("Attachment diunggah.", Severity.Success);
+                await LoadAttachmentsAsync();
+            }
+            else
+            {
+                Snackbar.Add($"Gagal upload: {result.ErrorMessage}", Severity.Error);
+            }
+        }
+        finally
+        {
+            _uploading = false;
+            if (_fileUpload is not null)
+            {
+                // Reset picker agar chip file terpilih tak menetap setelah upload selesai.
+                await _fileUpload.ClearAsync();
+            }
+        }
+    }
+
+    private async Task DownloadAsync(GRAttachmentDto attachment)
+    {
+        var result = await Api.Inbound.GetAttachmentDownloadUrlAsync(GoodsReceiptId, attachment.AttachmentId);
+        if (result.Success)
+        {
+            // Buka pre-signed URL di tab baru; file diunduh langsung dari storage, bukan lewat service.
+            await JS.InvokeVoidAsync("open", result.Value!.Url.ToString(), "_blank");
+        }
+        else
+        {
+            Snackbar.Add($"Gagal ambil URL download: {result.ErrorMessage}", Severity.Error);
+        }
+    }
+
+    private async Task DeleteAsync(GRAttachmentDto attachment)
+    {
+        var parameters = new DialogParameters
+        {
+            [nameof(ConfirmDialog.Message)] = $"Hapus attachment {attachment.FileName}? (soft-delete)",
+            [nameof(ConfirmDialog.ConfirmText)] = "Hapus",
+            [nameof(ConfirmDialog.ConfirmColor)] = Color.Error,
+        };
+        var dialog = await DialogService.ShowAsync<ConfirmDialog>($"Hapus {attachment.FileName}", parameters);
+        var confirmed = await dialog.Result;
+        if (confirmed is { Canceled: false, Data: true })
+        {
+            var result = await Api.Inbound.DeleteAttachmentAsync(GoodsReceiptId, attachment.AttachmentId);
+            Snackbar.Add(
+                result.Success ? "Attachment dihapus." : $"Gagal: {result.ErrorMessage}",
+                result.Success ? Severity.Success : Severity.Error);
+            if (result.Success)
+            {
+                await LoadAttachmentsAsync();
+            }
+        }
+    }
+
+    private static string FormatSize(long bytes) =>
+        bytes >= 1024 * 1024 ? $"{bytes / (1024.0 * 1024.0):0.#} MB" : $"{bytes / 1024.0:0.#} KB";
+
+    private static Color StatusColor(string status) => status switch
+    {
+        "Confirmed" => Color.Success,
+        "Pending" => Color.Info,
+        "Hold" => Color.Warning,
+        _ => Color.Default,
+    };
+}

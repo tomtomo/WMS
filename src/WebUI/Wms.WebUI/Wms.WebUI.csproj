@@ -19,4 +19,8 @@
     <ProjectReference Include="..\..\BuildingBlocks\Wms.BuildingBlocks.Web\Wms.BuildingBlocks.Web.csproj" />
   </ItemGroup>
 
+  <ItemGroup Label="Test BFF">
+    <InternalsVisibleTo Include="Wms.WebUI.IntegrationTests" />
+  </ItemGroup>
+
 </Project>

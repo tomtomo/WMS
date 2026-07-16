@@ -66,6 +66,26 @@ public sealed class RestApiTests(PostgresFixture postgres) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Get_outbound_order_returns_detail_with_lines()
+    {
+        var orderId = await OutboundSeeder.SeedNewOrderAsync(_app.Services, "SKU-MILK", 10m);
+
+        var detail = await _client.GetFromJsonAsync<JsonElement>($"/v1/outbound-orders/{orderId}");
+
+        detail.GetProperty("orderId").GetGuid().Should().Be(orderId);
+        detail.GetProperty("status").GetString().Should().Be("New");
+        detail.GetProperty("lines").GetArrayLength().Should().Be(1);
+    }
+
+    [Fact]
+    public async Task Get_unknown_outbound_order_returns_404()
+    {
+        var response = await _client.GetAsync($"/v1/outbound-orders/{Guid.NewGuid()}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
     public async Task Complete_picking_then_dispatch_via_rest_closes_the_order()
     {
         var orderId = await OutboundSeeder.SeedNewOrderAsync(_app.Services, "SKU-MILK", 10m);
@@ -97,5 +117,27 @@ public sealed class RestApiTests(PostgresFixture postgres) : IAsyncLifetime
 
         var backlog = await _client.GetFromJsonAsync<JsonElement>("/v1/outbound-orders/backlog");
         backlog.GetArrayLength().Should().Be(0, "order terpenuhi semua. Closed, tak balik backlog");
+    }
+
+    [Fact]
+    public async Task Create_outbound_order_via_rest_returns_created_and_appears_in_backlog()
+    {
+        var body = new
+        {
+            customerId = Guid.NewGuid(),
+            recipient = "Toko Tom",
+            addressLine = "Jl. Merdeka 1",
+            city = "Jakarta",
+            lines = new[] { new { sku = "SKU-MILK", qty = 10m, uom = "CARTON" } },
+        };
+
+        var create = await _client.PostAsJsonAsync("/v1/outbound-orders", body);
+
+        create.StatusCode.Should().Be(HttpStatusCode.Created);
+        var orderId = (await create.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("orderId").GetGuid();
+        orderId.Should().NotBeEmpty();
+
+        var backlog = await _client.GetFromJsonAsync<JsonElement>("/v1/outbound-orders/backlog");
+        backlog.GetArrayLength().Should().Be(1);
     }
 }

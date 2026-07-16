@@ -17,12 +17,15 @@ using Wms.BuildingBlocks.Infrastructure.Resilience;
 
 namespace Wms.WebUI.Bff;
 
-// Browser hanya menyimpan cookie HttpOnly. Token internal dan profil Entra tetap disimpan di server, sedangkan API hanya menerima token internal.
+// Browser hanya menyimpan cookie HttpOnly. Token internal dan profil Entra tetap di server; API hanya menerima token internal.
 public static class BffExtensions
 {
     public const string GatewayClientName = "gateway";
 
     public const string GraphClientName = "graph";
+
+    // Client refresh tidak memakai BearerForwardingHandler karena endpoint Auth bersifat anonim dan tidak boleh memicu refresh lagi.
+    public const string AuthRefreshClientName = "auth-refresh";
 
     private const string EntraScheme = "EntraOidc";
 
@@ -34,6 +37,7 @@ public static class BffExtensions
         services.AddHttpContextAccessor();
         services.AddSingleton<ITokenStore, InMemoryTokenStore>();
         services.AddSingleton<IUserProfileStore, InMemoryUserProfileStore>();
+        services.AddSingleton<BffTokenRefresher>();
         services.AddTransient<BearerForwardingHandler>();
 
         var gatewayAddress = new Uri(
@@ -42,19 +46,22 @@ public static class BffExtensions
         services.AddInternalHttpClient(GatewayClientName, gatewayAddress)
             .AddHttpMessageHandler<BearerForwardingHandler>();
 
+        // Pisahkan client refresh agar request ke Auth tidak masuk kembali ke handler bearer.
+        services.AddInternalHttpClient(AuthRefreshClientName, gatewayAddress);
+
         var entra = new EntraBffOptions();
         configuration.GetSection(EntraBffOptions.SectionName).Bind(entra);
         services.AddSingleton(entra);
 
-        // Auth state Blazor (AuthorizeView) dari cookie.
+        // Ambil auth state Blazor dari cookie untuk AuthorizeView.
         services.AddScoped<AuthenticationStateProvider, BffAuthenticationStateProvider>();
         services.AddCascadingAuthenticationState();
 
-        // Sediakan akses ke service dalam circuit Blazor saat HttpContext tidak tersedia.
+        // Sediakan service ini di circuit Blazor saat HttpContext sudah tidak tersedia.
         services.AddScoped<CircuitServicesAccessor>();
         services.AddScoped<CircuitHandler, ServicesAccessorCircuitHandler>();
 
-        // State badge notifikasi in-app per circuit.
+        // Menyimpan status badge notifikasi untuk setiap circuit pengguna.
         services.AddScoped<NotificationState>();
 
         var authentication = services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme);
@@ -69,7 +76,7 @@ public static class BffExtensions
         // Daftarkan login Entra hanya saat dikonfigurasi agar login lokal tetap berjalan tanpa konfigurasi tambahan.
         if (entra.Enabled)
         {
-            // Gunakan timeout, retry, dan circuit breaker untuk panggilan ke Microsoft Graph tanpa menduplikasi handler bawaan.
+            // Terapkan timeout, retry, dan circuit breaker pada panggilan Microsoft Graph.
 #pragma warning disable EXTEXP0001
             services.AddHttpClient(GraphClientName, client =>
                     client.BaseAddress = new Uri(entra.GraphBaseAddress))
@@ -91,7 +98,7 @@ public static class BffExtensions
 
         var bff = app.MapGroup("/bff");
 
-        // Login lokal memakai form post agar cookie dibuat dari response, sekaligus memblokir request lintas situs melalui SameSite=Strict.
+        // Login lokal memakai form POST agar cookie dibuat dari respons dan dilindungi SameSite=Strict.
         bff.MapPost("/login", LoginAsync).DisableAntiforgery();
 
         // Mulai proses login Microsoft dengan mengarahkan pengguna ke Entra ID.
@@ -165,7 +172,7 @@ public static class BffExtensions
         }
 
         var sessionId = Guid.NewGuid().ToString("N");
-        tokenStore.Set(sessionId, token.AccessToken);
+        tokenStore.Set(sessionId, new TokenSet(token.AccessToken, token.RefreshToken, token.ExpiresAt));
 
         var profile = await FetchGraphProfileAsync(httpClientFactory, context.TokenEndpointResponse?.AccessToken);
         profileStore.Set(sessionId, profile);
@@ -258,7 +265,7 @@ public static class BffExtensions
 
         // JWT disimpan server-side. Browser hanya menerima session cookie HttpOnly.
         var sessionId = Guid.NewGuid().ToString("N");
-        tokenStore.Set(sessionId, token.AccessToken);
+        tokenStore.Set(sessionId, new TokenSet(token.AccessToken, token.RefreshToken, token.ExpiresAt));
 
         var claims = new List<Claim> { new(BffClaims.SessionId, sessionId), new(ClaimTypes.Name, credentials.Username) };
         claims.AddRange(ExtractPermissionClaims(token.AccessToken));
@@ -281,24 +288,47 @@ public static class BffExtensions
     private static async Task<IResult> LogoutAsync(
         ITokenStore tokenStore,
         IUserProfileStore profileStore,
+        BffTokenRefresher tokenRefresher,
+        IHttpClientFactory httpClientFactory,
         HttpContext httpContext)
     {
         var sessionId = httpContext.User.FindFirst(BffClaims.SessionId)?.Value;
         if (sessionId is not null)
         {
+            // Cabut refresh token saat logout agar token hasil rotasi tidak tetap aktif.
+            if (tokenStore.Get(sessionId) is { } tokens)
+            {
+                await RevokeRefreshTokenAsync(httpClientFactory, tokens.RefreshToken);
+            }
+
             tokenStore.Remove(sessionId);
             profileStore.Remove(sessionId);
+            tokenRefresher.Forget(sessionId);
         }
 
         await httpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         return Results.Redirect("/login");
+    }
+
+    // Revoke dicoba saat logout, tetapi kegagalannya tidak boleh menghalangi penghapusan sesi lokal.
+    private static async Task RevokeRefreshTokenAsync(IHttpClientFactory httpClientFactory, string refreshToken)
+    {
+        try
+        {
+            var client = httpClientFactory.CreateClient(AuthRefreshClientName);
+            (await client.PostAsJsonAsync("/auth/v1/logout", new { refreshToken })).Dispose();
+        }
+        catch (HttpRequestException)
+        {
+            // Auth tidak bisa dihubungi; sesi lokal sudah dihapus, jadi lanjutkan logout.
+        }
     }
 }
 
 // Kredensial login lokal dari form WebUI ke BFF. Token tak pernah dikirim balik ke browser.
 public sealed record LoginRequest(string Username, string Password);
 
-// Respons token dari gateway (login lokal & entra) dibaca di server dan disimpan di token store.
+// Respons token dari gateway untuk login lokal dan Entra dibaca di server lalu disimpan di token store.
 internal sealed record GatewayTokenResponse(string AccessToken, DateTimeOffset ExpiresAt, string RefreshToken);
 
 // Subset profil Microsoft Graph /me.

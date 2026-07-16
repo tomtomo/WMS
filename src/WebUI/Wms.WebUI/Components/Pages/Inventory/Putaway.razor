@@ -1,0 +1,92 @@
+@page "/inventory/putaway"
+@inherits AuthAwareComponentBase
+@inject WmsApiClient Api
+@inject LocationNameResolver Locations
+@inject ISnackbar Snackbar
+
+<PageTitle>WMS — Putaway</PageTitle>
+
+<MudText Typo="Typo.h4" GutterBottom="true">Putaway Tasks</MudText>
+
+@if (_loading)
+{
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" />
+}
+else if (_tasks.Count == 0)
+{
+    <MudText>Tidak ada task putaway.</MudText>
+}
+else
+{
+    <MudTable Items="_tasks" Dense="true" Hover="true">
+        <HeaderContent>
+            <MudTh>Stock</MudTh>
+            <MudTh>From</MudTh>
+            <MudTh>Suggested Destination</MudTh>
+            <MudTh>Status</MudTh>
+            <MudTh></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Stock">@OrderDisplay.Short(context.StockId)</MudTd>
+            <MudTd DataLabel="From">@Locations.Resolve(context.SourceLocationId)</MudTd>
+            <MudTd DataLabel="Suggested Destination"><b>@Locations.Resolve(context.SuggestedDestinationId)</b></MudTd>
+            <MudTd DataLabel="Status"><MudChip T="string" Size="Size.Small" Color="Color.Info">@context.Status</MudChip></MudTd>
+            <MudTd>
+                @if (User.HasPermission(UiPermissions.CompletePutaway))
+                {
+                    <MudButton Size="Size.Small" Color="Color.Success" Disabled="_busy"
+                               OnClick="() => CompleteAsync(context)">Complete</MudButton>
+                }
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+@code {
+    private IReadOnlyList<PutawayTaskDto> _tasks = [];
+    private bool _loading;
+    private bool _busy;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        await Locations.EnsureLoadedAsync();
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        var result = await Api.Inventory.ListPutawayTasksAsync();
+        if (result.Success)
+        {
+            _tasks = result.Value!;
+        }
+        else
+        {
+            Snackbar.Add($"Gagal memuat task putaway: {result.ErrorMessage}", Severity.Warning);
+        }
+
+        _loading = false;
+    }
+
+    private async Task CompleteAsync(PutawayTaskDto task)
+    {
+        _busy = true;
+        // Operator menaruh ke lokasi yang disarankan.
+        var result = await Api.Inventory.CompletePutawayAsync(
+            task.PutawayTaskId, new CompletePutawayRequest(task.SuggestedDestinationId, OperatorId: null));
+        _busy = false;
+
+        if (result.Success)
+        {
+            Snackbar.Add("Putaway selesai.", Severity.Success);
+            await LoadAsync();
+        }
+        else
+        {
+            Snackbar.Add($"Gagal: {result.ErrorMessage}", Severity.Error);
+        }
+    }
+}

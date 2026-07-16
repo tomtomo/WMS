@@ -3,39 +3,60 @@
 
 <PageTitle>WMS — Login</PageTitle>
 
-<MudText Typo="Typo.h4" GutterBottom="true">Login</MudText>
+<style>
+    .login-field { margin-bottom: 1rem; }
+    .login-field label { display: block; font-size: .8rem; margin-bottom: .3rem; color: var(--mud-palette-text-secondary, #616161); }
+    .login-input {
+        width: 100%; box-sizing: border-box; padding: .65rem .75rem; font-size: 1rem;
+        border: 1px solid var(--mud-palette-lines-inputs, #bdbdbd); border-radius: var(--mud-default-borderradius, 4px);
+        background: var(--mud-palette-surface, #fff); color: var(--mud-palette-text-primary, #212121);
+    }
+    .login-input:focus { outline: none; border-color: var(--mud-palette-primary, #594ae2); box-shadow: 0 0 0 1px var(--mud-palette-primary, #594ae2); }
+    .login-submit {
+        width: 100%; padding: .7rem; margin-top: .5rem; cursor: pointer; font-size: 1rem; font-weight: 500;
+        border: none; border-radius: var(--mud-default-borderradius, 4px);
+        background: var(--mud-palette-primary, #594ae2); color: var(--mud-palette-primary-text, #fff);
+        transition: background .15s ease;
+    }
+    .login-submit:hover { background: var(--mud-palette-primary-darken, #4a3cd0); }
+</style>
 
-@if (Error is not null)
-{
-    <MudAlert Severity="Severity.Error" Class="mb-4">@ErrorMessage</MudAlert>
-}
+<div class="d-flex justify-center" style="margin-top: 3rem;">
+    <MudPaper Elevation="3" Class="pa-8" Style="width: 100%; max-width: 400px;">
+        <MudText Typo="Typo.h5" GutterBottom="true" Class="mb-4">Masuk ke WMS</MudText>
 
-<form method="post" action="/bff/login">
-    <div class="mt-2">
-        <label for="username">Username</label><br />
-        <input id="username" name="username" value="admin" />
-    </div>
-    <div class="mt-2">
-        <label for="password">Password</label><br />
-        <input id="password" name="password" type="password" />
-    </div>
-    <button type="submit" class="mt-4">Masuk</button>
-</form>
+        @if (Error is not null)
+        {
+            <MudAlert Severity="Severity.Error" Class="mb-4">@ErrorMessage</MudAlert>
+        }
 
-@if (Entra.Enabled)
-{
-    <MudDivider Class="my-4" />
-    <MudButton Href="/bff/login/entra" data-enhance-nav="false"
-               Variant="Variant.Outlined" Color="Color.Primary">
-        Sign in with Microsoft
-    </MudButton>
-}
+        <form method="post" action="/bff/login">
+            <div class="login-field">
+                <label for="username">Username</label>
+                <input id="username" name="username" value="admin" class="login-input" autocomplete="username" />
+            </div>
+            <div class="login-field">
+                <label for="password">Password</label>
+                <input id="password" name="password" type="password" class="login-input" autocomplete="current-password" />
+            </div>
+            <button type="submit" class="login-submit">Masuk</button>
+        </form>
+
+        @if (Entra.Enabled)
+        {
+            <MudDivider Class="my-6" />
+            <MudButton Href="/bff/login/entra" data-enhance-nav="false"
+                       Variant="Variant.Outlined" Color="Color.Primary" FullWidth="true">
+                Sign in with Microsoft
+            </MudButton>
+        }
+    </MudPaper>
+</div>
 
 @code {
     [SupplyParameterFromQuery]
     public string? Error { get; set; }
 
-    // Tampilkan pesan yang sesuai untuk kegagalan login lokal maupun login melalui Microsoft.
     private string ErrorMessage => Error switch
     {
         "entra" => "Login Microsoft gagal atau identitas Entra belum ditautkan ke user WMS.",

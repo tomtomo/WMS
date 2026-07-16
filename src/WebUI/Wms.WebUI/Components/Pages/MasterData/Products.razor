@@ -1,0 +1,67 @@
+@page "/master-data/products"
+@inherits MasterDataCrudPageBase<ProductDto>
+
+<PageTitle>WMS — Products</PageTitle>
+
+<PageHeader Title="Products">
+    <Actions>
+        @if (User.HasPermission(UiPermissions.ManageProduct))
+        {
+            <MudButton StartIcon="@Icons.Material.Filled.Add" Color="Color.Primary" Variant="Variant.Filled" OnClick="OpenCreateAsync">Tambah Product</MudButton>
+        }
+    </Actions>
+</PageHeader>
+
+<MudPaper Class="pa-3 mb-4" Outlined="true">
+    <MudSwitch @bind-Value="ShowInactive" Label="Tampilkan inactive" Color="Color.Primary" T="bool" @bind-Value:after="Reload" />
+</MudPaper>
+
+<MudTable T="ProductDto" ServerData="LoadAsync" Dense="true" Hover="true" @ref="Table">
+    <HeaderContent>
+        <MudTh>SKU</MudTh>
+        <MudTh>Name</MudTh>
+        <MudTh>UOM</MudTh>
+        <MudTh>Batch</MudTh>
+        <MudTh>Expiry</MudTh>
+        <MudTh>QC</MudTh>
+        <MudTh>Shelf</MudTh>
+        <MudTh>Active</MudTh>
+        <MudTh Style="width:60px" />
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="SKU">@context.Sku</MudTd>
+        <MudTd DataLabel="Name">@context.Name</MudTd>
+        <MudTd DataLabel="UOM">@context.Uom</MudTd>
+        <MudTd DataLabel="Batch">@(context.BatchTrackingRequired ? "Yes" : "No")</MudTd>
+        <MudTd DataLabel="Expiry">@(context.ExpiryTrackingRequired ? "Yes" : "No")</MudTd>
+        <MudTd DataLabel="QC">@(context.QcRequiredOnReceipt ? "Yes" : "No")</MudTd>
+        <MudTd DataLabel="Shelf">@(context.ShelfLifeDays?.ToString() ?? "-")</MudTd>
+        <MudTd DataLabel="Active">@(context.IsActive ? "✓" : "✗")</MudTd>
+        <MudTd>
+            @if (context.IsActive && User.HasPermission(UiPermissions.ManageProduct))
+            {
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error"
+                               aria-label="Deactivate product" OnClick="@(() => DeactivateAsync(context))" />
+            }
+        </MudTd>
+    </RowTemplate>
+    <NoRecordsContent>
+        <MudText Class="pa-4">Belum ada product untuk filter ini.</MudText>
+    </NoRecordsContent>
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
+</MudTable>
+
+@code {
+    protected override Task<ApiResult<PagedResult<ProductDto>>> ListAsync(int page, int pageSize, bool includeInactive, CancellationToken cancellationToken)
+        => Api.MasterData.ListProductsAsync(page, pageSize, includeInactive, cancellationToken);
+
+    protected override Type FormDialogType => typeof(ProductFormDialog);
+
+    protected override string EntityLabel => "Product";
+
+    protected override string Describe(ProductDto row) => row.Sku;
+
+    protected override Task<ApiResult> DeactivateCoreAsync(ProductDto row) => Api.MasterData.DeactivateProductAsync(row.Sku);
+}

@@ -10,23 +10,24 @@ public sealed class LoginToGoodsReceiptsSmokeTests
     [SkippableFact]
     public async Task Login_then_open_goods_receipts_page()
     {
-        var baseUrl = Environment.GetEnvironmentVariable("WMS_E2E_BASEURL")?.TrimEnd('/');
-        Skip.If(string.IsNullOrEmpty(baseUrl), "Set WMS_E2E_BASEURL ke WebUI yang jalan untuk menjalankan smoke E2E.");
+        var profile = WmsE2EProfile.FromEnvironment();
+        Skip.If(!profile.IsConfigured, "Set WMS_E2E_BASEURL ke WebUI yang jalan untuk menjalankan smoke E2E.");
 
         using var playwright = await Playwright.CreateAsync();
-        await using var browser = await playwright.Chromium.LaunchAsync();
-        var context = await browser.NewContextAsync(new BrowserNewContextOptions { IgnoreHTTPSErrors = true });
+        await using var browser = await playwright.Chromium.LaunchAsync(
+            new BrowserTypeLaunchOptions { Headless = true, Channel = profile.BrowserChannel });
+        var context = await browser.NewContextAsync(new BrowserNewContextOptions { IgnoreHTTPSErrors = profile.IgnoreTls });
         var page = await context.NewPageAsync();
 
         // Login lokal (admin seed).
-        await page.GotoAsync($"{baseUrl}/login");
-        await page.FillAsync("input[name=\"username\"]", "admin");
-        await page.FillAsync("input[name=\"password\"]", "ChangeMe#2026");
+        await page.GotoAsync($"{profile.BaseUrl}/login");
+        await page.FillAsync("input[name=\"username\"]", profile.Username);
+        await page.FillAsync("input[name=\"password\"]", profile.Password);
         await page.ClickAsync("button[type=\"submit\"]");
-        await page.WaitForURLAsync($"{baseUrl}/**");
+        await page.WaitForURLAsync($"{profile.BaseUrl}/**");
 
         // Pastikan halaman Goods Receipts dapat dibuka setelah login dan mengambil data melalui gateway.
-        await page.GotoAsync($"{baseUrl}/inbound/goods-receipts");
+        await page.GotoAsync($"{profile.BaseUrl}/inbound/goods-receipts");
         await page.WaitForSelectorAsync("text=Goods Receipts");
 
         (await page.ContentAsync()).Should().Contain("Goods Receipts").And.Contain("Pending Review");

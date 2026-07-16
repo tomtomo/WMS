@@ -23,7 +23,25 @@ internal static class UiPermissions
 
     public const string PostGR = "Inbound.PostGR";
 
+    public const string UploadGRAttachment = "Inbound.UploadGRAttachment";
+
+    public const string DeleteGRAttachment = "Inbound.DeleteGRAttachment";
+
     public const string CompletePutaway = "Inventory.CompletePutaway";
 
     public const string ReadStock = "Inventory.ReadStock";
+
+    public const string CreateOutboundOrder = "Outbound.CreateOrder";
+
+    public const string CreateWave = "Outbound.CreateWave";
+
+    public const string DispatchWave = "Outbound.DispatchWave";
+
+    public const string CompletePickingTask = "Outbound.CompletePickingTask";
+
+    public const string ManageProduct = "MasterData.ManageProduct";
+
+    public const string ManageLocation = "MasterData.ManageLocation";
+
+    public const string ManageWarehouse = "MasterData.ManageWarehouse";
 }

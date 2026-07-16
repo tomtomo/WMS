@@ -1,0 +1,116 @@
+@page "/outbound/picking"
+@inherits AuthAwareComponentBase
+@inject WmsApiClient Api
+@inject LocationNameResolver Locations
+@inject ISnackbar Snackbar
+
+<PageTitle>WMS — Picking</PageTitle>
+
+<MudText Typo="Typo.h4" GutterBottom="true">Picking</MudText>
+
+<div class="d-flex gap-2 align-center mb-3 flex-wrap">
+    <MudTextField @bind-Value="_pickerId" Label="Picker Id (GUID)" Margin="Margin.Dense" />
+    <MudSelect T="Guid" @bind-Value="_staging" Label="Staging Location" Margin="Margin.Dense" Style="min-width:200px">
+        @foreach (var location in _stagingLocations)
+        {
+            <MudSelectItem T="Guid" Value="@location.LocationId">@location.Code</MudSelectItem>
+        }
+    </MudSelect>
+    <MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="LoadWorklistAsync" />
+</div>
+
+@if (_loading)
+{
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" />
+}
+else if (_tasks.Count == 0)
+{
+    <MudText>Tidak ada picking task.</MudText>
+}
+else
+{
+    <MudTable Items="_tasks" Dense="true" Hover="true">
+        <HeaderContent>
+            <MudTh>Task Id</MudTh>
+            <MudTh>SKU</MudTh>
+            <MudTh>Qty</MudTh>
+            <MudTh></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Task Id">@OrderDisplay.Short(context.PickingTaskId)</MudTd>
+            <MudTd DataLabel="SKU">@context.Sku</MudTd>
+            <MudTd DataLabel="Qty">@context.Qty.ToString("0.##")</MudTd>
+            <MudTd>
+                @if (User.HasPermission(UiPermissions.CompletePickingTask))
+                {
+                    <MudButton Size="Size.Small" Color="Color.Primary" OnClick="() => CompleteAsync(context)" Disabled="_busy">Complete</MudButton>
+                }
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+@code {
+    private string _pickerId = "c0000000-0000-0000-0000-000000000001";
+    private Guid _staging;
+    private IReadOnlyList<LocationDto> _stagingLocations = [];
+    private IReadOnlyList<PickingTaskDto> _tasks = [];
+    private bool _loading;
+    private bool _busy;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        await Locations.EnsureLoadedAsync();
+        _stagingLocations = Locations.OfType("StagingArea");
+        if (_staging == Guid.Empty && _stagingLocations.Count > 0)
+        {
+            _staging = _stagingLocations[0].LocationId;
+        }
+
+        await LoadWorklistAsync();
+    }
+
+    private async Task LoadWorklistAsync()
+    {
+        _loading = true;
+        Guid? picker = Guid.TryParse(_pickerId, out var parsed) ? parsed : null;
+        var result = await Api.Outbound.ListPickingTasksAsync(picker);
+        if (result.Success)
+        {
+            _tasks = result.Value!;
+        }
+        else
+        {
+            Snackbar.Add($"Gagal memuat worklist: {result.ErrorMessage}", Severity.Warning);
+        }
+
+        _loading = false;
+    }
+
+    private async Task CompleteAsync(PickingTaskDto task)
+    {
+        if (_staging == Guid.Empty)
+        {
+            Snackbar.Add("Pilih staging location dulu.", Severity.Warning);
+            return;
+        }
+
+        Guid? operatorId = Guid.TryParse(_pickerId, out var picker) ? picker : null;
+
+        _busy = true;
+        var result = await Api.Outbound.CompletePickingAsync(task.PickingTaskId, new CompletePickingRequest(task.Qty, _staging, operatorId));
+        _busy = false;
+
+        if (result.Success)
+        {
+            Snackbar.Add("Picking selesai.", Severity.Success);
+            await LoadWorklistAsync();
+        }
+        else
+        {
+            Snackbar.Add($"Gagal: {result.ErrorMessage}", Severity.Error);
+        }
+    }
+}

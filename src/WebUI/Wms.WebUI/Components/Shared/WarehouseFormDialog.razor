@@ -1,0 +1,64 @@
+@using System.ComponentModel.DataAnnotations
+@inject WmsApiClient Api
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <div style="min-width:480px;">
+            <EditForm EditContext="_editContext" OnValidSubmit="SubmitAsync">
+                <DataAnnotationsValidator />
+                <MudTextField @bind-Value="_form.Name" Label="Name" Required="true" Variant="Variant.Outlined" Class="mb-2" />
+                <MudTextField @bind-Value="_form.Address" Label="Address" Lines="2" Required="true" Variant="Variant.Outlined" Class="mb-2" />
+                <ValidationSummary />
+            </EditForm>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Disabled="_busy">Batal</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SubmitAsync" Disabled="_busy">@(_busy ? "..." : "Simpan")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance Dialog { get; set; } = default!;
+
+    private readonly WarehouseForm _form = new();
+    private EditContext _editContext = default!;
+    private bool _busy;
+
+    protected override void OnInitialized() => _editContext = new EditContext(_form);
+
+    private async Task SubmitAsync()
+    {
+        if (!_editContext.Validate())
+        {
+            return;
+        }
+
+        _busy = true;
+        var result = await Api.MasterData.CreateWarehouseAsync(new CreateWarehouseRequest(_form.Name, _form.Address));
+        _busy = false;
+
+        if (result.Success)
+        {
+            Snackbar.Add($"Warehouse {_form.Name} dibuat.", Severity.Success);
+            Dialog.Close(DialogResult.Ok(true));
+        }
+        else
+        {
+            Snackbar.Add($"Gagal: {result.ErrorMessage}", Severity.Error);
+        }
+    }
+
+    private void Cancel() => Dialog.Cancel();
+
+    private sealed class WarehouseForm
+    {
+        [Required(ErrorMessage = "Name wajib.")]
+        public string Name { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Address wajib.")]
+        public string Address { get; set; } = string.Empty;
+    }
+}
